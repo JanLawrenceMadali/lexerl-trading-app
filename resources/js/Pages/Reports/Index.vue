@@ -1,0 +1,3 @@
+<template>
+    Sales Page
+</template>
