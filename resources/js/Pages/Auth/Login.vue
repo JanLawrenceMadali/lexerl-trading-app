@@ -1,11 +1,13 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Button } from '@/Components/ui/button';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LogIn } from 'lucide-vue-next';
+import { Loader2 } from 'lucide-vue-next';
 
 defineProps({
     canResetPassword: {
@@ -17,7 +19,7 @@ defineProps({
 });
 
 const form = useForm({
-    email: '',
+    username: '',
     password: '',
     remember: false,
 });
@@ -31,64 +33,47 @@ const submit = () => {
 
 <template>
     <GuestLayout>
+
         <Head title="Log in" />
 
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
+        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
         </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+            <div class="grid gap-2">
+                <Label for="username">Username</Label>
+                <Input id="username" type="text" v-model="form.username" autofocus autocomplete="username"
+                    placeholder="Username" />
+                <InputError :message="form.errors.username" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
+            <div class="grid gap-2 mt-4">
+                <Label for="password">Password</Label>
+                <Input id="password" type="password" v-model="form.password" autocomplete="current-password" />
+                <InputError :message="form.errors.password" />
             </div>
 
             <div class="block mt-4">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
-                </label>
+                <Label class="flex items-center space-x-2">
+                    <Checkbox id="remember" v-model:checked="form.remember" />
+                    <Label for="remember"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Remember me
+                    </Label>
+                </Label>
             </div>
 
-            <div class="flex items-center justify-end mt-4">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
-                >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Log in
-                </PrimaryButton>
+            <div class="flex items-center justify-end my-4">
+                <Button :class="['w-full', { 'opacity-25': form.processing }]" :disabled="form.processing">
+                    <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
+                    <LogIn v-else class="w-4 h-4 mr-2" />
+                    Sign In
+                </Button>
             </div>
+
+            <p class="text-sm text-center text-muted-foreground">Forgot password? Please contact your <span class="underline">Administrator</span>.</p>
         </form>
+
     </GuestLayout>
 </template>
