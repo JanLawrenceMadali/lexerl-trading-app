@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Button } from '@/Components/ui/button'
 
 defineProps({
-    users: Object
+    purchases: Object
 })
 
 </script>
