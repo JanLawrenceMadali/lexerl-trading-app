@@ -27,7 +27,7 @@ const getRoute = (index) => {
             </MenubarTrigger>
             <MenubarContent side="right" class="min-w-32">
                 <MenubarItem v-for="(item, index) in menuItems" :key="index">
-                    <Link :href="getRoute(index)" class="w-full">
+                    <Link :href="getRoute(index)" class="w-full text-base">
                     {{ item }}
                     </Link>
                 </MenubarItem>
