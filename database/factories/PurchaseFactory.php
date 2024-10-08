@@ -17,14 +17,15 @@ class PurchaseFactory extends Factory
     public function definition(): array
     {
         return [
-            'amount' => fake()->randomFloat(2, 1, 1000),
+            'quantity' => fake()->randomNumber(2, true),
             'cost' => fake()->randomFloat(2, 1, 1000),
             'notes' => fake()->sentence(),
-            'transaction_number' => fake()->unique()->randomNumber(5, true),
-            'transaction_id' => rand(1, 3),
             'category_id' => rand(1, 4),
+            'supplier_id' => rand(1, 30),
             'subcategory_id' => rand(1, 2),
-            'supplier_id' => rand(1, 50),
+            'transaction_id' => rand(1, 3),
+            'unit_measure_id' => rand(1, 7),
+            'transaction_number' => fake()->unique()->randomNumber(5, true)
         ];
     }
 }

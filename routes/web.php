@@ -24,10 +24,14 @@ Route::middleware('auth')->group(function () {
     // Search
     Route::inertia('/search', 'Search')->name('search');
 
-    Route::get('/purchaseIn', [PurchaseInController::class, 'index'])->name('purchaseIn');
-    // Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
-    // Route::post('/transactions/store', [TransactionController::class, 'store'])->name('transactions.store');
-    // Route::get('/sales', [SalesController::class, 'index'])->name('sales');
+    Route::prefix('purchase-in')->group(function () {
+        Route::get('/', [PurchaseInController::class, 'index'])->name('purchase-in');
+        Route::get('/create', [PurchaseInController::class, 'create'])->name('purchase-in.create');
+        Route::post('/store', [PurchaseInController::class, 'store'])->name('purchase-in.store');
+        Route::patch('/update/{purchase}', [PurchaseInController::class, 'update'])->name('purchase-in.update');
+        Route::delete('/destroy/{purchase}', [PurchaseInController::class, 'destroy'])->name('purchase-in.destroy');
+    });
+
 
     // Settings
     Route::inertia('/settings', 'Settings/Index')->name('settings');

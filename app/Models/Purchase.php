@@ -9,13 +9,14 @@ class Purchase extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'amount',
         'cost',
         'notes',
-        'tx_doc_id',
+        'quantity',
         'category_id',
         'supplier_id',
         'subcategory_id',
+        'transaction_id',
+        'unit_measure_id',
         'transaction_number'
     ];
 
@@ -37,5 +38,10 @@ class Purchase extends Model
     public function transaction()
     {
         return $this->belongsTo(Transaction::class);
+    }
+
+    public function unit_measure()
+    {
+        return $this->belongsTo(UnitMeasure::class);
     }
 }
