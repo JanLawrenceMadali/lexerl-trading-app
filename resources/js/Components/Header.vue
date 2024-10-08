@@ -1,8 +1,12 @@
 <script setup>
-import { CircleUser, Home, LineChart, Menu, Package, Package2, ShoppingCart, Users } from 'lucide-vue-next';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { ArrowLeftRight, CircleUser, Cog, FileSearch, Home, LayoutDashboard, LineChart, Menu, Package, Package2, Printer, ShoppingCart, Users } from 'lucide-vue-next';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { Badge } from './ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import ApplicationLogo from './ApplicationLogo.vue';
+import { Link } from '@inertiajs/vue3';
+import MenuTab from './MenuTab.vue';
+import SubmenuTab from './SubmenuTab.vue';
 
 const props = defineProps({
     items: {
@@ -29,45 +33,30 @@ const props = defineProps({
                     <span class="sr-only">Toggle navigation menu</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" class="flex flex-col">
-                <nav class="grid gap-2 text-lg font-medium">
-                    <a href="#" class="flex items-center gap-2 text-lg font-semibold">
-                        <Package2 class="w-6 h-6" />
-                        <span class="sr-only">Acme Inc</span>
-                    </a>
-                    <a href="#"
-                        class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground">
-                        <Home class="w-5 h-5" />
-                        Dashboard
-                    </a>
-                    <a href="#"
-                        class="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground">
-                        <ShoppingCart class="w-5 h-5" />
-                        Orders
-                        <Badge class="flex items-center justify-center w-6 h-6 ml-auto rounded-full shrink-0">
-                            6
-                        </Badge>
-                    </a>
-                    <a href="#"
-                        class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground">
-                        <Package class="w-5 h-5" />
-                        Products
-                    </a>
-                    <a href="#"
-                        class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground">
-                        <Users class="w-5 h-5" />
-                        Customers
-                    </a>
-                    <a href="#"
-                        class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground">
-                        <LineChart class="w-5 h-5" />
-                        Analytics
-                    </a>
+            <SheetContent side="left" class="flex flex-col w-[200px]">
+                <SheetHeader>
+                    <SheetTitle></SheetTitle>
+                    <SheetDescription></SheetDescription>
+                </SheetHeader>
+                <nav class="flex flex-col items-center gap-4 px-2 sm:py-5">
+                    <Link :href="route('dashboard')"
+                        class="flex items-center justify-center gap-2 text-lg font-semibold rounded-full group size-16 shrink-0 bg-slate-200 text-primary-foreground md:size-16 md:text-base">
+                    <ApplicationLogo class="w-12 h-auto transition-all duration-300 group-hover:scale-125" />
+                    <span class="sr-only">Lexerl Trading App</span>
+                    </Link>
+                    <MenuTab label="Dashboard" :icon="LayoutDashboard" route="dashboard" />
+                    <MenuTab label="Search" :icon="FileSearch" route="search" />
+                    <SubmenuTab label="Transactions" :icon="ArrowLeftRight"
+                        :menu-items="['Purchase In', 'Sales', 'Collectibles']"
+                        :menu-routes="['purchase-in', 'users', 'users']" />
+                    <SubmenuTab label="Reports" :icon="Printer" :menu-items="['Sales', 'Collectibles', 'Purchases']"
+                        :menu-routes="['users', 'users', 'users']" />
+                    <MenuTab label="Settings" :icon="Cog" route="settings" />
                 </nav>
             </SheetContent>
         </Sheet>
 
-        <div class="flex items-center justify-between w-full">
+        <div class="flex items-center justify-end w-full md:justify-between">
             <Breadcrumb class="hidden md:flex">
                 <BreadcrumbList>
                     <template v-for="(item, index) in items" :key="index">
@@ -99,7 +88,11 @@ const props = defineProps({
                         </span>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <Link :href="route('settings')" class="w-full text-start">
+                        Settings
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                         <Link :href="route('logout')" method="post" as="button" type="button" class="w-full text-start">
