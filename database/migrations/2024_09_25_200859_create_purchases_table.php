@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
-            $table->decimal('amount');
             $table->decimal('cost');
+            $table->integer('quantity');
             $table->string('notes')->nullable();
             $table->integer('transaction_number')->unique();
-            $table->foreignId('transaction_id')->constrained();
+            $table->foreignId('supplier_id')->constrained();
             $table->foreignId('category_id')->constrained();
             $table->foreignId('subcategory_id')->constrained();
-            $table->foreignId('supplier_id')->constrained();
+            $table->foreignId('transaction_id')->constrained();
+            $table->foreignId('unit_measure_id')->constrained();
             $table->timestamps();
         });
     }
