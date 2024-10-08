@@ -20,10 +20,11 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             SubcategorySeeder::class,
-            TransactionSeeder::class
+            TransactionSeeder::class,
+            UnitMeasureSeeder::class
         ]);
-        User::factory(50)->create();
-        Supplier::factory(50)->create();
-        Purchase::factory(50)->create();
+        User::factory(30)->create();
+        Supplier::factory(30)->create();
+        Purchase::factory(30)->create();
     }
 }
