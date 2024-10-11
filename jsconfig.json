@@ -1,10 +1,14 @@
 {
     "compilerOptions": {
+        "target": "ES6",
+        "lib": ["ES6", "DOM"],
+        "module": "ES6",
         "baseUrl": ".",
         "paths": {
             "@/*": ["resources/js/*"],
             "ziggy-js": ["./vendor/tightenco/ziggy"]
         }
     },
-    "exclude": ["node_modules", "public"]
+    "exclude": ["node_modules", "public"],
+    "types": ["vue-sweetalert2"],
 }
