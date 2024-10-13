@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->integer('quantity');
-            $table->decimal('landed_cost');
+            $table->decimal('selling_price');
             $table->decimal('amount');
             $table->string('sales_date');
             $table->string('notes')->nullable();

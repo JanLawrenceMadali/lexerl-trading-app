@@ -27,7 +27,7 @@ class SaleFactory extends Factory
             'unit_measure_id' => rand(1, 7),
             'amount' => fake()->randomFloat(2, 1, 1000),
             'quantity' => fake()->randomNumber(2, true),
-            'landed_cost' => fake()->randomFloat(2, 1, 1000),
+            'selling_price' => fake()->randomFloat(2, 1, 1000),
             'sales_date' => fake()->dateTimeBetween('-1 year', 'now'),
             'transaction_number' => fake()->unique()->randomNumber(8, true)
         ];

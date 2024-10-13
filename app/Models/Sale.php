@@ -15,7 +15,7 @@ class Sale extends Model
         'is_paid',
         'quantity',
         'sales_date',
-        'landed_cost',
+        'selling_price',
         'customer_id',
         'due_date_id',
         'category_id',

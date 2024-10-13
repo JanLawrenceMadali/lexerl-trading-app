@@ -29,7 +29,7 @@ const form = useForm({
     amount: props.sales.amount,
     is_paid: String(props.sales.is_paid),
     quantity: props.sales.quantity,
-    landed_cost: props.sales.landed_cost,
+    selling_price: props.sales.selling_price,
     sales_date: props.sales.sales_date,
     due_date_id: String(props.sales.due_date_id),
     customer_id: String(props.sales.customer_id),
@@ -59,9 +59,9 @@ watch(() => selectedDate.value, (newDate) => {
 });
 
 watch(
-    () => [form.quantity, form.landed_cost],
-    ([quantity, landed_cost]) => {
-        form.amount = quantity && landed_cost ? quantity * landed_cost : null
+    () => [form.quantity, form.selling_price],
+    ([quantity, selling_price]) => {
+        form.amount = quantity && selling_price ? quantity * selling_price : null
     }
 )
 
@@ -171,7 +171,7 @@ const submit = () => {
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm = !form.amount || !form.quantity || !form.customer_id || !form.category_id || !form.landed_cost || !form.sales_date || !form.subcategory_id || !form.unit_measure_id || !form.transaction_id || !form.transaction_number;
+    const isForm = !form.amount || !form.quantity || !form.customer_id || !form.category_id || !form.selling_price || !form.sales_date || !form.subcategory_id || !form.unit_measure_id || !form.transaction_id || !form.transaction_number;
     return isForm || form.processing;
 });
 
@@ -240,7 +240,7 @@ const isSubmitDisabled = computed(() => {
                             <!-- Customer -->
                             <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
                                 <Label class="col-span-2">
-                                    <span class="after:content-['*'] after:ml-0.5 after:text-red-500">Customer</span>
+                                    <span class="after:content-['*'] after:ml-0.5 after:text-red-500">Customer Name</span>
                                 </Label>
                                 <Popover v-model:open="state.openCustomer">
                                     <PopoverTrigger as-child
@@ -475,22 +475,22 @@ const isSubmitDisabled = computed(() => {
 
                         <div class="grid gap-3 md:grid-cols-2">
                             <div class="grid grid-cols-1 gap-3 md:gap-4">
-                                <!-- Landed Cost -->
+                                <!-- Selling Price -->
                                 <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label for="landed_cost" class="md:col-span-2">
+                                    <Label for="selling_price" class="md:col-span-2">
                                         <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Landed Cost
+                                            Selling Price
                                         </span>
                                     </Label>
                                     <div class="relative items-center w-full md:col-span-3">
-                                        <Input id="landed_cost" v-model="form.landed_cost" type="number" min=0
+                                        <Input id="selling_price" v-model="form.selling_price" type="number" min=0
                                             oninput="validity.valid||(value='');"
-                                            :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.landed_cost }]" />
+                                            :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.selling_price }]" />
                                         <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                             <PhilippinePeso class="size-5 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-5" :message="form.errors.landed_cost" />
+                                    <InputError class="col-span-5" :message="form.errors.selling_price" />
                                 </div>
                                 <!-- Amount -->
                                 <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
