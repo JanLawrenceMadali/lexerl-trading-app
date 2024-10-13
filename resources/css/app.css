@@ -4,6 +4,32 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.custom-title {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.custom-text {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.swal2-icon {
+  border: none !important;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .poppins-regular {
   font-family: "Poppins", system-ui;
   font-weight: 400;
