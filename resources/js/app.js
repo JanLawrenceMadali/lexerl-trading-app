@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from './Components/ui/badge';
 import { RadioGroup, RadioGroupItem } from './Components/ui/radio-group';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './Components/ui/breadcrumb';
+import VueSweetalert2 from 'vue-sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 createInertiaApp({
     title: (title) => `${title} - Lexerl Trading App`,
@@ -21,6 +23,7 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(VueSweetalert2)
             .component("Badge", Badge)
             .component("Button", Button)
             .component("Breadcrumb", Breadcrumb)
