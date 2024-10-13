@@ -8,12 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Purchase extends Model
 {
     use HasFactory;
+    
     protected $fillable = [
-        'cost',
         'notes',
+        'amount',
         'quantity',
+        'landed_cost',
         'category_id',
         'supplier_id',
+        'purchase_date',
         'subcategory_id',
         'transaction_id',
         'unit_measure_id',
