@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
-            $table->decimal('cost');
             $table->integer('quantity');
+            $table->decimal('landed_cost');
+            $table->decimal('amount');
+            $table->string('purchase_date');
             $table->string('notes')->nullable();
             $table->integer('transaction_number')->unique();
             $table->foreignId('supplier_id')->constrained();

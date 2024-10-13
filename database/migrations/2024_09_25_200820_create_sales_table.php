@@ -13,6 +13,19 @@ return new class extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
+            $table->integer('quantity');
+            $table->decimal('landed_cost');
+            $table->decimal('amount');
+            $table->string('sales_date');
+            $table->string('notes')->nullable();
+            $table->boolean('is_paid')->default(false);
+            $table->integer('transaction_number')->unique();
+            $table->foreignId('due_date_id')->constrained();
+            $table->foreignId('customer_id')->constrained();
+            $table->foreignId('category_id')->constrained();
+            $table->foreignId('subcategory_id')->constrained();
+            $table->foreignId('transaction_id')->constrained();
+            $table->foreignId('unit_measure_id')->constrained();
             $table->timestamps();
         });
     }
