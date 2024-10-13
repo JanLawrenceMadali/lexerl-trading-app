@@ -21,7 +21,7 @@ const getRoute = (index) => {
 <template>
     <Menubar class="grid mb-12 bg-transparent border-none">
         <MenubarMenu>
-            <MenubarTrigger class="grid gap-3 cursor-pointer place-items-center hover:text-foreground text-muted-foreground">
+            <MenubarTrigger class="grid gap-3 cursor-pointer place-items-center hover:bg-slate-100 hover:text-slate-800 text-slate-100">
                 <component :is="icon" class="size-8" />
                 {{ label }}
             </MenubarTrigger>
