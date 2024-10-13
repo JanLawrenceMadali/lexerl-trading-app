@@ -1,10 +1,10 @@
 <?php
 
+use App\Http\Controllers\CollectibleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseInController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\Setting\UserController;
-use App\Http\Controllers\Transaction\SalesController;
-use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -24,13 +24,29 @@ Route::middleware('auth')->group(function () {
     // Search
     Route::inertia('/search', 'Search')->name('search');
 
+    // Purchase In
     Route::prefix('purchase-in')->group(function () {
         Route::get('/', [PurchaseInController::class, 'index'])->name('purchase-in');
-        Route::get('/create', [PurchaseInController::class, 'create'])->name('purchase-in.create');
         Route::post('/store', [PurchaseInController::class, 'store'])->name('purchase-in.store');
         Route::patch('/update/{purchase}', [PurchaseInController::class, 'update'])->name('purchase-in.update');
         Route::delete('/destroy/{purchase}', [PurchaseInController::class, 'destroy'])->name('purchase-in.destroy');
     });
+
+    // Sales
+    Route::prefix('sales')->group(function () {
+        Route::get('/', [SalesController::class, 'index'])->name('sales');
+        Route::post('/store', [SalesController::class, 'store'])->name('sales.store');
+        Route::patch('/update/{sale}', [SalesController::class, 'update'])->name('sales.update');
+        Route::delete('/destroy/{sale}', [SalesController::class, 'destroy'])->name('sales.destroy');
+    });
+
+    // Collectibles 
+    // Route::prefix('collectibles')->group(function () {
+    //     Route::get('/', [CollectibleController::class, 'index'])->name('sales');
+    //     Route::post('/store', [CollectibleController::class, 'store'])->name('sales.store');
+    //     Route::patch('/update/{sale}', [CollectibleController::class, 'update'])->name('sales.update');
+    //     Route::delete('/destroy/{sale}', [CollectibleController::class, 'destroy'])->name('sales.destroy');
+    // });
 
 
     // Settings
