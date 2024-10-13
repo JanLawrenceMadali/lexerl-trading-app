@@ -5,7 +5,6 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
 import Header from '@/Components/Header.vue';
 import DataTable from './DataTable.vue';
-import { Toaster } from '@/Components/ui/toast';
 
 const props = defineProps({
     purchases: Object
@@ -29,7 +28,6 @@ const items = ref([
 <template>
 
     <Head title="Purchase In" />
-    <Toaster />
     <AuthenticatedLayout>
         <Header :items="items" />
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">

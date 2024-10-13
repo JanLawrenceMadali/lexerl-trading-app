@@ -1,17 +1,18 @@
 <script setup>
-import { h, ref, watch } from 'vue'
+import { h, ref } from 'vue'
 import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
-import { Link, router } from "@inertiajs/vue3";
+import { router, usePage } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PlusCircle, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SquareArrowOutUpRight, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
-import Delete from './Dialog/Delete.vue';
 import Create from './Dialog/Create.vue';
 import Edit from './Dialog/Edit.vue';
+import Swal from 'sweetalert2';
+import View from './Dialog/View.vue';
 
 const props = defineProps({
     units: Object,
@@ -22,44 +23,115 @@ const props = defineProps({
     subcategories: Object,
 })
 
+const page = usePage()
+
 const data = ref(props.purchases)
 
+const reloadDataTable = () => {
+    data.value = page.props.purchases
+}
+
 const handlePurchaseCreated = () => {
-    router.reload({ only: ['purchases'] })
+    reloadDataTable()
+    Swal.fire({
+        title: "Created!",
+        text: "Transaction successfully created!",
+        iconHtml: '<img src="/assets/icons/Success.png">',
+        confirmButtonColor: "#1B1212",
+    });
 }
 
-const handlePurchaseDeleted = () => {
-    data.value = data.value.filter(purchase => purchase.id !== deletedPurchaseId)
+const handlePurchaseUpdated = () => {
+    reloadDataTable()
+    Swal.fire({
+        title: "Updated!",
+        text: "Transaction successfully updated!",
+        iconHtml: '<img src="/assets/icons/Success.png">',
+        confirmButtonColor: "#1B1212",
+    });
 }
 
-const handlePurchaseEdited = () => {
-    router.reload({ only: ['purchases'] })
+const handlePurchaseDeleted = (id) => {
+    Swal.fire({
+        title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
+        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        iconHtml: '<img src="/assets/icons/Warning.png">',
+        showCancelButton: true,
+        confirmButtonColor: "#C00F0C",
+        cancelButtonColor: "#1B1212",
+        confirmButtonText: "Yes",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('purchase-in.destroy', id), {
+                onSuccess: () => {
+                    data.value = data.value.filter(item => item.id !== id);
+                    router.get(route('purchase-in'))
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "Transaction successfully removed!",
+                        iconHtml: '<img src="/assets/icons/Success.png">',
+                        confirmButtonColor: "#1B1212",
+                    });
+                }
+            })
+        }
+    });
 }
 
 const TIME_UNITS = [
-  { unit: 'year', seconds: 31536000 },
-  { unit: 'month', seconds: 2592000 },
-  { unit: 'day', seconds: 86400 },
-  { unit: 'hour', seconds: 3600 },
-  { unit: 'minute', seconds: 60 },
-  { unit: 'second', seconds: 1 }
+    { unit: 'year', seconds: 31536000 },
+    { unit: 'month', seconds: 2592000 },
+    { unit: 'day', seconds: 86400 },
+    { unit: 'hour', seconds: 3600 },
+    { unit: 'minute', seconds: 60 },
+    { unit: 'second', seconds: 1 }
 ];
 
 const timeAgo = (date) => {
-  const secondsElapsed = Math.floor((new Date() - date) / 1000);
+    const secondsElapsed = Math.floor((new Date() - date) / 1000);
 
-  for (const { unit, seconds } of TIME_UNITS) {
-    const interval = Math.floor(secondsElapsed / seconds);
-    if (interval >= 1) {
-      return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+    for (const { unit, seconds } of TIME_UNITS) {
+        const interval = Math.floor(secondsElapsed / seconds);
+        if (interval >= 1) {
+            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+        }
     }
-  }
 
-  return 'just now';
+    return 'just now';
 };
 
 
 const columns = [
+    {
+        accessorKey: 'transaction_number',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const purchase = row.original;
+            return h('div', { class: 'px-2' }, `# ${purchase.transaction_number}`);
+        },
+    },
+    {
+        accessorKey: 'purchase_date',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Purchase Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const purchase = row.original
+            const date = new Date(purchase.purchase_date)
+            const formattedDate = new Intl.DateTimeFormat('en-PH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            }).format(date)
+
+            return h('div', { class: 'px-2' }, [
+                h('div', {}, formattedDate),
+                h('div', { class: 'text-xs text-gray-500' })
+            ]);
+        },
+    },
     {
         accessorKey: 'supplier.name',
         header: ({ column }) => {
@@ -71,36 +143,14 @@ const columns = [
         },
     },
     {
-        accessorKey: 'transaction.transaction_type',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction Type', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, purchase.transaction.transaction_type),
-                h('div', { class: 'text-slate-500' }, `Transaction # ${purchase.transaction_number}`)
-            ]);
-        },
-    },
-    {
-        accessorKey: 'unit_measure.name',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Unit', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, purchase.unit_measure.abbreviation)
-        },
-    },
-    {
         accessorKey: 'quantity',
         header: ({ column }) => {
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Quantity', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
+            const purchase = row.original
             const quantity = Number.parseFloat(row.getValue('quantity'))
-            return h('div', { class: 'font-medium px-2' }, quantity)
+            return h('div', { class: 'px-2' }, `${quantity} ${purchase.unit_measure.abbreviation}`)
         },
     },
     {
@@ -111,7 +161,7 @@ const columns = [
         cell: ({ row }) => {
             const purchase = row.original;
             return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, purchase.category?.name || 'N/A'),
+                h('div', { class: 'font-medium' }, purchase.category.name),
                 h('div', { class: 'text-slate-500' },
                     purchase.subcategory.category_id === purchase.category?.id
                         ? purchase.subcategory.name
@@ -121,14 +171,13 @@ const columns = [
         },
     },
     {
-        accessorKey: 'cost',
+        accessorKey: 'amount',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Cost', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const cost = Number.parseFloat(row.getValue('cost'))
-            const formatted = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', }).format(cost)
-            return h('div', { class: 'font-medium px-2' }, formatted)
+            const purchase = row.original;
+            return h('div', { class: 'px-2' }, '₱' + purchase.amount);
         },
     },
     {
@@ -142,7 +191,7 @@ const columns = [
                 h(Tooltip, {}, {
                     default: () => [
                         h(TooltipTrigger, { asChild: true }, () =>
-                            h('div', { class: 'px-2 truncate w-28' }, notes)
+                            h('div', { class: 'px-2 truncate w-40' }, notes)
                         ),
                         h(TooltipContent, {}, () =>
                             h('p', {}, notes)
@@ -152,55 +201,55 @@ const columns = [
             );
         },
     },
-    {
-        accessorKey: 'created_at',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original
-            const date = new Date(purchase.created_at)
-            const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            }).format(date)
+    // {
+    //     accessorKey: 'created_at',
+    //     header: ({ column }) => {
+    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+    //     },
+    //     cell: ({ row }) => {
+    //         const purchase = row.original
+    //         const date = new Date(purchase.created_at)
+    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
+    //             year: 'numeric',
+    //             month: 'short',
+    //             day: 'numeric',
+    //         }).format(date)
 
-            const timeAgoString = timeAgo(date);
+    //         const timeAgoString = timeAgo(date);
 
-            return h('div', { class: 'px-2' }, [
-                h('div', {}, formattedDate),
-                h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-            ]);
-        },
-    },
-    {
-        accessorKey: 'updated_at',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original
-            const date = new Date(purchase.updated_at)
-            const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            }).format(date)
+    //         return h('div', { class: 'px-2' }, [
+    //             h('div', {}, formattedDate),
+    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
+    //         ]);
+    //     },
+    // },
+    // {
+    //     accessorKey: 'updated_at',
+    //     header: ({ column }) => {
+    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+    //     },
+    //     cell: ({ row }) => {
+    //         const purchase = row.original
+    //         const date = new Date(purchase.updated_at)
+    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
+    //             year: 'numeric',
+    //             month: 'short',
+    //             day: 'numeric',
+    //         }).format(date)
 
-            const timeAgoString = timeAgo(date);
+    //         const timeAgoString = timeAgo(date);
 
-            return h('div', { class: 'px-2' }, [
-                h('div', {}, formattedDate),
-                h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-            ]);
-        },
-    },
+    //         return h('div', { class: 'px-2' }, [
+    //             h('div', {}, formattedDate),
+    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
+    //         ]);
+    //     },
+    // },
     {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const purchase = row.original;
+            const purchases = row.original;
             const units = props.units
             const suppliers = props.suppliers
             const categories = props.categories
@@ -208,19 +257,25 @@ const columns = [
             const subcategories = props.subcategories
 
             return h('div', { class: 'flex items-center gap-1' }, [
+                h(View, {
+
+                }),
                 h(Edit, {
-                    purchases: purchase,
                     units,
                     suppliers,
                     categories,
                     transactions,
                     subcategories,
-                    onPurchaseUpdated: handlePurchaseEdited
+                    purchases: purchases,
+                    onPurchaseUpdated: handlePurchaseUpdated
                 }),
-                h(Delete, {
-                    purchaseId: purchase.id,
-                    onPurchaseDeleted: handlePurchaseDeleted
-                }),
+                h(Button, {
+                    size: 'xs',
+                    variant: 'ghost',
+                    class: 'text-red-600 hover:text-red-800',
+                    title: 'Delete',
+                    onClick: () => handlePurchaseDeleted(purchase.id)
+                }, () => h(Trash2, { class: 'size-5' })),
             ]);
         },
     },
@@ -261,15 +316,15 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'cost',
             'notes',
+            'amount',
             'quantity',
-            'created_at',
+            'purchase_date',
             'supplier.name',
             'category.name',
             'subcategory.name',
-            'unit_measure.abbreviation',
             'transaction_number',
+            'unit_measure.abbreviation',
             'transaction.transaction_type',
         ];
 
