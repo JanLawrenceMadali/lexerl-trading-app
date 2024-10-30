@@ -13,8 +13,8 @@ class TransactionSeeder extends Seeder
      */
     public function run(): void
     {
-        Transaction::create(['transaction_type' => 'Contract Number']);
-        Transaction::create(['transaction_type' => 'Sales Invoice']);
-        Transaction::create(['transaction_type' => 'Delivery Receipt']);
+        Transaction::create(['type' => 'Contract Number']);
+        Transaction::create(['type' => 'Sales Invoice']);
+        Transaction::create(['type' => 'Delivery Receipt']);
     }
 }
