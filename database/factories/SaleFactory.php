@@ -2,6 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
+use App\Models\Customer;
+use App\Models\DueDate;
+use App\Models\Product;
+use App\Models\Status;
+use App\Models\Subcategory;
+use App\Models\Transaction;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,19 +25,16 @@ class SaleFactory extends Factory
     public function definition(): array
     {
         return [
-            'category_id' => rand(1, 4),
-            'customer_id' => rand(1, 30),
-            'is_paid' => fake()->boolean(),
-            'notes' => fake()->sentence(),
-            'subcategory_id' => rand(1, 2),
-            'due_date_id' => rand(1, 3),
-            'transaction_id' => rand(2, 3),
-            'unit_measure_id' => rand(1, 7),
-            'amount' => fake()->randomFloat(2, 1, 1000),
-            'quantity' => fake()->randomNumber(2, true),
-            'selling_price' => fake()->randomFloat(2, 1, 1000),
-            'sales_date' => fake()->dateTimeBetween('-1 year', 'now'),
-            'transaction_number' => fake()->unique()->randomNumber(8, true)
+            'description' => fake()->sentence(),
+            'sale_date' => fake()->date(format: 'm/d/Y'),
+            'status_id' => Status::inRandomOrder()->first()->id,
+            'due_date_id' => DueDate::inRandomOrder()->first()->id,
+            'customer_id' => Customer::inRandomOrder()->first()->id,
+            'total_amount' => fake()->randomFloat(2, 100, 1000),
+            'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
+            'updated_at' => fake()->dateTimeBetween('-1 year', 'now'),
+            'transaction_number' => fake()->regexify('[A-Z]{5}[0-4]{3}'),
+            'transaction_id' => Transaction::inRandomOrder()->first()->id,
         ];
     }
 }

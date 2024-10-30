@@ -5,51 +5,82 @@ import { Button } from '@/Components/ui/button'
 import { useForm } from '@inertiajs/vue3'
 import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
-import { CalendarIcon, Check, ChevronDown, HandCoins, Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command'
+import { Check, ChevronDown, Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes, CalendarIcon, Trash2 } from 'lucide-vue-next'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
-import { Calendar } from '@/Components/ui/calendar'
 import Label from '@/Components/ui/label/Label.vue'
 import InputError from '@/Components/InputError.vue'
+import { Calendar } from '@/Components/ui/calendar'
+import { RadioGroup, RadioGroupItem } from '@/Components/ui/radio-group'
+import CreateCustomer from './CreateCustomer.vue'
 
 const props = defineProps({
-    units: Object,
     dues: Object,
+    sales: Object,
+    units: Object,
+    products: Object,
     customers: Object,
     categories: Object,
+    inventories: Object,
     transactions: Object,
     subcategories: Object,
 })
 
 const form = useForm({
-    notes: null,
-    amount: null,
-    is_paid: null,
-    quantity: null,
-    sales_date: null,
+    status_id: '1',
+    sale_date: null,
     due_date_id: null,
+    description: null,
     customer_id: null,
-    category_id: null,
-    selling_price: null,
-    subcategory_id: null,
-    unit_measure_id: null,
     transaction_id: null,
     transaction_number: null,
+    total_amount: null,
+    products: [{
+        amount: null,
+        unit_id: null,
+        category: null,
+        quantity: null,
+        category_id: null,
+        selling_price: null,
+        subcategory_id: null,
+    }]
 })
 
+const addProduct = () => {
+    form.products.push({
+        amount: null,
+        unit_id: null,
+        quantity: null,
+        category_id: null,
+        selling_price: null,
+        subcategory_id: null,
+    });
+};
+
+const removeProduct = (index) => {
+    form.products.splice(index, 1);
+}
+
 const df = new Intl.DateTimeFormat('en-PH', {
-    month: '2-digit',
-    day: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
     year: 'numeric',
 });
 
-const selectedDate = ref()
+const selectedDate = ref(null)
+
+const isPopoverOpen = ref(false);
+
+const handleDateSelect = (date) => {
+    form.sale_date = date;
+    isPopoverOpen.value = false;
+};
 
 const formatAndSetDate = (date) => {
     if (date) {
-        form.sales_date = df.format(new Date(date));
+        form.sale_date = df.format(new Date(date));
     }
 };
 
@@ -57,72 +88,134 @@ watch(() => selectedDate.value, (newDate) => {
     formatAndSetDate(newDate);
 });
 
-watch(
-    () => [form.quantity, form.selling_price],
-    ([quantity, selling_price]) => {
-        form.amount = quantity && selling_price ? quantity * selling_price : null
-    }
-)
+watch(() => form.products, (newProducts) => {
+    const total = newProducts.reduce((total, product) => {
+        return total + (product.amount || 0);
+    }, 0);
+    form.total_amount = Number(total.toFixed(2));
+}, { deep: true });
 
 const state = reactive({
     search: '',
     customerId: null,
+    supplierId: null,
     categoryId: null,
     subCategoryId: null,
-    openCategory: false,
+    openSupplier: false,
     openCustomer: false,
-    openSubCategory: false,
-    showCreateCustomerDialog: false
+    openCategory: {},
+    openSubcategory: {},
 })
 
-watch(() => state.customerId, (newId) => {
-    if (newId) {
-        form.customer_id = newId;
-    }
+const searchRegex = computed(() => new RegExp(state.search, 'i'));
+
+const filteredCustomer = computed(() => {
+    return props.customers.filter(customer => searchRegex.value.test(customer.name));
 });
 
 const filteredCategory = computed(() => {
+    const products = props.products.filter(category =>
+        props.inventories.some(item => item.product_id === category.id)
+    );
+
     return props.categories.filter(category =>
-        category.name.toLowerCase().includes(state.search.toLowerCase())
+        products.some(item => item.category_id === category.id)
     )
-})
+});
 
-const filteredSubCategory = computed(() => {
-    return props.subcategories.filter(subCategory =>
-        subCategory.name.toLowerCase().includes(state.search.toLowerCase()) &&
-        subCategory.category_id === form.category_id
-    )
-})
+const filteredSubcategory = (categoryId) => {
+    const products = props.products.filter(category =>
+        props.inventories.some(item => item.product_id === category.id)
+    );
 
-const filteredCustomer = computed(() => {
-    return props.customers.filter(customer =>
-        customer.name.toLowerCase().includes(state.search.toLowerCase())
+    return props.subcategories.filter(subcategory =>
+        products.some(item => item.subcategory_id === subcategory.id && item.category_id === categoryId.id)
+    );
+};
+
+const filteredUnit = computed(() => {
+    return props.units.filter(unit =>
+        props.inventories.some(item => item.unit_id === unit.id)
     )
-})
+
+    // return props.products.filter(product =>
+    //     units.some()
+    // )
+});
+
+watch(() => form.products, (newProducts) => {
+    newProducts.forEach((product, index) => {
+        const { quantity, selling_price } = product;
+        form.products[index].amount = quantity && selling_price ? quantity * selling_price : null;
+    });
+},
+    { deep: true }
+);
+
+const totalQuantity = computed(() => {
+    if (!form.products || form.products.length === 0) return 0;
+
+    const calculateProductQuantity = (product) => {
+        const { category_id, subcategory_id, unit_id, children } = product;
+
+        // Return 0 if all are null
+        if (!category_id && !subcategory_id && !unit_id) return 0;
+
+        const productTotal = props.inventories.reduce((total, item) => {
+            const matchingProduct = props.products.find(p => p.id === item.product_id);
+            if (!matchingProduct) return total;
+
+            const isMatchingCategory = !category_id || category_id === matchingProduct.category_id;
+            const isMatchingSubcategory = !subcategory_id || subcategory_id === matchingProduct.subcategory_id;
+            const isMatchingUnit = !unit_id || item.unit_id == unit_id;
+
+            if (isMatchingCategory && isMatchingSubcategory && isMatchingUnit) {
+                return total + item.quantity;
+            }
+            return total;
+        }, 0);
+
+        const childrenTotals = children && children.length > 0
+            ? children.map(calculateProductQuantity)
+            : [];
+
+        return [productTotal, ...childrenTotals.flat()];
+    };
+
+    return form.products.flatMap(calculateProductQuantity);
+});
 
 const handleSearch = (value) => {
     state.search = value
 }
 
-const selectCategory = (categoryId) => {
-    state.categoryId = categoryId;
-    const selectedCategory = props.categories.find(category => category.id === categoryId);
-    if (selectedCategory) {
-        form.category_id = selectedCategory.id;
-    }
-    state.openCategory = false;
-};
+const openCategoryDropdown = (index) => {
+    state.openCategory[index] = true
+}
 
-const selectSubCategory = (subCategoryId) => {
-    state.subCategoryId = subCategoryId;
-    const selectedSubCategory = props.subcategories.find(subCategory => subCategory.id === subCategoryId);
-    if (selectedSubCategory) {
-        form.subcategory_id = selectedSubCategory.id;
-    }
-    state.openSubCategory = false;
-};
+const openSubcategoryDropdown = (index) => {
+    state.openSubcategory[index] = true
+}
+
+const selectCategory = (category, index) => {
+    const product = form.products[index];
+    product.subcategory = null;
+    product.subcategory_id = null;
+    product.category = category;
+    product.category_id = category.id;
+    state.openCategory[index] = false;
+}
+
+const selectSubcategory = (subcategory, index) => {
+    state.search = '';
+    const product = form.products[index];
+    product.subcategory_id = subcategory.id;
+    product.subcategory = subcategory;
+    state.openSubcategory[index] = false;
+}
 
 const selectCustomer = (customerId) => {
+    state.search = '';
     state.customerId = customerId;
     const selectedCustomer = props.customers.find(customer => customer.id === customerId);
     if (selectedCustomer) {
@@ -131,28 +224,16 @@ const selectCustomer = (customerId) => {
     state.openCustomer = false;
 };
 
-const selectedCategory = computed(() =>
-    props.categories.find(category => category.id === state.categoryId)
-)
-
-const selectedSubCategory = computed(() =>
-    props.subcategories.find(subCategory => subCategory.id === state.subCategoryId)
-)
-
-const selectedCustomer = computed(() =>
-    props.customers.find(customer => customer.id === state.customerId)
-)
-
-const createCustomer = (name) => {
-    console.log(`Creating new customer: ${name}`)
-    state.showCreateCustomerDialog = false
-}
+const customerMap = new Map(props.customers.map(customer => [customer.id, customer]));
+const selectedCustomer = computed(() => customerMap.get(state.customerId));
 
 const isOpen = ref(false);
 const emit = defineEmits(['sales-created'])
 
-const closeSheet = () => {
+const closeModal = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
@@ -160,19 +241,28 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            form.reset();
+            closeModal();
             form.get(route('sales'))
-            closeSheet();
             emit('sales-created')
         },
         onError: (errors) => {
-            console.log(errors);
+            // console.log(errors);
         },
     });
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm = !form.amount || !form.quantity || !form.customer_id || !form.category_id || !form.selling_price || !form.sales_date || !form.subcategory_id || !form.unit_measure_id || !form.transaction_id || !form.transaction_number;
+    const isForm =
+        !form.sale_date ||
+            form.status_id == 2 ? !form.due_date_id : '' ||
+            !form.customer_id ||
+        !form.products.some(product =>
+            product.unit_id &&
+            product.category_id &&
+            product.subcategory_id &&
+            product.quantity &&
+            product.selling_price
+        )
     return isForm || form.processing;
 });
 
@@ -189,7 +279,7 @@ const isSubmitDisabled = computed(() => {
                     </span>
                 </Button>
             </DialogTrigger>
-            <DialogContent class="sm:min-w-[400px] md:min-w-[1500px]">
+            <DialogContent class="min-w-[1500px]">
                 <DialogHeader>
                     <DialogTitle>Add New Transaction</DialogTitle>
                     <DialogDescription>
@@ -198,62 +288,19 @@ const isSubmitDisabled = computed(() => {
                 </DialogHeader>
                 <div class="py-4">
                     <div class="p-4 border rounded-lg">
-                        <form @submit.prevent="submit" class="grid gap-3 md:gap-4">
-                            <div class="grid items-center gap-3 md:grid-cols-2">
-                                <!-- Transaction Type -->
-                                <div class="grid items-center gap-3 md:w-full md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Transaction Type
-                                        </span>
-                                    </Label>
-                                    <Select v-model="form.transaction_id">
-                                        <SelectTrigger
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <SelectValue placeholder="Select transaction type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem v-for="transaction in transactions" :key="transaction.id"
-                                                    :value="String(transaction.id)">
-                                                    {{ transaction.transaction_type }}
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_id" />
-                                </div>
-                                <!-- Transaction Number -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label for="transaction_number" class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Transaction Number
-                                        </span>
-                                    </Label>
-                                    <div class="relative items-center w-full md:col-span-3">
-                                        <Input id="transaction_number" v-model="form.transaction_number" type="number" min=0 oninput="validity.valid||(value='');"
-                                            :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
-                                        <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                            <Hash class="size-5 text-muted-foreground" />
-                                        </span>
-                                    </div>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_number" />
-                                </div>
-                            </div>
-                            <div class="grid items-center gap-3 md:grid-cols-2">
+                        <form @submit.prevent="submit" class="grid gap-4">
+
+                            <div class="grid items-center grid-cols-2 gap-3">
                                 <!-- Customer -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Customer Name</span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Customer Name
                                     </Label>
                                     <Popover v-model:open="state.openCustomer">
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openCustomer"
-                                                class="justify-between font-normal">{{
-                                                    selectedCustomer?.name || "Select customer" }}
+                                        <PopoverTrigger as-child>
+                                            <Button variant="outline"
+                                                :class="['justify-between font-normal col-span-3', { 'border-red-600 focus-visible:ring-red-500': form.errors.customer_id }]">
+                                                {{ selectedCustomer?.name || "Select customer" }}
                                                 <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
                                             </Button>
                                         </PopoverTrigger>
@@ -261,11 +308,7 @@ const isSubmitDisabled = computed(() => {
                                             <Command>
                                                 <CommandInput type="search" placeholder="Search customer"
                                                     @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateCustomerDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new customer
-                                                </Button>
+                                                <CreateCustomer />
                                                 <CommandEmpty>
                                                     No customer found.
                                                 </CommandEmpty>
@@ -286,251 +329,324 @@ const isSubmitDisabled = computed(() => {
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>
                                 <!-- Sale Date -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Sale Date
-                                        </span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Sale Date
                                     </Label>
-                                    <Popover>
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.sales_date }]">
+                                    <Popover v-model:open="isPopoverOpen">
+                                        <PopoverTrigger as-child>
                                             <Button variant="outline"
-                                                :class="cn('justify-start text-left font-normal', !form.sales_date && 'text-muted-foreground')">
-                                                <CalendarIcon class="w-4 h-4 mr-2" />
-                                                {{ form.sales_date
-                                                    ? df.format(new Date(form.sales_date))
-                                                    : "Pick a date"
+                                                :class="cn('justify-start text-left font-normal col-span-3', !form.sale_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.customer_id })">
+                                                <CalendarIcon class="mr-2 size-4" />
+                                                {{ form.sale_date ? df.format(new Date(form.sale_date)) : "Select Date"
                                                 }}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent class="w-auto p-0">
-                                            <Calendar v-model="selectedDate" initial-focus />
+                                            <Calendar v-model="selectedDate" initial-focus
+                                                @update:model-value="handleDateSelect" />
                                         </PopoverContent>
                                     </Popover>
-                                    <InputError class="col-span-5" :message="form.errors.sales_date" />
+                                    <InputError class="col-span-5" :message="form.errors.sale_date" />
                                 </div>
                             </div>
 
-                            <div class="grid items-center gap-3 md:grid-cols-2">
-                                <!-- Category -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Category</span>
+                            <div class="grid items-center grid-cols-2 gap-3">
+                                <!-- Transaction Type -->
+                                <div class="grid items-center w-full grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Transaction Type
                                     </Label>
-                                    <Popover v-model:open="state.openCategory">
-                                        <PopoverTrigger as-child
+                                    <Select v-model="form.transaction_id">
+                                        <SelectTrigger
                                             :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openCategory"
-                                                class="justify-between font-normal">{{
-                                                    selectedCategory?.name || "Select category" }}
-                                                <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search category"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateCustomerDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new category
-                                                </Button>
-                                                <CommandEmpty>
-                                                    No category found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.category_id"
-                                                            v-for="category in filteredCategory" :key="category.id"
-                                                            :value="category.id" @select="selectCategory(category.id)">
-                                                            {{ category.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto size-4', state.categoryId === category.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <InputError class="col-span-5" :message="form.errors.category_id" />
+                                            <SelectValue placeholder="Select transaction type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem v-for="transaction in transactions" :key="transaction.id"
+                                                    :value="String(transaction.id)">
+                                                    {{ transaction.type }}
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError class="col-span-5" :message="form.errors.transaction_id" />
                                 </div>
-                                <!-- SubCategory -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Subcategory</span>
+                                <!-- Transaction Number -->
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label for="transaction_number"
+                                        class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Transaction Number
                                     </Label>
-                                    <Popover v-model:open="state.openSubCategory">
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openSubCategory"
-                                                class="justify-between font-normal">{{
-                                                    selectedSubCategory?.name || "Select subcategory"
-                                                }}
-                                                <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search subcategory"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateCustomerDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new subcategory
-                                                </Button>
-                                                <CommandEmpty>
-                                                    No subcategory found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.subcategory_id"
-                                                            v-for="subCategory in filteredSubCategory"
-                                                            :key="subCategory.id" :value="subCategory.id"
-                                                            @select="selectSubCategory(subCategory.id)">
-                                                            {{ subCategory.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto h-4 w-4', state.subCategoryId === subCategory.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <InputError class="col-span-5" :message="form.errors.subcategory_id" />
+                                    <div class="relative items-center w-full col-span-3">
+                                        <Input id="transaction_number" v-model="form.transaction_number" type="text"
+                                            min="0" oninput="validity.valid||(value='');"
+                                            :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
+                                        <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                                            <Hash class="size-4 text-muted-foreground" />
+                                        </span>
+                                    </div>
+                                    <InputError class="col-span-5" :message="form.errors.transaction_number" />
                                 </div>
                             </div>
 
-                            <div class="grid items-center gap-3 md:grid-cols-2">
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <!-- Quantity -->
-                                    <div class="grid items-center grid-cols-4 col-span-4 gap-3">
-                                        <Label for="quantity" class="col-span-2">
-                                            <span
-                                                class="after:content-['*'] after:ml-0.5 after:text-red-500">Quantity</span>
-                                        </Label>
-                                        <div class="relative items-center w-full md:col-span-2">
-                                            <Input id="quantity" v-model="form.quantity" type="number" min=0 oninput="validity.valid||(value='');"
-                                                :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.quantity }]" />
-                                            <span
-                                                class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <Boxes class="size-5 text-muted-foreground" />
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Unit -->
-                                    <div class="col-span-1">
-                                        <Select v-model="form.unit_measure_id">
-                                            <SelectTrigger
-                                                :class="{ 'border-red-600 focus:ring-red-500': form.errors.unit_measure_id }">
-                                                <SelectValue placeholder="Unit" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem v-for="unit in units" :key="unit.id"
-                                                        :value="String(unit.id)">{{ unit.abbreviation }}
-                                                    </SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div class="col-span-5">
-                                        <InputError :message="form.errors.quantity" />
-                                        <InputError :message="form.errors.unit_measure_id" />
-                                    </div>
-                                </div>
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <!-- Payment -->
-                                    <div class="grid items-center grid-cols-4 col-span-4 gap-3">
-                                        <Label for="is_paid" class="col-span-2">
-                                            <span
-                                                class="after:content-['*'] after:ml-0.5 after:text-red-500">Payment</span>
-                                        </Label>
-                                        <div class="relative items-center w-full md:col-span-2">
-                                            <Input id="is_paid" v-model="form.is_paid" type="number" min=0 oninput="validity.valid||(value='');"
-                                                :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.is_paid }]" />
-                                            <span
-                                                class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <HandCoins class="size-5 text-muted-foreground" />
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Due Date -->
-                                    <div class="col-span-1">
-                                        <Select v-model="form.due_date_id">
-                                            <SelectTrigger
-                                                :class="{ 'border-red-600 focus:ring-red-500': form.errors.due_date_id }">
-                                                <SelectValue placeholder="Due Date" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem v-for="due in dues" :key="due.id"
-                                                        :value="String(due.id)">{{ due.days }}
-                                                    </SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div class="col-span-5">
-                                        <InputError :message="form.errors.quantity" />
-                                        <InputError :message="form.errors.due_date_id" />
-                                    </div>
-                                </div>
+                            <div class="flex items-center justify-between">
+                                <div class="font-bold">Sale Item</div>
+                                <Button @click="addProduct()" type="button" size="sm" class="gap-1 h-7">
+                                    <Plus class="size-3.5" />
+                                    <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                        Add Item
+                                    </span>
+                                </Button>
                             </div>
-
-                            <div class="grid gap-3 md:grid-cols-2">
-                                <div class="grid grid-cols-1 gap-3 md:gap-4">
-                                    <!-- Selling Price -->
-                                    <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                        <Label for="selling_price" class="md:col-span-2">
-                                            <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                            <div class="max-h-[300px] overflow-auto p-4 border rounded-lg">
+                                <Table>
+                                    <TableHeader class="bg-slate-100">
+                                        <TableRow>
+                                            <TableHead><span class="sr-only">Index</span></TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                                Category
+                                            </TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                                Sub Category
+                                            </TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                                Unit
+                                            </TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
                                                 Selling Price
-                                            </span>
-                                        </Label>
-                                        <div class="relative items-center w-full md:col-span-3">
-                                            <Input id="selling_price" v-model="form.selling_price" type="number" min=0 oninput="validity.valid||(value='');"
-                                                :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.selling_price }]" />
-                                            <span
-                                                class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <PhilippinePeso class="size-5 text-muted-foreground" />
-                                            </span>
-                                        </div>
-                                        <InputError class="col-span-5" :message="form.errors.selling_price" />
-                                    </div>
-                                    <!-- Amount -->
-                                    <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                        <Label for="amount" class="md:col-span-2">Amount</Label>
-                                        <div class="relative items-center w-full md:col-span-3">
-                                            <Input id="amount" v-model="form.amount" type="number" disabled
-                                                class="pl-8 bg-slate-200" />
-                                            <span
-                                                class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <PhilippinePeso class="size-5 text-muted-foreground" />
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                            </TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                                Quantity
+                                            </TableHead>
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                                Amount
+                                            </TableHead>
+                                            <TableHead>
+                                                <span class="sr-only">Action</span>
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow v-if="form.products.length > 0"
+                                            v-for="(product, index) in form.products" :key="index"
+                                            class="hover:bg-muted/0">
+                                            <TableCell>{{ index + 1 }}</TableCell>
+                                            <TableCell> <!-- Category -->
+                                                <Popover v-model:open="state.openCategory[index]">
+                                                    <PopoverTrigger as-child>
+                                                        <Button variant="outline"
+                                                            :class="['justify-between font-normal w-[180px]', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.category_id`] }]"
+                                                            @click.stop="openCategoryDropdown(index)">
+                                                            {{ product.category?.name || "Select category"
+                                                            }}
+                                                            <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent class="w-[180px] p-0">
+                                                        <Command>
+                                                            <CommandEmpty>
+                                                                No category found.
+                                                            </CommandEmpty>
+                                                            <CommandList>
+                                                                <CommandGroup>
+                                                                    <CommandItem v-model="product.category_id"
+                                                                        v-for="category in filteredCategory"
+                                                                        :key="category.id" :value="category.id"
+                                                                        @select="selectCategory(category, index)">
+                                                                        {{ category.name }}
+                                                                        <Check
+                                                                            :class="cn('ml-auto size-4', product.category_id === category.id ? 'opacity-100' : 'opacity-0')" />
+                                                                    </CommandItem>
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <InputError :message="form.errors[`products.${index}.category_id`]" />
+                                            </TableCell>
+                                            <TableCell> <!-- SubCategory -->
+                                                <Popover v-model:open="state.openSubcategory[index]">
+                                                    <PopoverTrigger as-child>
+                                                        <Button variant="outline"
+                                                            :class="['justify-between font-normal min-w-[210px]', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]"
+                                                            @click.stop="openSubcategoryDropdown(index)"
+                                                            :disabled="!product.category_id">
+                                                            {{ product.subcategory?.name ||
+                                                                "Select subcategory" }}
+                                                            <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent class="max-w-[210px] p-0">
+                                                        <Command>
+                                                            <CommandInput type="search" placeholder="Search subcategory"
+                                                                @input="handleSearch($event.target.value)" />
+                                                            <CommandEmpty>
+                                                                No subcategory found.
+                                                            </CommandEmpty>
+                                                            <CommandList>
+                                                                <CommandGroup>
+                                                                    <CommandItem v-model="product.subcategory_id"
+                                                                        v-for="subcategory in filteredSubcategory(product.category)"
+                                                                        :key="subcategory.id" :value="subcategory.id"
+                                                                        @select="selectSubcategory(subcategory, index)">
+                                                                        {{ subcategory.name }}
+                                                                        <Check
+                                                                            :class="cn('ml-auto size-4', product.subcategory_id === subcategory.id ? 'opacity-100' : 'opacity-0')" />
+                                                                    </CommandItem>
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <InputError
+                                                    :message="form.errors[`products.${index}.subcategory_id`]" />
+                                            </TableCell>
+                                            <TableCell> <!-- Unit -->
+                                                <Select v-model="product.unit_id">
+                                                    <SelectTrigger
+                                                        :class="['w-[130px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
+                                                        <SelectValue placeholder="Select Unit" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem v-for="unit in filteredUnit" :key="unit.id"
+                                                                :value="String(unit.id)">
+                                                                {{ unit.abbreviation }}
+                                                            </SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError :message="form.errors[`products.${index}.unit_id`]" />
+                                            </TableCell>
+                                            <TableCell> <!-- Selling Price -->
+                                                <div class="relative items-center">
+                                                    <Input v-model="product.selling_price" type="number" step=".01"
+                                                        min="0" oninput="validity.valid||(value='');"
+                                                        :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.selling_price`] }]" />
+                                                    <span
+                                                        class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                                                        <PhilippinePeso class="size-4 text-muted-foreground" />
+                                                    </span>
+                                                </div>
+                                                <InputError :message="form.errors[`products.${index}.selling_price`]" />
+                                            </TableCell>
+                                            <TableCell> <!-- Quantity -->
+                                                <div class="relative items-center">
+                                                    <Input v-model="product.quantity" type="number" min="0"
+                                                        oninput="validity.valid||(value='');"
+                                                        :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }]" />
+                                                    <span
+                                                        class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                                                        <Boxes class="size-4 text-muted-foreground" />
+                                                    </span>
+                                                    <small :class="['absolute font-medium top-2.5 right-3',
+                                                        totalQuantity[index] > product.quantity
+                                                            ? 'text-green-600'
+                                                            : 'text-red-600 animate-pulse']">
+                                                        {{ totalQuantity[index] - product.quantity }} left
+                                                    </small>
+                                                </div>
+                                                <InputError :message="form.errors[`products.${index}.quantity`]" />
+                                            </TableCell>
+                                            <TableCell> <!-- Amount -->
+                                                <div class="relative items-center">
+                                                    <Input v-model="product.amount" type="number" disabled
+                                                        class="pl-7 bg-slate-200" />
+                                                    <span
+                                                        class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                                                        <PhilippinePeso class="size-4 text-muted-foreground" />
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell> <!-- Action -->
+                                                <Button variant="ghost" @click="removeProduct(index)" type="button"
+                                                    size="xs" class="text-red-500 hover:text-red-600">
+                                                    <Trash2 class="size-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow v-else class="hover:bg-muted/0">
+                                            <TableCell :colspan="7" class="h-24 text-center">
+                                                No products found.
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            <div class="grid items-center grid-cols-2 gap-3">
                                 <!-- Additional details -->
-                                <div class="grid gap-3 md:text-right md:grid-cols-5">
-                                    <Label for="description" class="py-3 md:col-span-2">Additional Details</Label>
-                                    <Textarea v-model="form.notes" id="description" class="md:col-span-3 min-h-30" />
+                                <div class="grid grid-cols-5 gap-3 text-right">
+                                    <Label for="description" class="col-span-2 pt-3">Additional Details</Label>
+                                    <Textarea v-model="form.description" id="description" class="col-span-3" />
+                                </div>
+                                <div class="grid items-center gap-4 text-right">
+                                    <!-- total amount -->
+                                    <div class="grid items-center grid-cols-5 gap-3">
+                                        <Label for="total_amount"
+                                            class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                            Total Amount
+                                        </Label>
+                                        <div class="relative items-center col-span-3">
+                                            <Input v-model="form.total_amount" type="number" disabled
+                                                class="pl-7 bg-slate-200" />
+                                            <span
+                                                class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                                                <PhilippinePeso class="size-4 text-muted-foreground" />
+                                            </span>
+                                        </div>
+                                        <InputError class="col-span-5" :message="form.errors.total_amount" />
+                                    </div>
+                                    <div class="grid items-center grid-cols-10">
+                                        <!-- Due Date -->
+                                        <div v-if="form.status_id == 2"
+                                            class="grid items-center grid-cols-7 col-span-7 gap-2 text-right">
+                                            <Label
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-4">
+                                                Due Date
+                                            </Label>
+                                            <Select v-model="form.due_date_id">
+                                                <SelectTrigger
+                                                    :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.due_date_id }]">
+                                                    <SelectValue placeholder="Select Due Date" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem v-for="due in dues" :key="due.id"
+                                                            :value="String(due.id)">
+                                                            {{ due.days }}
+                                                        </SelectItem>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError class="col-span-3" :message="form.errors.due_date_id" />
+                                        </div>
+                                        <!-- Status -->
+                                        <div :class="form.status_id == 2 ? 'col-span-3' : 'col-span-10'">
+                                            <div class="flex items-center justify-end gap-[50px] px-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <input v-model="form.status_id" type="radio" id="cash" value="1" />
+                                                    <label for="cash">Cash</label>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <input v-model="form.status_id" type="radio" id="credit"
+                                                        value="2" />
+                                                    <label for="credit">Credit</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <DialogFooter>
-                                <DialogClose as-child>
-                                    <Button type="button" class="bg-[#C00F0C] hover:bg-red-500">
-                                        Cancel
-                                    </Button>
-                                </DialogClose>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed"
-                                    :disabled="isSubmitDisabled" type="submit">
+                            <DialogFooter class="flex items-center mt-4">
+                                <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
+                                    Cancel
+                                </Button>
+                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
+                                    :disabled="isSubmitDisabled">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

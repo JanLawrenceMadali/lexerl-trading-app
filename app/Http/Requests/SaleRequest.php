@@ -23,30 +23,37 @@ class SaleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'is_paid' => 'required',
-            'quantity' => 'required',
-            'sales_date' => 'required',
-            'due_date_id' => 'required',
-            'category_id' => 'required',
+            'description' => '',
+            'status_id' => 'required',
+            'sale_date' => 'required',
             'customer_id' => 'required',
-            'selling_price' => 'required',
-            'subcategory_id' => 'required',
+            'total_amount' => 'required',
             'transaction_id' => 'required',
-            'unit_measure_id' => 'required',
-            'transaction_number' => ['required', Rule::unique('sales')->ignore($this->sale)]
+            'transaction_number' => 'required',
+            'products.*.amount' => '',
+            'products.*.unit_id' => 'required',
+            'products.*.category' => '',
+            'products.*.quantity' => 'required',
+            'products.*.category_id' => 'required',
+            'products.*.selling_price' => 'required',
+            'products.*.subcategory_id' => 'required',
+            'due_date_id' => 'nullable|exists:due_dates,id|required_if:status_id,2',
         ];
     }
 
     public function messages()
     {
         return [
-            'is_paid.required' => 'The payment field is required.',
-            'due_date_id.required' => 'The due date field is required.',
-            'category_id.required' => 'The category field is required.',
-            'customer_id.required' => 'The customer field is required.',
-            'subcategory_id.required' => 'The subcategory field is required.',
-            'transaction_id.required' => 'The transaction type field is required.',
-            'unit_measure_id.required' => 'The unit measure field is required.',
+            'status_id.required' => 'status is required.',
+            'due_date_id.required_if' => 'due date is required.',
+            'customer_id.required' => 'customer is required.',
+            'transaction_id.required' => 'transaction type is required.',
+            'transaction_number.required' => 'transaction number is required.',
+            'products.*.unit_id.required' => 'unit is required.',
+            'products.*.quantity.required' => 'quantity is required.',
+            'products.*.selling_price.required' => 'selling price is required.',
+            'products.*.category_id.required' => 'category is required.',
+            'products.*.subcategory_id.required' => 'subcategory is required.',
         ];
     }
 }

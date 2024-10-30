@@ -2,7 +2,7 @@
 import { h, ref } from 'vue'
 import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
-import { router, usePage } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
@@ -15,21 +15,21 @@ import Swal from 'sweetalert2';
 import View from './Dialog/View.vue';
 
 const props = defineProps({
-    units: Object,
-    sales: Object,
     dues: Object,
+    sales: Object,
+    units: Object,
+    products: Object,
     customers: Object,
     categories: Object,
+    inventories: Object,
     transactions: Object,
     subcategories: Object,
 })
 
-const page = usePage()
-
 const data = ref(props.sales)
 
 const reloadDataTable = () => {
-    data.value = page.props.sales
+    data.value = props.sales
 }
 
 const handleSalesCreated = () => {
@@ -101,12 +101,20 @@ const timeAgo = (date) => {
     return 'just now';
 };
 
+const formattedCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+};
 
 const columns = [
     {
         accessorKey: 'transaction_number',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction No.', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const sale = row.original;
@@ -114,17 +122,17 @@ const columns = [
         },
     },
     {
-        accessorKey: 'sales_date',
+        accessorKey: 'sale_date',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sales Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sale Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const sale = row.original
-            const date = new Date(sale.sales_date)
+            const date = new Date(sale.sale_date)
             const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                year: 'numeric',
-                month: 'short',
+                month: 'long',
                 day: 'numeric',
+                year: 'numeric',
             }).format(date)
 
             return h('div', { class: 'px-2' }, [
@@ -134,139 +142,42 @@ const columns = [
         },
     },
     {
-        accessorKey: 'customer.name',
+        accessorKey: 'customer_name',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Customer', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Customer Name', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const sale = row.original;
-            return h('div', { class: 'px-2' }, sale.customer.name)
-        },
-    },
-    {
-        accessorKey: 'quantity',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Quantity', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const sale = row.original
-            const quantity = Number.parseFloat(row.getValue('quantity'))
-            return h('div', { class: 'px-2' }, `${quantity} ${sale.unit_measure.abbreviation}`)
-        },
-    },
-    {
-        accessorKey: 'category.name',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const sale = row.original;
+            const customer_name = sale.customer_name
+            const customer_email = sale.customer_email
             return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, sale.category.name),
-                h('div', { class: 'text-slate-500' },
-                    sale.subcategory.category_id === sale.category?.id
-                        ? sale.subcategory.name
-                        : 'No subcategory'
-                )
+                h('div', { class: 'font-medium' }, customer_name),
+                h('div', { class: 'text-slate-500' }, customer_email)
             ]);
         },
     },
     {
-        accessorKey: 'is_paid',
+        accessorKey: 'total_amount',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Payment', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Total Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const sale = row.original;
-            const paymentStatus = sale.is_paid === 0 ? 'Credit' : 'Cash';
-            return h('div', { class: 'px-2' }, paymentStatus);
+            const total_amount = sale.total_amount
+            return h('div', { class: 'px-2' }, formattedCurrency(total_amount));
         },
     },
     {
-        accessorKey: 'due_date',
+        accessorKey: 'status',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Due Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Payment Method', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const sale = row.original;
-            return h('div', { class: 'px-2' }, sale.due_date.days);
+            const status = sale.status
+            return h('div', { class: 'px-2' }, status);
         },
     },
-    {
-        accessorKey: 'amount',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const sale = row.original;
-            return h('div', { class: 'px-2' }, '₱' + sale.amount);
-        },
-    },
-    {
-        accessorKey: 'notes',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Notes', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const notes = row.getValue('notes');
-            return h(TooltipProvider, {}, () =>
-                h(Tooltip, {}, {
-                    default: () => [
-                        h(TooltipTrigger, { asChild: true }, () =>
-                            h('div', { class: 'px-2 truncate w-40' }, notes)
-                        ),
-                        h(TooltipContent, {}, () =>
-                            h('p', {}, notes)
-                        )
-                    ]
-                })
-            );
-        },
-    },
-    // {
-    //     accessorKey: 'created_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const sale = row.original
-    //         const date = new Date(sale.created_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
-    // {
-    //     accessorKey: 'updated_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const sale = row.original
-    //         const date = new Date(sale.updated_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
     {
         id: 'actions',
         enableHiding: false,
@@ -275,19 +186,23 @@ const columns = [
             const units = props.units
             const sales = row.original;
             const customers = props.customers
+            const products = props.products
             const categories = props.categories
+            const inventories = props.inventories
             const transactions = props.transactions
             const subcategories = props.subcategories
 
             return h('div', { class: 'flex items-center gap-1' }, [
                 h(View, {
-
+                    sales
                 }),
                 h(Edit, {
-                    units,
                     dues,
+                    units,
                     customers,
+                    products,
                     categories,
+                    inventories,
                     transactions,
                     sales: sales,
                     subcategories,
@@ -340,17 +255,12 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'notes',
-            'amount',
-            'quantity',
-            'sales_date',
-            'due_date.days',
-            'customer.name',
-            'category.name',
-            'subcategory.name',
+            'status',
+            'sale_date',
+            'total_amount',
+            'customer_name',
+            'customer_email',
             'transaction_number',
-            'unit_measure.abbreviation',
-            'transaction.transaction_type',
         ];
 
         return searchableFields.some(field => {
@@ -373,7 +283,8 @@ function getNestedValue(obj, path) {
     <div class="flex items-center justify-between gap-2 py-4">
         <Input placeholder="Search..." v-model="filter" class="h-8 w-[150px] lg:w-[250px]" />
         <Create @sales-created="handleSalesCreated" :sales="sales" :categories="categories"
-            :subcategories="subcategories" :customers="customers" :transactions="transactions" :units="units" :dues="dues" />
+            :subcategories="subcategories" :customers="customers" :transactions="transactions" :units="units"
+            :dues="dues" :inventories="inventories" :products="products" />
     </div>
     <div class="border rounded-md">
         <Table>

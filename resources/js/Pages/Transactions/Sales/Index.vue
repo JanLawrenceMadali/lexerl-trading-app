@@ -1,5 +1,4 @@
 <script setup>
-import { usePage } from '@inertiajs/vue3';
 import { CardHeader } from '@/Components/ui/card';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
@@ -7,20 +6,28 @@ import Header from '@/Components/Header.vue';
 import DataTable from './DataTable.vue';
 
 const props = defineProps({
-    sales: Object
+    dues: Object,
+    units: Object,
+    sales: Object,
+    products: Object,
+    customers: Object,
+    categories: Object,
+    inventories: Object,
+    transactions: Object,
+    subcategories: Object,
 })
 
-const page = usePage()
-const units = page.props.units
-const dues = page.props.dues
-const sales = page.props.sales
-const customers = page.props.customers
-const categories = page.props.categories
-const transactions = page.props.transactions
-const subcategories = page.props.subcategories
+const dues = props.dues
+const units = props.units
+const sales = props.sales
+const products = props.products
+const customers = props.customers
+const categories = props.categories
+const transactions = props.transactions
+const subcategories = props.subcategories
 
 const items = ref([
-    { label: 'Transactions', href: '#' },
+    { label: 'Transactions', href: '/' },
     { label: 'Sales', href: 'sales' },
 ])
 
@@ -28,7 +35,7 @@ const items = ref([
 
 <template>
 
-    <Head title="Purchase In" />
+    <Head title="Sales" />
     <AuthenticatedLayout>
         <Header :items="items" />
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
@@ -41,7 +48,8 @@ const items = ref([
                 </CardHeader>
                 <CardContent>
                     <DataTable :sales="sales" :categories="categories" :subcategories="subcategories"
-                        :customers="customers" :transactions="transactions" :units="units" :dues="dues" />
+                        :customers="customers" :transactions="transactions" :units="units" :dues="dues"
+                        :inventories="inventories" :products="products" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>

@@ -4,54 +4,53 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Sale extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'notes',
         'amount',
-        'is_paid',
         'quantity',
-        'sales_date',
-        'selling_price',
-        'customer_id',
+        'sale_date',
+        'status_id',
+        'description',
+        'total_amount',
         'due_date_id',
+        'supplier_id',
         'category_id',
+        'customer_id',
+        'selling_price',
         'subcategory_id',
         'transaction_id',
         'unit_measure_id',
         'transaction_number',
     ];
 
-    public function category()
+    public function products(): BelongsToMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Product::class, 'product_sale')->withPivot('quantity', 'amount', 'selling_price', 'unit_id', 'product_id');
     }
 
-    public function subcategory()
+    public function statuses(): BelongsTo
     {
-        return $this->belongsTo(Subcategory::class);
+        return $this->belongsTo(Status::class, 'status_id');
     }
 
-    public function customer()
+    public function customers(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
-    public function transaction()
+    public function transactions(): BelongsTo
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(Transaction::class, 'transaction_id');
     }
 
-    public function unit_measure()
+    public function dues(): BelongsTo
     {
-        return $this->belongsTo(UnitMeasure::class);
-    }
-
-    public function due_date()
-    {
-        return $this->belongsTo(DueDate::class);
+        return $this->belongsTo(DueDate::class, 'due_date_id');
     }
 }
