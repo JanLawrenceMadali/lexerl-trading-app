@@ -16,7 +16,9 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
-    {        
+    {
+
+        Customer::factory(30)->create();
         $this->call([
             RoleSeeder::class,
             UserSeeder::class,
@@ -24,12 +26,13 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             SubcategorySeeder::class,
             TransactionSeeder::class,
-            UnitMeasureSeeder::class
+            SupplierSeeder::class,
+            StatusSeeder::class,
+            UnitSeeder::class,
+            ProductSeeder::class,
+            SaleSeeder::class,
+            InventorySeeder::class,
         ]);
         User::factory(30)->create();
-        Customer::factory(30)->create();
-        Sale::factory(30)->create();
-        Supplier::factory(30)->create();
-        Purchase::factory(30)->create();
     }
 }
