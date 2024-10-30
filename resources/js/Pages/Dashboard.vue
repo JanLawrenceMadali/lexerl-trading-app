@@ -9,9 +9,23 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Header from '@/Components/Header.vue'
 import { ref } from 'vue'
 
+const props = defineProps({
+    users: Object,
+    sales: Object,
+})
+
 const items = ref([
     { label: 'Dashboard', href: 'dashboard' }
 ])
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+};
 
 </script>
 
@@ -25,16 +39,32 @@ const items = ref([
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle class="text-sm font-medium">
-                            Total Revenue
+                            Total Users
                         </CardTitle>
-                        <DollarSign class="w-4 h-4 text-muted-foreground" />
+                        <Users class="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div class="text-2xl font-bold">
-                            $45,231.89
+                            {{ users }}
                         </div>
                         <p class="text-xs text-muted-foreground">
-                            +20.1% from last month
+                            sample description
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle class="text-sm font-medium">
+                            Sales
+                        </CardTitle>
+                        <CreditCard class="w-4 h-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">
+                            {{ formatCurrency(sales) }}
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            sample description
                         </p>
                     </CardContent>
                 </Card>
@@ -51,22 +81,6 @@ const items = ref([
                         </div>
                         <p class="text-xs text-muted-foreground">
                             +180.1% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle class="text-sm font-medium">
-                            Sales
-                        </CardTitle>
-                        <CreditCard class="w-4 h-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            +12,234
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            +19% from last month
                         </p>
                     </CardContent>
                 </Card>
