@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CollectibleController;
 use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SalesController;
@@ -9,8 +10,6 @@ use App\Http\Controllers\Setting\UserController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\SupplierController;
 use App\Models\ActivityLog;
-use App\Models\Inventory;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('purchase-in')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('purchase-in');
         Route::post('/store', [InventoryController::class, 'store'])->name('purchase-in.store');
-        Route::patch('/update/{purchase}', [InventoryController::class, 'update'])->name('purchase-in.update');
-        Route::delete('/destroy/{purchase}', [InventoryController::class, 'destroy'])->name('purchase-in.destroy');
+        Route::patch('/update/{inventory}', [InventoryController::class, 'update'])->name('purchase-in.update');
+        Route::delete('/destroy/{inventory}', [InventoryController::class, 'destroy'])->name('purchase-in.destroy');
     });
 
     // Sales
@@ -55,12 +54,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Collectibles
-    // Route::prefix('collectibles')->group(function () {
-    //     Route::get('/', [CollectibleController::class, 'index'])->name('sales');
-    //     Route::post('/store', [CollectibleController::class, 'store'])->name('sales.store');
-    //     Route::patch('/update/{sale}', [CollectibleController::class, 'update'])->name('sales.update');
-    //     Route::delete('/destroy/{sale}', [CollectibleController::class, 'destroy'])->name('sales.destroy');
-    // });
+    Route::prefix('collectibles')->group(function () {
+        Route::get('/', [CollectibleController::class, 'index'])->name('collectibles');
+        Route::post('/update', [CollectibleController::class, 'update'])->name('collectibles.update');
+    });
 
     // Reports
     Route::get('/activity_logs', function () {
@@ -68,22 +65,21 @@ Route::middleware('auth')->group(function () {
             'logs' => ActivityLog::with('users')->latest()->get()
         ]);
     })->name('activity_logs');
-
-    Route::get('/inventory', function () {
+    // Inventory
+    Route::get('/inventory_logs', function () {
         $inventories = DB::table('inventories')
             ->join('units', 'inventories.unit_id', '=', 'units.id')
-            ->join('products', 'inventories.product_id', '=', 'products.id')
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->join('subcategories', 'products.subcategory_id', '=', 'subcategories.id')
+            ->join('categories', 'inventories.category_id', '=', 'categories.id')
+            ->join('subcategories', 'inventories.subcategory_id', '=', 'subcategories.id')
             ->select(
-                'products.id as product_id',
                 'units.abbreviation as unit',
                 'categories.name as category_name',
                 'subcategories.name as subcategory_name',
                 DB::raw('SUM(inventories.quantity) as total_quantity')
             )
-            ->groupBy('products.id', 'units.abbreviation', 'categories.name', 'subcategories.name')
+            ->groupBy('units.abbreviation', 'categories.name', 'subcategories.name')
             ->having('total_quantity', '>', 0)
+            ->latest('inventories.created_at')
             ->get()
             ->map(function ($item) {
                 return [
@@ -97,12 +93,31 @@ Route::middleware('auth')->group(function () {
                 return intval($item['quantity']) > 0;
             });
 
-
         return Inertia::render('Reports/Inventory/Index', [
             'inventories' => $inventories
         ]);
-    })->name('inventory');
+    })->name('inventory_logs');
 
+    // Sales
+    Route::get('/sale_logs', function () {
+        $sales = DB::table('product_sale')
+            ->join('products', 'product_sale.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->join('subcategories', 'products.subcategory_id', '=', 'subcategories.id')
+            ->join('units', 'product_sale.unit_id', '=', 'units.id')
+            ->select(
+                'categories.name as category_name',
+                'subcategories.name as subcategory_name',
+                'product_sale.quantity',
+                'units.abbreviation as unit'
+            )
+            ->latest('product_sale.created_at')
+            ->get();
+
+        return Inertia::render('Reports/Sales/Index', [
+            'sales' => $sales
+        ]);
+    })->name('sale_logs');
     // Settings
     Route::inertia('/settings', 'Settings/Index')->name('settings');
     // Supplier
