@@ -1,82 +1,21 @@
 <script setup>
-import { h, ref } from 'vue'
+import { h, ref, computed, watch } from 'vue'
 import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
-import { router, usePage } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SquareArrowOutUpRight, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
-import Create from './Dialog/Create.vue';
-import Edit from './Dialog/Edit.vue';
+import { Checkbox } from '@/Components/ui/checkbox/index'
+import { useForm } from '@inertiajs/vue3'
 import Swal from 'sweetalert2';
-import View from './Dialog/View.vue';
 
 const props = defineProps({
-    units: Object,
-    purchases: Object,
-    suppliers: Object,
-    categories: Object,
-    transactions: Object,
-    subcategories: Object,
+    sales: Object,
 })
 
-const page = usePage()
-
-const data = ref(props.purchases)
-
-const reloadDataTable = () => {
-    data.value = page.props.purchases
-}
-
-const handlePurchaseCreated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Created!",
-        text: "Transaction successfully created!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
-
-const handlePurchaseUpdated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Updated!",
-        text: "Transaction successfully updated!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
-
-const handlePurchaseDeleted = (id) => {
-    Swal.fire({
-        title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
-        iconHtml: '<img src="/assets/icons/Warning.png">',
-        showCancelButton: true,
-        confirmButtonColor: "#C00F0C",
-        cancelButtonColor: "#1B1212",
-        confirmButtonText: "Yes",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(route('purchase-in.destroy', id), {
-                onSuccess: () => {
-                    data.value = data.value.filter(item => item.id !== id);
-                    router.get(route('purchase-in'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: "Transaction successfully removed!",
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
-                }
-            })
-        }
-    });
-}
+const data = ref(props.sales)
 
 const TIME_UNITS = [
     { unit: 'year', seconds: 31536000 },
@@ -100,30 +39,59 @@ const timeAgo = (date) => {
     return 'just now';
 };
 
+const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+}).format(value)
+
+const formattedCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+};
 
 const columns = [
     {
+        id: 'select',
+        header: ({ table }) => h(Checkbox, {
+            'checked': table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
+            'onUpdate:checked': value => table.toggleAllPageRowsSelected(!!value),
+            'ariaLabel': 'Select all',
+        }),
+        cell: ({ row }) => h(Checkbox, {
+            'checked': row.getIsSelected(),
+            'onUpdate:checked': value => row.toggleSelected(!!value),
+            'ariaLabel': 'Select row',
+        }),
+        enableSorting: false,
+        enableHiding: false,
+    },
+    {
         accessorKey: 'transaction_number',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction No.', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, `# ${purchase.transaction_number}`);
+            const sale = row.original;
+            return h('div', { class: 'px-2' }, `# ${sale.transaction_number}`);
         },
     },
     {
-        accessorKey: 'purchase_date',
+        accessorKey: 'sale_date',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Purchase Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sale Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original
-            const date = new Date(purchase.purchase_date)
+            const sale = row.original
+            const date = new Date(sale.sale_date)
             const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                year: 'numeric',
-                month: 'short',
+                month: 'long',
                 day: 'numeric',
+                year: 'numeric',
             }).format(date)
 
             return h('div', { class: 'px-2' }, [
@@ -133,160 +101,47 @@ const columns = [
         },
     },
     {
-        accessorKey: 'supplier.name',
+        accessorKey: 'customer_name',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Supplier', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Customer Name', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, purchase.supplier.name)
-        },
-    },
-    {
-        accessorKey: 'quantity',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Quantity', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original
-            const quantity = Number.parseFloat(row.getValue('quantity'))
-            return h('div', { class: 'px-2' }, `${quantity} ${purchase.unit_measure.abbreviation}`)
-        },
-    },
-    {
-        accessorKey: 'category.name',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const purchase = row.original;
+            const sale = row.original;
+            const customer_name = sale.customer_name
+            const customer_email = sale.customer_email
             return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, purchase.category.name),
-                h('div', { class: 'text-slate-500' },
-                    purchase.subcategory.category_id === purchase.category?.id
-                        ? purchase.subcategory.name
-                        : 'No subcategory'
-                )
+                h('div', { class: 'font-medium' }, customer_name),
+                h('div', { class: 'text-slate-500' }, customer_email)
             ]);
         },
     },
     {
-        accessorKey: 'amount',
+        accessorKey: 'total_amount',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Total Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, '₱' + purchase.amount);
+            const sale = row.original;
+            const total_amount = sale.total_amount
+            return h('div', { class: 'px-2' }, formattedCurrency(total_amount));
         },
     },
     {
-        accessorKey: 'notes',
+        accessorKey: 'payment_method',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Notes', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Payment Method', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const notes = row.getValue('notes');
-            return h(TooltipProvider, {}, () =>
-                h(Tooltip, {}, {
-                    default: () => [
-                        h(TooltipTrigger, { asChild: true }, () =>
-                            h('div', { class: 'px-2 truncate w-40' }, notes)
-                        ),
-                        h(TooltipContent, {}, () =>
-                            h('p', {}, notes)
-                        )
-                    ]
-                })
-            );
+            const sale = row.original;
+            const payment_method = sale.payment_method
+            return h('div', { class: 'px-2' }, payment_method);
         },
-    },
-    // {
-    //     accessorKey: 'created_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const purchase = row.original
-    //         const date = new Date(purchase.created_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
-    // {
-    //     accessorKey: 'updated_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const purchase = row.original
-    //         const date = new Date(purchase.updated_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
-    {
-        id: 'actions',
-        enableHiding: false,
-        cell: ({ row }) => {
-            const purchases = row.original;
-            const units = props.units
-            const suppliers = props.suppliers
-            const categories = props.categories
-            const transactions = props.transactions
-            const subcategories = props.subcategories
-
-            return h('div', { class: 'flex items-center gap-1' }, [
-                h(View, {
-
-                }),
-                h(Edit, {
-                    units,
-                    suppliers,
-                    categories,
-                    transactions,
-                    subcategories,
-                    purchases: purchases,
-                    onPurchaseUpdated: handlePurchaseUpdated
-                }),
-                h(Button, {
-                    size: 'xs',
-                    variant: 'ghost',
-                    class: 'text-red-600 hover:text-red-800',
-                    title: 'Delete',
-                    onClick: () => handlePurchaseDeleted(purchase.id)
-                }, () => h(Trash2, { class: 'size-5' })),
-            ]);
-        },
-    },
+    }
 ]
 
 const sorting = ref([])
 const filter = ref('')
-const columnFilters = ref([])
-const columnVisibility = ref({})
 const rowSelection = ref({})
-const expanded = ref({})
 
 const table = useVueTable({
     data,
@@ -297,10 +152,7 @@ const table = useVueTable({
     getFilteredRowModel: getFilteredRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
-    onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
-    onColumnVisibilityChange: updaterOrValue => valueUpdater(updaterOrValue, columnVisibility),
     onRowSelectionChange: updaterOrValue => valueUpdater(updaterOrValue, rowSelection),
-    onExpandedChange: updaterOrValue => valueUpdater(updaterOrValue, expanded),
     initialState: {
         pagination: {
             pageSize: 5,
@@ -308,19 +160,17 @@ const table = useVueTable({
     },
     state: {
         get sorting() { return sorting.value },
-        get columnFilters() { return columnFilters.value },
-        get columnVisibility() { return columnVisibility.value },
         get rowSelection() { return rowSelection.value },
-        get expanded() { return expanded.value },
         get globalFilter() { return filter.value }
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'supplier.name',
-            'category.name',
-            'subcategory.name',
-            'unit_measure.abbreviation',
-            'transaction.transaction_type',
+            'transaction_number',
+            'sale_date',
+            'customer_name',
+            'customer_email',
+            'total_amount',
+            'payment_method',
         ];
 
         return searchableFields.some(field => {
@@ -337,14 +187,52 @@ function getNestedValue(obj, path) {
     }, obj);
 }
 
+const form = useForm({ selectedIds: [] });
+
+const selectedIds = computed(() =>
+    table.getSelectedRowModel().rows.map(row => ({
+        id: Number(row.original.id), status_id: Number(row.original.status_id)
+    }))
+);
+
+watch(selectedIds, (newValue) => { form.selectedIds = newValue; });
+
+const bulkUpdate = () => {
+    form.post(route('collectibles.update'), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            form.get(route('collectibles'))
+            table.resetRowSelection();
+            Swal.fire({
+                text: "Collectible(s) successfully marked as paid!",
+                iconHtml: '<img src="/assets/icons/Success.png">',
+                confirmButtonColor: "#1B1212",
+            });
+        },
+        onError: (error) => {
+            console.error('Bulk update failed:', error);
+            // Handle error, maybe display an error message
+        }
+    });
+};
+
 </script>
 
 <template>
     <div class="flex items-center justify-between gap-2 py-4">
-        <Input placeholder="Search..." v-model="filter" class="h-8 w-[150px] lg:w-[250px]" />
-        <Create @purchase-created="handlePurchaseCreated" :purchases="purchases" :categories="categories"
-            :subcategories="subcategories" :suppliers="suppliers" :transactions="transactions" :units="units" />
+        <div class="relative items-center col-span-2">
+            <Input v-model="filter" type="search" placeholder="Search..." class="pl-7 h-8 w-[150px] lg:w-[250px]" />
+            <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                <Search class="size-4 text-muted-foreground" />
+            </span>
+        </div>
+        <Button size="sm" @click="bulkUpdate" class="gap-1 uppercase bg-green-600 h-7"
+            :disabled="selectedIds.length === 0">
+            Mark as paid
+        </Button>
     </div>
+    <span class="text-sm text-red-500">{{ form.errors.selectedIds }}</span>
     <div class="border rounded-md">
         <Table>
             <TableHeader>
@@ -379,6 +267,10 @@ function getNestedValue(obj, path) {
         </Table>
     </div>
     <div class="flex items-center justify-end py-4 space-x-2">
+        <div class="flex-1 text-sm text-muted-foreground">
+            {{ table.getFilteredSelectedRowModel().rows.length }} of
+            {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+        </div>
         <div class="flex items-center space-x-2">
             <p class="text-sm font-medium">
                 Rows per page
