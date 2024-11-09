@@ -10,8 +10,8 @@ import Header from '@/Components/Header.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
-    users: Object,
-    sales: Object,
+    users: Number,
+    sales: Number,
 })
 
 const items = ref([
