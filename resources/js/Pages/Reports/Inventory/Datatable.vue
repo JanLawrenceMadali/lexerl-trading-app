@@ -14,8 +14,6 @@ const props = defineProps({
 
 const data = ref(props.inventories)
 
-console.log(data);
-
 const TIME_UNITS = [
     { unit: 'year', seconds: 31536000 },
     { unit: 'month', seconds: 2592000 },
@@ -113,9 +111,10 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'action',
-            'description',
-            'users.username',
+            'unit',
+            'quantity',
+            'category_name',
+            'subcategory_name',
         ];
 
         return searchableFields.some(field => {

@@ -10,7 +10,7 @@ const props = defineProps({
 
 const items = ref([
     { label: 'Reports', href: '#' },
-    { label: 'Inventory', href: 'inventory' },
+    { label: 'Inventory Logs', href: 'inventory_logs' },
 ])
 </script>
 
@@ -21,7 +21,7 @@ const items = ref([
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Inventory</CardTitle>
+                    <CardTitle>Inventory Logs</CardTitle>
                     <CardDescription class="flex items-center justify-between">
                         Manage your purchases and view their information.
                     </CardDescription>
