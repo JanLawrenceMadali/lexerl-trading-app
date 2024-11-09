@@ -37,7 +37,7 @@ class SaleRequest extends FormRequest
             'products.*.category_id' => 'required',
             'products.*.selling_price' => 'required',
             'products.*.subcategory_id' => 'required',
-            'due_date_id' => 'nullable|exists:due_dates,id|required_if:status_id,2',
+            'due_date_id' => 'nullable|required_if:status_id,2',
         ];
     }
 
