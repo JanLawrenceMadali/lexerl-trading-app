@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SupplierRequest;
 use App\Models\Supplier;
-use Illuminate\Http\Request;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\SupplierRequest;
+use Illuminate\Support\Facades\Auth;
 
 class SupplierController extends Controller
 {
@@ -21,12 +23,23 @@ class SupplierController extends Controller
     {
         $validated = $supplierRequest->validated();
 
-        Supplier::create($validated);
+        try {
+            DB::transaction(function () use ($validated) {
+                Supplier::create($validated);
 
+                $this->logs('Supplier Created');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function logs(string $action)
+    {
         ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Created a supplier',
-            'description' => 'A supplier was created by ' . auth()->user()->username,
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'description' => $action . ' by ' . Auth::user()->username,
         ]);
     }
 }

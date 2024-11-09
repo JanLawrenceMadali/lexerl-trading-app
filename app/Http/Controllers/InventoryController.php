@@ -11,24 +11,25 @@ use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
 use App\Models\Unit;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class InventoryController extends Controller
 {
     public function index()
     {
-        $units = Unit::all();
-        $categories = Category::all();
-        $subcategories = Subcategory::all();
-        $transactions = Transaction::all();
-        $suppliers = Supplier::latest()->get();
+        $units = Unit::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+        $subcategories = Subcategory::orderBy('name')->get();
+        $transactions = Transaction::orderBy('type')->get();
+        $suppliers = Supplier::orderBy('name')->get();
         $inventories = DB::table('inventories')
             ->join('units', 'inventories.unit_id', '=', 'units.id')
             ->join('suppliers', 'inventories.supplier_id', '=', 'suppliers.id')
             ->join('transactions', 'inventories.transaction_id', '=', 'transactions.id')
-            ->join('products', 'inventories.product_id', '=', 'products.id')
-            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
-            ->leftJoin('subcategories', 'products.subcategory_id', '=', 'subcategories.id')
+            ->join('categories', 'inventories.category_id', '=', 'categories.id')
+            ->join('subcategories', 'inventories.subcategory_id', '=', 'subcategories.id')
             ->select(
                 'inventories.id',
                 'inventories.quantity',
@@ -57,7 +58,7 @@ class InventoryController extends Controller
             ->get();
 
         // return $inventories;
-        return inertia('Transactions/PurchaseIn/Index', [
+        return Inertia::render('Transactions/PurchaseIn/Index', [
             'units' => $units,
             'suppliers' => $suppliers,
             'inventories' => $inventories,
@@ -71,72 +72,64 @@ class InventoryController extends Controller
     {
         $validated = $inventoryRequest->validated();
 
-        $product_id = Product::where([
-            'category_id' => $validated['category_id'],
-            'subcategory_id' => $validated['subcategory_id']
-        ])->first()->id;
+        try {
+            DB::transaction(function () use ($validated) {
+                $inventory = Inventory::create([
+                    'amount' => $validated['amount'],
+                    'unit_id' => $validated['unit_id'],
+                    'quantity' => $validated['quantity'],
+                    'description' => $validated['description'],
+                    'landed_cost' => $validated['landed_cost'],
+                    'supplier_id' => $validated['supplier_id'],
+                    'category_id' => $validated['category_id'],
+                    'purchase_date' => $validated['purchase_date'],
+                    'subcategory_id' => $validated['subcategory_id'],
+                    'transaction_id' => $validated['transaction_id'],
+                    'transaction_number' => $validated['transaction_number'],
+                ]);
 
-        Inventory::create([
-            'product_id' => $product_id,
-            'amount' => $validated['amount'],
-            'unit_id' => $validated['unit_id'],
-            'quantity' => $validated['quantity'],
-            'description' => $validated['description'],
-            'landed_cost' => $validated['landed_cost'],
-            'supplier_id' => $validated['supplier_id'],
-            'purchase_date' => $validated['purchase_date'],
-            'transaction_id' => $validated['transaction_id'],
-            'transaction_number' => $validated['transaction_number'],
-        ]);
+                $this->logs('Purchase Created');
 
+                return $inventory;
+            });
+        } catch (\Exception $e) {
+            report($e);
+        }
+    }
+
+    public function update(InventoryRequest $inventoryRequest, Inventory $inventory)
+    {
+        $validated = $inventoryRequest->validated();
+
+        try {
+            DB::transaction(function () use ($validated, $inventory) {
+                $inventory->update($validated);
+                $this->logs('Purchase Updated');
+            });
+        } catch (\Exception $e) {
+            report($e);
+        }
+    }
+
+    public function destroy(Inventory $inventory)
+    {
+        try {
+            DB::transaction(function () use ($inventory) {
+                $inventory->delete();
+
+                $this->logs('Purchase Deleted');
+            });
+        } catch (\Exception $e) {
+            report($e);
+        }
+    }
+
+    private function logs(string $action)
+    {
         ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Created a new purchase',
-            'description' => 'A new purchase was created by ' . auth()->user()->username,
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'description' => $action . ' by ' . Auth::user()->username,
         ]);
-
-        return redirect()->route('purchase-in')->with('success', 'Inventory created successfully');
-    }
-
-    public function update(InventoryRequest $inventoryRequest, $id)
-    {
-        $inventory = Inventory::findOrFail($id);
-
-        return DB::transaction(function () use ($inventoryRequest, $inventory) {
-            $inventory->update($inventoryRequest->validated());
-
-            ActivityLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'Updated a purchase',
-                'description' => 'A purchase was updated by ' . auth()->user()->username,
-            ]);
-
-            return redirect()->route('purchase-in')
-                ->with('success', 'Inventory updated successfully');
-        }, 3, function () {
-            return redirect()->route('purchase-in')
-                ->with('error', 'Failed to update inventory. Please try again.');
-        });
-    }
-
-    public function destroy($id)
-    {
-        $inventory = Inventory::findOrFail($id);
-
-        return DB::transaction(function () use ($inventory) {
-            $inventory->delete();
-
-            ActivityLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'Deleted a purchase',
-                'description' => 'A purchase was deleted by ' . auth()->user()->username,
-            ]);
-
-            return redirect()->route('purchase-in')
-                ->with('success', 'Inventory deleted successfully');
-        }, 3, function () {
-            return redirect()->route('purchase-in')
-                ->with('error', 'Failed to delete inventory. Please try again.');
-        });
     }
 }

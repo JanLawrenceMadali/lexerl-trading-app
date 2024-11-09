@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SubcategoryRequest;
-use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Subcategory;
-use Illuminate\Http\Request;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\SubcategoryRequest;
+use Illuminate\Support\Facades\Auth;
 
 class SubCategoryController extends Controller
 {
@@ -22,12 +23,23 @@ class SubCategoryController extends Controller
     {
         $validated = $subcategoryRequest->validated();
 
-        Subcategory::create($validated);
+        try {
+            DB::transaction(function () use ($validated) {
+                Subcategory::create($validated);
 
+                $this->logs('Sub Category Created');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function logs(string $action)
+    {
         ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Created a sub category',
-            'description' => 'A sub category was created by ' . auth()->user()->username,
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'description' => $action . ' by ' . Auth::user()->username,
         ]);
     }
 }
