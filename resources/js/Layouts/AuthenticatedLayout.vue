@@ -19,10 +19,11 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue'
                 <MenuTab label="Dashboard" :icon="LayoutDashboard" route="dashboard" />
                 <MenuTab label="Search" :icon="FileSearch" route="search" />
                 <SubmenuTab label="Transactions" :icon="ArrowLeftRight"
-                    :menu-items="['Collectibles', 'Purchase In', 'Sales']"
-                    :menu-routes="['users', 'purchase-in', 'sales']" />
-                <SubmenuTab label="Reports" :icon="Printer" :menu-items="['Sales', 'Collectibles', 'Purchases']"
-                    :menu-routes="['users', 'users', 'users']" />
+                    :menu-items="['Purchase In', 'Sales', 'Collectibles']"
+                    :menu-routes="['purchase-in', 'sales', 'collectibles']" />
+                <SubmenuTab label="Reports" :icon="Printer"
+                    :menu-items="['Current Inventory', 'Purchase In reports', 'Sales Report', 'System Logs']"
+                    :menu-routes="['inventory_logs', '#', 'sale_logs', 'activity_logs']" />
                 <MenuTab label="Settings" :icon="Cog" route="settings" />
             </nav>
         </aside>
