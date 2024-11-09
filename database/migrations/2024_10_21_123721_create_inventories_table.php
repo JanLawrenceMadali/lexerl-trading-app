@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Unit;
 use App\Models\Product;
+use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
 use Illuminate\Database\Migrations\Migration;
@@ -25,7 +27,8 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->foreignIdFor(Unit::class)->constrained();
             $table->foreignIdFor(Supplier::class)->constrained();
-            $table->foreignIdFor(Product::class)->constrained();
+            $table->foreignIdFor(Category::class)->constrained();
+            $table->foreignIdFor(Subcategory::class)->constrained();
             $table->foreignIdFor(Transaction::class)->constrained();
             $table->timestamps();
         });
