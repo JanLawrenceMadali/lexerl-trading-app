@@ -1,38 +1,15 @@
 <script setup>
-import {
-    FlexRender,
-    getCoreRowModel,
-    getExpandedRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useVueTable,
-} from '@tanstack/vue-table'
+import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { ArrowUpDown, ChevronDown } from 'lucide-vue-next'
-
 import { h, ref } from 'vue'
 import { Button } from '@/Components/ui/button'
 import { Checkbox } from '@/Components/ui/checkbox'
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/Components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger, } from '@/Components/ui/dropdown-menu'
 import { Input } from '@/Components/ui/input'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/Components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
 import { valueUpdater } from '@/lib/utils'
-import DropdownAction from '@/Components/DropdownAction.vue'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import Settings from '../Index.vue';
 import Header from '@/Components/Header.vue'
-import { Badge } from '@/Components/ui/badge'
 
 const props = defineProps({
     users: Object
@@ -115,7 +92,7 @@ const columns = [
         cell: ({ row }) => {
             const users = row.original
 
-            return h('div', { class: 'relative' }, h(DropdownAction, { users }))
+            return h('div', { class: 'relative' })
         },
     },
 ]
@@ -155,8 +132,9 @@ const table = useVueTable({
 </script>
 
 <template>
-    <AuthenticatedLayout>
-        <Header label="Manage Users" />
+    <Settings>
+
+        <Head title="Manage Users" />
         <div class="w-full p-6">
             <div class="flex items-center gap-2 py-4">
                 <Input type="search" class="max-w-sm" placeholder="Search username here..."
@@ -231,5 +209,5 @@ const table = useVueTable({
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </Settings>
 </template>
