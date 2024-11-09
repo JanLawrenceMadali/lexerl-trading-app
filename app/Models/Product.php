@@ -29,4 +29,11 @@ class Product extends Model
     {
         return $this->belongsTo(Subcategory::class, 'subcategory_id');
     }
+
+    public function sales(): BelongsToMany
+    {
+        return $this->belongsToMany(Sale::class, 'product_sale')
+            ->withPivot('quantity', 'amount', 'selling_price', 'unit_id', 'sale_id')
+            ->withTimestamps();
+    }
 }
