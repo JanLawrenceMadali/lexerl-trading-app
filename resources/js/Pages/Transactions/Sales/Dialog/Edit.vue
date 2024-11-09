@@ -28,12 +28,11 @@ const props = defineProps({
 })
 
 const sales = ref(props.sales)
-console.log(sales.value?.due_date_id);
 
 const form = useForm({
     status_id: String(sales.value.status_id),
     sale_date: sales.value.sale_date,
-    due_date_id: String(sales.value.due_date_id),
+    due_date_id: sales.value.due_date_id === null ? sales.value.due_date_id : String(sales.value.due_date_id),
     description: sales.value.description,
     customer_id: String(sales.value.customer_id),
     transaction_id: String(sales.value.transaction_id),
@@ -110,22 +109,6 @@ const state = reactive({
     openSubcategory: {},
 })
 
-const searchRegex = computed(() => new RegExp(state.search, 'i'));
-
-const filteredCustomer = computed(() => {
-    return props.customers.filter(customer => searchRegex.value.test(customer.name));
-});
-
-const filteredCategory = computed(() => {
-    const products = props.products.filter(category =>
-        props.inventories.some(item => item.product_id === category.id)
-    );
-
-    return props.categories.filter(category =>
-        products.some(item => item.category_id === category.id)
-    )
-});
-
 const filteredSubcategory = (categoryId) => {
     return props.subcategories.filter(subcategory => subcategory.category_id == categoryId);
 };
@@ -145,47 +128,38 @@ watch(() => form.products, (newProducts) => {
     { deep: true }
 );
 
-const handleSearch = (value) => {
-    state.search = value
-}
+const totalQuantity = computed(() => {
+    if (!form.products || form.products.length === 0) return 0;
 
-const openCategoryDropdown = (index) => {
-    state.openCategory[index] = true
-}
+    const calculateProductQuantity = (product) => {
+        const { category_id, subcategory_id, unit_id, children } = product;
 
-const openSubcategoryDropdown = (index) => {
-    state.openSubcategory[index] = true
-}
+        // Return 0 if all are null
+        if (!category_id && !subcategory_id && !unit_id) return 0;
 
-const selectCategory = (category, index) => {
-    const product = form.products[index];
-    product.subcategory = null;
-    product.subcategory_id = null;
-    product.category = category;
-    product.category_id = category.id;
-    state.openCategory[index] = false;
-}
+        const productTotal = props.inventories.reduce((total, item) => {
+            const matchingProduct = props.products.find(p => p.id === item.product_id);
+            if (!matchingProduct) return total;
 
-const selectSubcategory = (subcategory, index) => {
-    state.search = '';
-    const product = form.products[index];
-    product.subcategory_id = subcategory.id;
-    product.subcategory = subcategory;
-    state.openSubcategory[index] = false;
-}
+            const isMatchingCategory = !category_id || category_id === matchingProduct.category_id;
+            const isMatchingSubcategory = !subcategory_id || subcategory_id === matchingProduct.subcategory_id;
+            const isMatchingUnit = !unit_id || item.unit_id == unit_id;
 
-const selectCustomer = (customerId) => {
-    state.search = '';
-    state.customerId = customerId;
-    const selectedCustomer = props.customers.find(customer => customer.id === customerId);
-    if (selectedCustomer) {
-        form.customer_id = selectedCustomer.id;
-    }
-    state.openCustomer = false;
-};
+            if (isMatchingCategory && isMatchingSubcategory && isMatchingUnit) {
+                return item.quantity;
+            }
+            return total;
+        }, 0);
 
-const customerMap = new Map(props.customers.map(customer => [customer.id, customer]));
-const selectedCustomer = computed(() => customerMap.get(state.customerId));
+        const childrenTotals = children && children.length > 0
+            ? children.map(calculateProductQuantity)
+            : [];
+
+        return [productTotal, ...childrenTotals.flat()];
+    };
+
+    return form.products.flatMap(calculateProductQuantity);
+});
 
 const isOpen = ref(false);
 const emit = defineEmits(['sales-updated'])
@@ -206,7 +180,7 @@ const submit = () => {
             emit('sales-updated', props.sales.id)
         },
         onError: (errors) => {
-            console.log(errors);
+            // console.log(errors);
         },
     });
 };
@@ -239,7 +213,7 @@ const isSubmitDisabled = computed(() => {
             <DialogHeader>
                 <DialogTitle>Edit Transactions</DialogTitle>
                 <DialogDescription>
-                    Edit your transactions here. {{ form.due_date_id }} - {{ form.is_paid }}
+                    Edit your transaction details and click submit when done
                 </DialogDescription>
             </DialogHeader>
             <div class="py-4">
@@ -375,8 +349,8 @@ const isSubmitDisabled = computed(() => {
                                         <TableCell> <!-- Category -->
                                             <Select v-model="product.category_id">
                                                 <SelectTrigger
-                                                    :class="['w-[170px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.category_id`] }]">
-                                                    <SelectValue placeholder="Select Category" />
+                                                    :class="['w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.category_id`] }]">
+                                                    <SelectValue placeholder="Select category" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
@@ -392,8 +366,8 @@ const isSubmitDisabled = computed(() => {
                                         <TableCell> <!-- SubCategory -->
                                             <Select v-model="product.subcategory_id">
                                                 <SelectTrigger
-                                                    :class="['', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]">
-                                                    <SelectValue placeholder="Select Category" />
+                                                    :class="['min-w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]">
+                                                    <SelectValue placeholder="Select sub category" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
@@ -410,8 +384,8 @@ const isSubmitDisabled = computed(() => {
                                         <TableCell> <!-- Unit -->
                                             <Select v-model="product.unit_id">
                                                 <SelectTrigger
-                                                    :class="['w-[130px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
-                                                    <SelectValue placeholder="Select Unit" />
+                                                    :class="['w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
+                                                    <SelectValue placeholder="Select unit" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
@@ -445,6 +419,12 @@ const isSubmitDisabled = computed(() => {
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                     <Boxes class="size-4 text-muted-foreground" />
                                                 </span>
+                                                <!-- <small :class="['absolute font-medium top-2.5 right-3',
+                                                    totalQuantity[index] > product.quantity
+                                                        ? 'text-green-600'
+                                                        : 'text-red-600 animate-pulse']">
+                                                    {{ totalQuantity[index] - product.quantity }} left
+                                                </small> -->
                                             </div>
                                             <InputError :message="form.errors[`products.${index}.quantity`]" />
                                         </TableCell>
@@ -478,7 +458,8 @@ const isSubmitDisabled = computed(() => {
                             <!-- Additional details -->
                             <div class="grid grid-cols-5 gap-3 text-right">
                                 <Label for="description" class="col-span-2 pt-3">Additional Details</Label>
-                                <Textarea v-model="form.description" id="description" class="col-span-3" />
+                                <Textarea placeholder="Type your additional details here. (optional)"
+                                    v-model="form.description" id="description" class="col-span-3" />
                             </div>
                             <div class="grid items-center gap-4 text-right">
                                 <!-- total amount -->
@@ -517,7 +498,7 @@ const isSubmitDisabled = computed(() => {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <InputError class="col-span-3" :message="form.errors.due_date_id" />
+                                        <InputError class="col-span-7" :message="form.errors.due_date_id" />
                                     </div>
                                     <!-- Status -->
                                     <div :class="form.status_id == 2 ? 'col-span-3' : 'col-span-10'">

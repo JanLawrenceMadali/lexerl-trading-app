@@ -7,14 +7,13 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command'
-import { Check, ChevronDown, Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes, CalendarIcon, Trash2 } from 'lucide-vue-next'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
+import { Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes, CalendarIcon, Trash2 } from 'lucide-vue-next'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import Label from '@/Components/ui/label/Label.vue'
 import InputError from '@/Components/InputError.vue'
 import { Calendar } from '@/Components/ui/calendar'
-import { RadioGroup, RadioGroupItem } from '@/Components/ui/radio-group'
-import CreateCustomer from './CreateCustomer.vue'
+import DropdownSearch from '@/Components/DropdownSearch.vue'
+import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
 
 const props = defineProps({
     dues: Object,
@@ -97,51 +96,35 @@ watch(() => form.products, (newProducts) => {
 
 const state = reactive({
     search: '',
-    customerId: null,
-    supplierId: null,
-    categoryId: null,
-    subCategoryId: null,
-    openSupplier: false,
     openCustomer: false,
-    openCategory: {},
-    openSubcategory: {},
 })
 
-const searchRegex = computed(() => new RegExp(state.search, 'i'));
-
 const filteredCustomer = computed(() => {
-    return props.customers.filter(customer => searchRegex.value.test(customer.name));
-});
+    return props.customers.filter(customer =>
+        customer.name.toLowerCase().includes(state.search.toLowerCase())
+    )
+})
 
 const filteredCategory = computed(() => {
-    const products = props.products.filter(category =>
-        props.inventories.some(item => item.product_id === category.id)
-    );
-
     return props.categories.filter(category =>
-        products.some(item => item.category_id === category.id)
+        props.inventories.some(inventory => inventory.category_id === category.id)
     )
 });
 
 const filteredSubcategory = (categoryId) => {
-    const products = props.products.filter(category =>
-        props.inventories.some(item => item.product_id === category.id)
-    );
-
     return props.subcategories.filter(subcategory =>
-        products.some(item => item.subcategory_id === subcategory.id && item.category_id === categoryId.id)
+        props.inventories.some(inventory => inventory.subcategory_id === subcategory.id && inventory.category_id == categoryId)
     );
 };
 
-const filteredUnit = computed(() => {
+const filteredUnit = (products) => {
     return props.units.filter(unit =>
-        props.inventories.some(item => item.unit_id === unit.id)
+        props.inventories.some(inventory => inventory.unit_id === unit.id
+            && inventory.subcategory_id == products.subcategory_id
+            && inventory.category_id == products.category_id
+        )
     )
-
-    // return props.products.filter(product =>
-    //     units.some()
-    // )
-});
+};
 
 watch(() => form.products, (newProducts) => {
     newProducts.forEach((product, index) => {
@@ -162,12 +145,9 @@ const totalQuantity = computed(() => {
         if (!category_id && !subcategory_id && !unit_id) return 0;
 
         const productTotal = props.inventories.reduce((total, item) => {
-            const matchingProduct = props.products.find(p => p.id === item.product_id);
-            if (!matchingProduct) return total;
-
-            const isMatchingCategory = !category_id || category_id === matchingProduct.category_id;
-            const isMatchingSubcategory = !subcategory_id || subcategory_id === matchingProduct.subcategory_id;
-            const isMatchingUnit = !unit_id || item.unit_id == unit_id;
+            const isMatchingCategory = !category_id || category_id == item.category_id;
+            const isMatchingSubcategory = !subcategory_id || subcategory_id == item.subcategory_id;
+            const isMatchingUnit = !unit_id || unit_id == item.unit_id;
 
             if (isMatchingCategory && isMatchingSubcategory && isMatchingUnit) {
                 return total + item.quantity;
@@ -187,31 +167,6 @@ const totalQuantity = computed(() => {
 
 const handleSearch = (value) => {
     state.search = value
-}
-
-const openCategoryDropdown = (index) => {
-    state.openCategory[index] = true
-}
-
-const openSubcategoryDropdown = (index) => {
-    state.openSubcategory[index] = true
-}
-
-const selectCategory = (category, index) => {
-    const product = form.products[index];
-    product.subcategory = null;
-    product.subcategory_id = null;
-    product.category = category;
-    product.category_id = category.id;
-    state.openCategory[index] = false;
-}
-
-const selectSubcategory = (subcategory, index) => {
-    state.search = '';
-    const product = form.products[index];
-    product.subcategory_id = subcategory.id;
-    product.subcategory = subcategory;
-    state.openSubcategory[index] = false;
 }
 
 const selectCustomer = (customerId) => {
@@ -296,36 +251,10 @@ const isSubmitDisabled = computed(() => {
                                     <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                         Customer Name
                                     </Label>
-                                    <Popover v-model:open="state.openCustomer">
-                                        <PopoverTrigger as-child>
-                                            <Button variant="outline"
-                                                :class="['justify-between font-normal col-span-3', { 'border-red-600 focus-visible:ring-red-500': form.errors.customer_id }]">
-                                                {{ selectedCustomer?.name || "Select customer" }}
-                                                <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search customer"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <CreateCustomer />
-                                                <CommandEmpty>
-                                                    No customer found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.customer_id"
-                                                            v-for="customer in filteredCustomer" :key="customer.id"
-                                                            :value="customer.id" @select="selectCustomer(customer.id)">
-                                                            {{ customer.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto h-4 w-4', state.customerId === customer.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <div class="col-span-3">
+                                        <DropdownSearch v-model="form.customer_id" :items="filteredCustomer"
+                                            placeholder="Select customer" :has-error="form.errors.customer_id" />
+                                    </div>
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>
                                 <!-- Sale Date -->
@@ -336,10 +265,11 @@ const isSubmitDisabled = computed(() => {
                                     <Popover v-model:open="isPopoverOpen">
                                         <PopoverTrigger as-child>
                                             <Button variant="outline"
-                                                :class="cn('justify-start text-left font-normal col-span-3', !form.sale_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.customer_id })">
+                                                :class="cn('justify-start text-left font-normal col-span-3', !form.sale_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.sale_date })">
                                                 <CalendarIcon class="mr-2 size-4" />
-                                                {{ form.sale_date ? df.format(new Date(form.sale_date)) : "Select Date"
-                                                }}
+                                                {{ form.sale_date
+                                                    ? df.format(new Date(form.sale_date))
+                                                    : "Select Date" }}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent class="w-auto p-0">
@@ -434,85 +364,52 @@ const isSubmitDisabled = computed(() => {
                                             class="hover:bg-muted/0">
                                             <TableCell>{{ index + 1 }}</TableCell>
                                             <TableCell> <!-- Category -->
-                                                <Popover v-model:open="state.openCategory[index]">
-                                                    <PopoverTrigger as-child>
-                                                        <Button variant="outline"
-                                                            :class="['justify-between font-normal w-[180px]', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.category_id`] }]"
-                                                            @click.stop="openCategoryDropdown(index)">
-                                                            {{ product.category?.name || "Select category"
-                                                            }}
-                                                            <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent class="w-[180px] p-0">
-                                                        <Command>
-                                                            <CommandEmpty>
-                                                                No category found.
-                                                            </CommandEmpty>
-                                                            <CommandList>
-                                                                <CommandGroup>
-                                                                    <CommandItem v-model="product.category_id"
-                                                                        v-for="category in filteredCategory"
-                                                                        :key="category.id" :value="category.id"
-                                                                        @select="selectCategory(category, index)">
-                                                                        {{ category.name }}
-                                                                        <Check
-                                                                            :class="cn('ml-auto size-4', product.category_id === category.id ? 'opacity-100' : 'opacity-0')" />
-                                                                    </CommandItem>
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                        </Command>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <Select v-model="product.category_id">
+                                                    <SelectTrigger
+                                                        :class="['w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.category_id`] }]">
+                                                        <SelectValue placeholder="Select category" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem v-for="category in filteredCategory"
+                                                                :key="category.id" :value="String(category.id)">
+                                                                {{ category.name }}
+                                                            </SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
                                                 <InputError :message="form.errors[`products.${index}.category_id`]" />
                                             </TableCell>
                                             <TableCell> <!-- SubCategory -->
-                                                <Popover v-model:open="state.openSubcategory[index]">
-                                                    <PopoverTrigger as-child>
-                                                        <Button variant="outline"
-                                                            :class="['justify-between font-normal min-w-[210px]', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]"
-                                                            @click.stop="openSubcategoryDropdown(index)"
-                                                            :disabled="!product.category_id">
-                                                            {{ product.subcategory?.name ||
-                                                                "Select subcategory" }}
-                                                            <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent class="max-w-[210px] p-0">
-                                                        <Command>
-                                                            <CommandInput type="search" placeholder="Search subcategory"
-                                                                @input="handleSearch($event.target.value)" />
-                                                            <CommandEmpty>
-                                                                No subcategory found.
-                                                            </CommandEmpty>
-                                                            <CommandList>
-                                                                <CommandGroup>
-                                                                    <CommandItem v-model="product.subcategory_id"
-                                                                        v-for="subcategory in filteredSubcategory(product.category)"
-                                                                        :key="subcategory.id" :value="subcategory.id"
-                                                                        @select="selectSubcategory(subcategory, index)">
-                                                                        {{ subcategory.name }}
-                                                                        <Check
-                                                                            :class="cn('ml-auto size-4', product.subcategory_id === subcategory.id ? 'opacity-100' : 'opacity-0')" />
-                                                                    </CommandItem>
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                        </Command>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <Select v-model="product.subcategory_id"
+                                                    :disabled="!product.category_id">
+                                                    <SelectTrigger
+                                                        :class="['min-w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]">
+                                                        <SelectValue placeholder="Select sub category" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem
+                                                                v-for="subcategory in filteredSubcategory(product.category_id)"
+                                                                :key="subcategory.id" :value="String(subcategory.id)">
+                                                                {{ subcategory.name }}
+                                                            </SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
                                                 <InputError
                                                     :message="form.errors[`products.${index}.subcategory_id`]" />
                                             </TableCell>
                                             <TableCell> <!-- Unit -->
-                                                <Select v-model="product.unit_id">
+                                                <Select v-model="product.unit_id" :disabled="!product.subcategory_id">
                                                     <SelectTrigger
-                                                        :class="['w-[130px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
-                                                        <SelectValue placeholder="Select Unit" />
+                                                        :class="['w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
+                                                        <SelectValue placeholder="Select unit" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            <SelectItem v-for="unit in filteredUnit" :key="unit.id"
-                                                                :value="String(unit.id)">
+                                                            <SelectItem v-for="unit in filteredUnit(product)"
+                                                                :key="unit.id" :value="String(unit.id)">
                                                                 {{ unit.abbreviation }}
                                                             </SelectItem>
                                                         </SelectGroup>
@@ -544,7 +441,7 @@ const isSubmitDisabled = computed(() => {
                                                     <small :class="['absolute font-medium top-2.5 right-3',
                                                         totalQuantity[index] > product.quantity
                                                             ? 'text-green-600'
-                                                            : 'text-red-600 animate-pulse']">
+                                                            : 'text-red-600']">
                                                         {{ totalQuantity[index] - product.quantity }} left
                                                     </small>
                                                 </div>
@@ -552,7 +449,7 @@ const isSubmitDisabled = computed(() => {
                                             </TableCell>
                                             <TableCell> <!-- Amount -->
                                                 <div class="relative items-center">
-                                                    <Input v-model="product.amount" type="number" disabled
+                                                    <FormattedNumberInput v-model="product.amount" disabled
                                                         class="pl-7 bg-slate-200" />
                                                     <span
                                                         class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
@@ -580,17 +477,18 @@ const isSubmitDisabled = computed(() => {
                                 <!-- Additional details -->
                                 <div class="grid grid-cols-5 gap-3 text-right">
                                     <Label for="description" class="col-span-2 pt-3">Additional Details</Label>
-                                    <Textarea v-model="form.description" id="description" class="col-span-3" />
+                                    <Textarea placeholder="Type your additional details here. (optional)"
+                                        v-model="form.description" id="description" class="col-span-3" />
                                 </div>
+                                <!-- total amount -->
                                 <div class="grid items-center gap-4 text-right">
-                                    <!-- total amount -->
                                     <div class="grid items-center grid-cols-5 gap-3">
                                         <Label for="total_amount"
                                             class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                             Total Amount
                                         </Label>
                                         <div class="relative items-center col-span-3">
-                                            <Input v-model="form.total_amount" type="number" disabled
+                                            <FormattedNumberInput v-model="form.total_amount" disabled
                                                 class="pl-7 bg-slate-200" />
                                             <span
                                                 class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
@@ -621,7 +519,7 @@ const isSubmitDisabled = computed(() => {
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            <InputError class="col-span-3" :message="form.errors.due_date_id" />
+                                            <InputError class="col-span-7" :message="form.errors.due_date_id" />
                                         </div>
                                         <!-- Status -->
                                         <div :class="form.status_id == 2 ? 'col-span-3' : 'col-span-10'">
@@ -645,8 +543,7 @@ const isSubmitDisabled = computed(() => {
                                 <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
                                     Cancel
                                 </Button>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
-                                    :disabled="isSubmitDisabled">
+                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

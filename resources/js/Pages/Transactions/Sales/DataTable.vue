@@ -4,9 +4,8 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
@@ -281,7 +280,12 @@ function getNestedValue(obj, path) {
 
 <template>
     <div class="flex items-center justify-between gap-2 py-4">
-        <Input placeholder="Search..." v-model="filter" class="h-8 w-[150px] lg:w-[250px]" />
+        <div class="relative items-center col-span-2">
+            <Input v-model="filter" type="search" placeholder="Search..." class="pl-7 h-8 w-[150px] lg:w-[250px]" />
+            <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                <Search class="size-4 text-muted-foreground" />
+            </span>
+        </div>
         <Create @sales-created="handleSalesCreated" :sales="sales" :categories="categories"
             :subcategories="subcategories" :customers="customers" :transactions="transactions" :units="units"
             :dues="dues" :inventories="inventories" :products="products" />
