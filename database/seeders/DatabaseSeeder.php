@@ -30,8 +30,8 @@ class DatabaseSeeder extends Seeder
             StatusSeeder::class,
             UnitSeeder::class,
             ProductSeeder::class,
-            SaleSeeder::class,
-            InventorySeeder::class,
+            // SaleSeeder::class,
+            // InventorySeeder::class,
         ]);
         User::factory(30)->create();
     }
