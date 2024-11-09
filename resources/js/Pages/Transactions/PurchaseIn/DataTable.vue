@@ -4,9 +4,8 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { router, usePage } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/Components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SquareArrowOutUpRight, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
@@ -16,40 +15,14 @@ import View from './Dialog/View.vue';
 
 const props = defineProps({
     units: Object,
-    purchases: Object,
+    inventories: Object,
     suppliers: Object,
     categories: Object,
     transactions: Object,
     subcategories: Object,
 })
 
-const page = usePage()
-
-const data = ref(props.purchases)
-
-const reloadDataTable = () => {
-    data.value = page.props.purchases
-}
-
-const handlePurchaseCreated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Created!",
-        text: "Transaction successfully created!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
-
-const handlePurchaseUpdated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Updated!",
-        text: "Transaction successfully updated!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
+const data = ref(props.inventories)
 
 const handlePurchaseDeleted = (id) => {
     Swal.fire({
@@ -100,6 +73,14 @@ const timeAgo = (date) => {
     return 'just now';
 };
 
+const formattedCurrency = (value) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+};
 
 const columns = [
     {
@@ -108,8 +89,13 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, `# ${purchase.transaction_number}`);
+            const inventory = row.original;
+            const transaction_type = inventory.transaction_type
+            const transaction_number = inventory.transaction_number
+            return h('div', { class: 'px-2' }, [
+                h('div', transaction_type),
+                h('div', { class: 'text-sm text-gray-500' }, `# ${transaction_number}`)
+            ]);
         },
     },
     {
@@ -118,29 +104,48 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Purchase Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original
-            const date = new Date(purchase.purchase_date)
+            const inventory = row.original
+            const date = new Date(inventory.purchase_date)
             const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                year: 'numeric',
-                month: 'short',
+                month: 'long',
                 day: 'numeric',
+                year: 'numeric',
             }).format(date)
 
             return h('div', { class: 'px-2' }, [
-                h('div', {}, formattedDate),
-                h('div', { class: 'text-xs text-gray-500' })
+                h('div', formattedDate)
             ]);
         },
     },
     {
-        accessorKey: 'supplier.name',
+        accessorKey: 'supplier_name',
         header: ({ column }) => {
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Supplier', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, purchase.supplier.name)
+            const inventory = row.original;
+            const supplier_name = inventory.supplier_name
+            const supplier_email = inventory.supplier_email
+            return h('div', { class: 'px-2' }, [
+                h('div', { class: 'font-medium' }, supplier_name),
+                h('div', { class: 'text-slate-500' }, supplier_email)
+            ])
         },
+    },
+    {
+        accessorKey: 'category_name',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const inventory = row.original;
+            const category_name = inventory.category_name
+            const subcategory_name = inventory.subcategory_name
+            return h('div', { class: 'px-2' }, [
+                h('div', { class: 'font-medium' }, category_name),
+                h('div', { class: 'text-slate-500' }, subcategory_name)
+            ]);
+        }
     },
     {
         accessorKey: 'quantity',
@@ -148,26 +153,21 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Quantity', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original
-            const quantity = Number.parseFloat(row.getValue('quantity'))
-            return h('div', { class: 'px-2' }, `${quantity} ${purchase.unit_measure.abbreviation}`)
+            const inventory = row.original
+            const quantity = inventory.quantity
+            const units = inventory.abbreviation
+            return h('div', { class: 'px-2' }, `${quantity} ${units}`)
         },
     },
     {
-        accessorKey: 'category.name',
+        accessorKey: 'landed_cost',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Landed Cost', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, purchase.category.name),
-                h('div', { class: 'text-slate-500' },
-                    purchase.subcategory.category_id === purchase.category?.id
-                        ? purchase.subcategory.name
-                        : 'No subcategory'
-                )
-            ]);
+            const inventory = row.original;
+            const landed_cost = inventory.landed_cost
+            return h('div', { class: 'px-2' }, formattedCurrency(landed_cost));
         },
     },
     {
@@ -176,80 +176,26 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const purchase = row.original;
-            return h('div', { class: 'px-2' }, '₱' + purchase.amount);
+            const inventory = row.original;
+            const amount = inventory.amount
+            return h('div', { class: 'px-2' }, formattedCurrency(amount));
         },
     },
     {
-        accessorKey: 'notes',
+        accessorKey: 'description',
         header: ({ column }) => {
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Notes', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const notes = row.getValue('notes');
-            return h(TooltipProvider, {}, () =>
-                h(Tooltip, {}, {
-                    default: () => [
-                        h(TooltipTrigger, { asChild: true }, () =>
-                            h('div', { class: 'px-2 truncate w-40' }, notes)
-                        ),
-                        h(TooltipContent, {}, () =>
-                            h('p', {}, notes)
-                        )
-                    ]
-                })
-            );
+            const description = row.getValue('description');
+            return h('div', { title: description, class: 'px-2 truncate w-40' }, description)
         },
     },
-    // {
-    //     accessorKey: 'created_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const purchase = row.original
-    //         const date = new Date(purchase.created_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
-    // {
-    //     accessorKey: 'updated_at',
-    //     header: ({ column }) => {
-    //         return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    //     },
-    //     cell: ({ row }) => {
-    //         const purchase = row.original
-    //         const date = new Date(purchase.updated_at)
-    //         const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    //             year: 'numeric',
-    //             month: 'short',
-    //             day: 'numeric',
-    //         }).format(date)
-
-    //         const timeAgoString = timeAgo(date);
-
-    //         return h('div', { class: 'px-2' }, [
-    //             h('div', {}, formattedDate),
-    //             h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
-    //         ]);
-    //     },
-    // },
     {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const purchases = row.original;
+            const inventory = row.original;
             const units = props.units
             const suppliers = props.suppliers
             const categories = props.categories
@@ -258,7 +204,7 @@ const columns = [
 
             return h('div', { class: 'flex items-center gap-1' }, [
                 h(View, {
-
+                    inventory: inventory,
                 }),
                 h(Edit, {
                     units,
@@ -266,15 +212,14 @@ const columns = [
                     categories,
                     transactions,
                     subcategories,
-                    purchases: purchases,
-                    onPurchaseUpdated: handlePurchaseUpdated
+                    inventory: inventory,
                 }),
                 h(Button, {
                     size: 'xs',
                     variant: 'ghost',
                     class: 'text-red-600 hover:text-red-800',
                     title: 'Delete',
-                    onClick: () => handlePurchaseDeleted(purchase.id)
+                    onClick: () => handlePurchaseDeleted(inventory.id)
                 }, () => h(Trash2, { class: 'size-5' })),
             ]);
         },
@@ -316,16 +261,18 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'notes',
+            'units',
             'amount',
             'quantity',
+            'description',
+            'landed_cost',
             'purchase_date',
-            'supplier.name',
-            'category.name',
-            'subcategory.name',
+            'supplier_name',
+            'supplier_email',
+            'category_name',
+            'subcategory_name',
             'transaction_number',
-            'unit_measure.abbreviation',
-            'transaction.transaction_type',
+            'transaction_type',
         ];
 
         return searchableFields.some(field => {
@@ -346,9 +293,14 @@ function getNestedValue(obj, path) {
 
 <template>
     <div class="flex items-center justify-between gap-2 py-4">
-        <Input placeholder="Search..." v-model="filter" class="h-8 w-[150px] lg:w-[250px]" />
-        <Create @purchase-created="handlePurchaseCreated" :purchases="purchases" :categories="categories"
-            :subcategories="subcategories" :suppliers="suppliers" :transactions="transactions" :units="units" />
+        <div class="relative items-center col-span-2">
+            <Input v-model="filter" type="search" placeholder="Search..." class="pl-7 h-8 w-[150px] lg:w-[250px]" />
+            <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
+                <Search class="size-4 text-muted-foreground" />
+            </span>
+        </div>
+        <Create :inventories="inventories" :categories="categories" :subcategories="subcategories"
+            :suppliers="suppliers" :transactions="transactions" :units="units" />
     </div>
     <div class="border rounded-md">
         <Table>

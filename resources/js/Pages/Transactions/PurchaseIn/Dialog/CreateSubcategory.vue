@@ -55,7 +55,7 @@ const submit = () => {
         <DialogTrigger as-child>
             <Button variant="outline" size="sm" class="m-2">
                 <Plus class="mr-1 size-4" />
-                Add new supplier
+                Add new sub category
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-[500px]">

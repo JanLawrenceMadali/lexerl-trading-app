@@ -13,6 +13,11 @@ import Label from '@/Components/ui/label/Label.vue'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import { Calendar } from '@/Components/ui/calendar'
 import InputError from '@/Components/InputError.vue'
+import CreateSupplier from './CreateSupplier.vue'
+import CreateSubcategory from './CreateSubcategory.vue'
+import Swal from 'sweetalert2';
+import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
+import DropdownSearch from '@/Components/DropdownSearch.vue'
 
 const props = defineProps({
     units: Object,
@@ -23,26 +28,33 @@ const props = defineProps({
 })
 
 const form = useForm({
-    notes: null,
     amount: null,
     quantity: null,
+    description: null,
     supplier_id: null,
     category_id: null,
     landed_cost: null,
     purchase_date: null,
     subcategory_id: null,
-    unit_measure_id: null,
+    unit_id: null,
     transaction_id: null,
     transaction_number: null,
 })
 
 const df = new Intl.DateTimeFormat('en-PH', {
-    month: '2-digit',
-    day: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
     year: 'numeric',
 });
 
-const selectedDate = ref()
+const selectedDate = ref(null)
+
+const isPopoverOpen = ref(false);
+
+const handleDateSelect = (date) => {
+    form.purchase_date = date;
+    isPopoverOpen.value = false;
+};
 
 const formatAndSetDate = (date) => {
     if (date) {
@@ -62,95 +74,41 @@ watch(
 )
 
 const state = reactive({
-    search: '',
-    supplierId: null,
-    categoryId: null,
-    subCategoryId: null,
-    openCategory: false,
-    openSupplier: false,
-    openSubCategory: false,
-    showCreateSupplierDialog: false
+    search: ''
 })
-
-watch(() => state.supplierId, (newId) => {
-    if (newId) {
-        form.supplier_id = newId;
-    }
-});
 
 const filteredCategory = computed(() => {
+    const lowerSearch = state.search.toLowerCase();
     return props.categories.filter(category =>
-        category.name.toLowerCase().includes(state.search.toLowerCase())
-    )
+        category.name.toLowerCase().includes(lowerSearch)
+    );
 })
 
+// Todo - reset filteredSubCategory whenever i change the value of filteredCategory
 const filteredSubCategory = computed(() => {
+    const lowerSearch = state.search.toLowerCase();
     return props.subcategories.filter(subCategory =>
-        subCategory.name.toLowerCase().includes(state.search.toLowerCase()) &&
-        subCategory.category_id === form.category_id
-    )
+        subCategory.category_id === form.category_id &&
+        subCategory.name.toLowerCase().includes(lowerSearch)
+    );
 })
 
 const filteredSupplier = computed(() => {
+    const lowerSearch = state.search.toLowerCase();
     return props.suppliers.filter(supplier =>
-        supplier.name.toLowerCase().includes(state.search.toLowerCase())
+        supplier.name.toLowerCase().includes(lowerSearch)
     )
 })
 
-const handleSearch = (value) => {
-    state.search = value
-}
-
-const selectCategory = (categoryId) => {
-    state.categoryId = categoryId;
-    const selectedCategory = props.categories.find(category => category.id === categoryId);
-    if (selectedCategory) {
-        form.category_id = selectedCategory.id;
-    }
-    state.openCategory = false;
-};
-
-const selectSubCategory = (subCategoryId) => {
-    state.subCategoryId = subCategoryId;
-    const selectedSubCategory = props.subcategories.find(subCategory => subCategory.id === subCategoryId);
-    if (selectedSubCategory) {
-        form.subcategory_id = selectedSubCategory.id;
-    }
-    state.openSubCategory = false;
-};
-
-const selectSupplier = (supplierId) => {
-    state.supplierId = supplierId;
-    const selectedSupplier = props.suppliers.find(supplier => supplier.id === supplierId);
-    if (selectedSupplier) {
-        form.supplier_id = selectedSupplier.id;
-    }
-    state.openSupplier = false;
-};
-
-const selectedCategory = computed(() =>
-    props.categories.find(category => category.id === state.categoryId)
-)
-
-const selectedSubCategory = computed(() =>
-    props.subcategories.find(subCategory => subCategory.id === state.subCategoryId)
-)
-
-const selectedSupplier = computed(() =>
-    props.suppliers.find(supplier => supplier.id === state.supplierId)
-)
-
-const createSupplier = (name) => {
-    console.log(`Creating new supplier: ${name}`)
-    state.showCreateSupplierDialog = false
-}
-
 const isOpen = ref(false);
-const emit = defineEmits(['purchase-created'])
 
 const closeSheet = () => {
     isOpen.value = false;
 };
+
+const routeReload = () => {
+    form.get(route('purchase-in'))
+}
 
 const submit = () => {
     form.post(route('purchase-in.store'), {
@@ -158,9 +116,14 @@ const submit = () => {
         preserveState: true,
         onSuccess: () => {
             form.reset();
-            form.get(route('purchase-in'))
             closeSheet();
-            emit('purchase-created')
+            routeReload();
+            Swal.fire({
+                title: "Created!",
+                text: "Transaction successfully created!",
+                iconHtml: '<img src="/assets/icons/Success.png">',
+                confirmButtonColor: "#1B1212",
+            });
         },
         onError: (errors) => {
             // console.log(errors);
@@ -169,7 +132,17 @@ const submit = () => {
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm = !form.amount || !form.quantity || !form.supplier_id || !form.category_id || !form.landed_cost || !form.purchase_date || !form.subcategory_id || !form.unit_measure_id || !form.transaction_id || !form.transaction_number;
+    const isForm =
+        !form.amount ||
+        !form.unit_id ||
+        !form.quantity ||
+        !form.supplier_id ||
+        !form.category_id ||
+        !form.landed_cost ||
+        !form.purchase_date ||
+        !form.subcategory_id ||
+        !form.transaction_id ||
+        !form.transaction_number;
     return isForm || form.processing;
 });
 
@@ -198,21 +171,20 @@ const isSubmitDisabled = computed(() => {
                         <form @submit.prevent="submit" class="grid gap-3 md:gap-4">
                             <div class="grid items-center gap-3 md:grid-cols-2">
                                 <!-- Transaction Type -->
-                                <div class="grid items-center gap-3 md:w-full md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">Transaction
-                                            Type</span>
+                                <div class="grid items-center w-full grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Transaction Type
                                     </Label>
                                     <Select v-model="form.transaction_id">
                                         <SelectTrigger
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                            :class="['col-span-3', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
                                             <SelectValue placeholder="Select transaction type" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
                                                 <SelectItem v-for="transaction in transactions" :key="transaction.id"
                                                     :value="String(transaction.id)">
-                                                    {{ transaction.transaction_type }}
+                                                    {{ transaction.type }}
                                                 </SelectItem>
                                             </SelectGroup>
                                         </SelectContent>
@@ -220,88 +192,51 @@ const isSubmitDisabled = computed(() => {
                                     <InputError class="col-span-5" :message="form.errors.transaction_id" />
                                 </div>
                                 <!-- Transaction Number -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label for="transaction_number" class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Transaction Number
-                                        </span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label for="transaction_number"
+                                        class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Transaction Number
                                     </Label>
-                                    <div class="relative items-center w-full md:col-span-3">
-                                        <Input id="transaction_number" v-model="form.transaction_number" type="number"
-                                            :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
+                                    <div class="relative items-center w-full col-span-3">
+                                        <Input id="transaction_number" v-model="form.transaction_number" type="text"
+                                            min="0" oninput="validity.valid||(value='');"
+                                            :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
                                         <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                            <Hash class="size-5 text-muted-foreground" />
+                                            <Hash class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
                                     <InputError class="col-span-5" :message="form.errors.transaction_number" />
                                 </div>
                             </div>
+
                             <div class="grid items-center gap-3 md:grid-cols-2">
                                 <!-- Supplier -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Supplier</span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Supplier Name
                                     </Label>
-                                    <Popover v-model:open="state.openSupplier">
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openSupplier"
-                                                class="justify-between font-normal">{{
-                                                    selectedSupplier?.name || "Select supplier" }}
-                                                <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search supplier"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateSupplierDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new supplier
-                                                </Button>
-                                                <CommandEmpty>
-                                                    No supplier found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.supplier_id"
-                                                            v-for="supplier in filteredSupplier" :key="supplier.id"
-                                                            :value="supplier.id" @select="selectSupplier(supplier.id)">
-                                                            {{ supplier.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto h-4 w-4', state.supplierId === supplier.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DropdownSearch v-model="form.supplier_id" :items="filteredSupplier"
+                                        placeholder="Select supplier" :has-error="form.errors.supplier_id" />
                                     <InputError class="col-span-5" :message="form.errors.supplier_id" />
                                 </div>
                                 <!-- Purchase Date -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                            Purchase Date
-                                        </span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Purchase Date
                                     </Label>
-                                    <Popover>
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                    <Popover v-model:open="isPopoverOpen">
+                                        <PopoverTrigger as-child>
                                             <Button variant="outline"
-                                                :class="cn('justify-start text-left font-normal', !form.purchase_date && 'text-muted-foreground')">
-                                                <CalendarIcon class="w-4 h-4 mr-2" />
+                                                :class="cn('justify-start text-left font-normal col-span-3', !form.purchase_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.purchase_date })">
+                                                <CalendarIcon class="mr-2 size-4" />
                                                 {{ form.purchase_date
                                                     ? df.format(new Date(form.purchase_date))
-                                                    : "Pick a date"
-                                                }}
+                                                    : "Select date" }}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent class="w-auto p-0">
-                                            <Calendar v-model="selectedDate" initial-focus />
+                                            <Calendar v-model="selectedDate" initial-focus
+                                                @update:model-value="handleDateSelect" />
                                         </PopoverContent>
                                     </Popover>
                                     <InputError class="col-span-5" :message="form.errors.purchase_date" />
@@ -310,93 +245,24 @@ const isSubmitDisabled = computed(() => {
 
                             <div class="grid items-center gap-3 md:grid-cols-2">
                                 <!-- Category -->
-                                <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                    <Label class="md:col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Category</span>
+                                <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                        Category
                                     </Label>
-                                    <Popover v-model:open="state.openCategory">
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openCategory"
-                                                class="justify-between font-normal">{{
-                                                    selectedCategory?.name || "Select category" }}
-                                                <ChevronDown class="ml-2 opacity-50 size-4 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search category"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateSupplierDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new category
-                                                </Button>
-                                                <CommandEmpty>
-                                                    No category found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.category_id"
-                                                            v-for="category in filteredCategory" :key="category.id"
-                                                            :value="category.id" @select="selectCategory(category.id)">
-                                                            {{ category.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto size-4', state.categoryId === category.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DropdownSearch v-model="form.category_id" :items="filteredCategory"
+                                        placeholder="Select sub category" :has-error="form.errors.category_id" />
                                     <InputError class="col-span-5" :message="form.errors.category_id" />
                                 </div>
                                 <!-- SubCategory -->
                                 <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
                                     <Label class="col-span-2">
-                                        <span
-                                            class="after:content-['*'] after:ml-0.5 after:text-red-500">Subcategory</span>
+                                        <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            Sub Category
+                                        </span>
                                     </Label>
-                                    <Popover v-model:open="state.openSubCategory">
-                                        <PopoverTrigger as-child
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
-                                            <Button variant="outline" role="combobox"
-                                                :aria-expanded="state.openSubCategory"
-                                                class="justify-between font-normal">{{
-                                                    selectedSubCategory?.name || "Select subcategory"
-                                                }}
-                                                <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent class="w-[420px] p-0">
-                                            <Command>
-                                                <CommandInput type="search" placeholder="Search subcategory"
-                                                    @input="handleSearch($event.target.value)" />
-                                                <Button variant="outline" size="sm"
-                                                    @click="state.showCreateSupplierDialog = true" class="m-2">
-                                                    <Plus class="mr-1 size-4" />
-                                                    Add new subcategory
-                                                </Button>
-                                                <CommandEmpty>
-                                                    No subcategory found.
-                                                </CommandEmpty>
-                                                <CommandList>
-                                                    <CommandGroup>
-                                                        <CommandItem v-model="form.subcategory_id"
-                                                            v-for="subCategory in filteredSubCategory"
-                                                            :key="subCategory.id" :value="subCategory.id"
-                                                            @select="selectSubCategory(subCategory.id)">
-                                                            {{ subCategory.name }}
-                                                            <Check
-                                                                :class="cn('ml-auto h-4 w-4', state.subCategoryId === subCategory.id ? 'opacity-100' : 'opacity-0')" />
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DropdownSearch v-model="form.subcategory_id" :items="filteredSubCategory"
+                                        :disabled="!form.category_id" placeholder="Select sub category"
+                                        :has-error="form.errors.subcategory_id" />
                                     <InputError class="col-span-5" :message="form.errors.subcategory_id" />
                                 </div>
                             </div>
@@ -406,24 +272,25 @@ const isSubmitDisabled = computed(() => {
                                     <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
                                         <!-- Quantity -->
                                         <div class="grid items-center grid-cols-4 col-span-4 gap-3">
-                                            <Label for="quantity" class="col-span-2">
-                                                <span
-                                                    class="after:content-['*'] after:ml-0.5 after:text-red-500">Quantity</span>
+                                            <Label for="quantity"
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                                Quantity
                                             </Label>
-                                            <div class="relative items-center w-full md:col-span-2">
-                                                <Input id="quantity" v-model="form.quantity" type="number"
-                                                    :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.quantity }]" />
+                                            <div class="relative items-center w-full col-span-2">
+                                                <Input id="quantity" v-model="form.quantity" type="number" min="0"
+                                                    oninput="validity.valid||(value='');"
+                                                    :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.quantity }]" />
                                                 <span
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                    <Boxes class="size-5 text-muted-foreground" />
+                                                    <Boxes class="size-4 text-muted-foreground" />
                                                 </span>
                                             </div>
                                         </div>
                                         <!-- Unit -->
                                         <div class="col-span-1">
-                                            <Select v-model="form.unit_measure_id">
+                                            <Select v-model="form.unit_id">
                                                 <SelectTrigger
-                                                    :class="{ 'border-red-600 focus:ring-red-500': form.errors.transaction_id }">
+                                                    :class="[!form.unit_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.unit_id }]">
                                                     <SelectValue placeholder="Unit" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -437,43 +304,44 @@ const isSubmitDisabled = computed(() => {
                                         </div>
                                         <div class="col-span-5">
                                             <InputError :message="form.errors.quantity" />
-                                            <InputError :message="form.errors.unit_measure_id" />
+                                            <InputError :message="form.errors.unit_id" />
                                         </div>
                                     </div>
                                     <!-- Landed Cost -->
-                                    <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                        <Label for="landed_cost" class="md:col-span-2">
-                                            <span class="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                                Landed Cost
-                                            </span>
+                                    <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                        <Label for="landed_cost"
+                                            class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
+                                            Landed Cost
                                         </Label>
-                                        <div class="relative items-center w-full md:col-span-3">
-                                            <Input id="landed_cost" v-model="form.landed_cost" type="number"
-                                                :class="['pl-8', { 'border-red-600 focus-visible:ring-red-500': form.errors.landed_cost }]" />
+                                        <div class="relative items-center w-full col-span-3">
+                                            <Input id="landed_cost" v-model="form.landed_cost" type="number" step=".01"
+                                                min="0" oninput="validity.valid||(value='');"
+                                                :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.landed_cost }]" />
                                             <span
                                                 class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <PhilippinePeso class="size-5 text-muted-foreground" />
+                                                <PhilippinePeso class="size-4 text-muted-foreground" />
                                             </span>
                                         </div>
                                         <InputError class="col-span-5" :message="form.errors.landed_cost" />
                                     </div>
                                     <!-- Amount -->
-                                    <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
-                                        <Label for="amount" class="md:col-span-2">Amount</Label>
-                                        <div class="relative items-center w-full md:col-span-3">
-                                            <Input id="amount" v-model="form.amount" type="number" disabled
-                                                class="pl-8 bg-slate-200" />
+                                    <div class="grid items-center grid-cols-5 gap-3 text-right">
+                                        <Label for="amount" class="col-span-2">Amount</Label>
+                                        <div class="relative items-center w-full col-span-3">
+                                            <FormattedNumberInput v-model="form.amount" disabled
+                                                class="pl-7 bg-slate-200" />
                                             <span
                                                 class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
-                                                <PhilippinePeso class="size-5 text-muted-foreground" />
+                                                <PhilippinePeso class="size-4 text-muted-foreground" />
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Additional details -->
-                                <div class="grid gap-3 md:text-right md:grid-cols-5">
-                                    <Label for="description" class="py-3 md:col-span-2">Additional Details</Label>
-                                    <Textarea v-model="form.notes" id="description" class="md:col-span-3 min-h-30" />
+                                <div class="grid grid-cols-5 gap-3 text-right">
+                                    <Label for="description" class="col-span-2 pt-3">Additional Details</Label>
+                                    <Textarea placeholder="Type your additional details here. (optional)"
+                                        v-model="form.description" id="description" class="col-span-3" />
                                 </div>
                             </div>
 
@@ -483,8 +351,7 @@ const isSubmitDisabled = computed(() => {
                                         Cancel
                                     </Button>
                                 </DialogClose>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed"
-                                    :disabled="isSubmitDisabled" type="submit">
+                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>
