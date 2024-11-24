@@ -1,37 +1,30 @@
 <script setup>
 import { ref } from "vue";
 import Datatable from './Datatable.vue';
-import Header from '@/Components/Header.vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Settings from '../Index.vue'
 
 const props = defineProps({
-    logs: Object
+    subcategories: Object
 })
-
-const items = ref([
-    { label: 'Reports', href: '#' },
-    { label: 'Activity Logs', href: 'activity_logs' },
-])
 </script>
 
 <template>
-    <Head title="Reports" />
-    <AuthenticatedLayout>
-        <Header :items="items" />
-        <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
+    <Head title="Manage Sub Category" />
+    <Settings>
+        <div class="px-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Activity Logs</CardTitle>
+                    <CardTitle>Sub Category</CardTitle>
                     <CardDescription class="flex items-center justify-between">
-                        Manage your purchases and view their information.
+                        Manage subcategories and view their information.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Datatable :logs="logs" />
+                    <Datatable :subcategories="subcategories" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>
             </Card>
         </div>
-    </AuthenticatedLayout>
+    </Settings>
 </template>

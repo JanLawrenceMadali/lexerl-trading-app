@@ -13,9 +13,11 @@ class SubCategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::all();
+        $categories = Category::latest()->get();
+        $subcategories = Subcategory::latest()->get();
         return inertia('Settings/Subcategory/Index', [
-            'categories' => $categories
+            'subcategories' => $subcategories,
+            'categories' => $categories,
         ]);
     }
 

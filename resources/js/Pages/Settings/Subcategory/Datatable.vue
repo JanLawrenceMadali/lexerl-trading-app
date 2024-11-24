@@ -9,10 +9,10 @@ import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 
 const props = defineProps({
-    logs: Object,
+    subcategories: Object,
 })
 
-const data = ref(props.logs)
+const data = ref(props.subcategories)
 
 const TIME_UNITS = [
     { unit: 'year', seconds: 31536000 },
@@ -44,33 +44,15 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
 
 const columns = [
     {
-        accessorKey: 'user',
+        accessorKey: 'name',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['User', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Name', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const { users } = row.original;
-            return h('div', { class: 'px-2' }, h('div', users.username));
-        },
-    },
-    {
-        accessorKey: 'action',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Action', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const action = row.getValue('action');
-            return h('div', { class: 'px-2' }, h('div', action));
-        },
-    },
-    {
-        accessorKey: 'description',
-        header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Notes', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-        },
-        cell: ({ row }) => {
-            const description = row.getValue('description');
-            return h('div', { class: 'px-2' }, h('div', description));
+            const { name } = row.original;
+            return h('div', { class: 'px-2' }, [
+                h('div', { class: 'font-medium' }, name),
+            ])
         },
     },
     {
@@ -79,8 +61,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original
-            const date = new Date(sale.created_at)
+            const { created_at } = row.original
+            const date = new Date(created_at)
 
             const timeAgoString = timeAgo(date);
 
@@ -118,9 +100,7 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'action',
-            'description',
-            'users.username',
+            'name'
         ];
 
         return searchableFields.some(field => {
