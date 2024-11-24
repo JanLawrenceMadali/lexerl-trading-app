@@ -36,7 +36,7 @@ const submit = () => {
             form.get(route('purchase-in'))
 
             Swal.fire({
-                title: "Created!",
+                title: "Success!",
                 text: "Sub Category successfully created!",
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",

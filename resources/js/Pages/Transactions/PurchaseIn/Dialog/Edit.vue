@@ -5,10 +5,9 @@ import { Button } from '@/Components/ui/button'
 import { useForm } from '@inertiajs/vue3'
 import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
-import { CalendarIcon, Check, ChevronDown, Edit, Loader2, Hash, PhilippinePeso, Plus, Boxes } from 'lucide-vue-next'
+import { CalendarIcon, Edit, Loader2, Hash, PhilippinePeso, Plus, Boxes } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command'
 import Label from '@/Components/ui/label/Label.vue'
 import InputError from '@/Components/InputError.vue'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
@@ -16,7 +15,8 @@ import { Calendar } from '@/Components/ui/calendar'
 import Swal from 'sweetalert2';
 import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
 import CreateSubcategory from './CreateSubcategory.vue'
-import CreateSupplier from './CreateSupplier.vue'
+import DropdownSearch from '@/Components/DropdownSearch.vue'
+import Create from '@/Pages/Settings/Suppliers/Dialog/Create.vue'
 
 const props = defineProps({
     units: Object,
@@ -35,9 +35,9 @@ const form = useForm({
     description: data.value.description,
     landed_cost: data.value.landed_cost,
     purchase_date: data.value.purchase_date,
-    supplier_id: String(data.value.supplier_id),
-    category_id: String(data.value.category_id),
-    subcategory_id: String(data.value.subcategory_id),
+    supplier_id: data.value.supplier_id,
+    category_id: data.value.category_id,
+    subcategory_id: data.value.subcategory_id,
     unit_id: String(data.value.unit_id),
     transaction_id: String(data.value.transaction_id),
     transaction_number: data.value.transaction_number,
@@ -75,85 +75,32 @@ watch(
 )
 
 const state = reactive({
-    search: '',
-    supplierId: null,
-    categoryId: null,
-    subCategoryId: null,
-    openCategory: false,
-    openSupplier: false,
-    openSubCategory: false,
-    showCreateSupplierDialog: false
+    search: ''
 })
 
-watch(() => state.supplierId, (newId) => {
-    if (newId) {
-        form.supplier_id = newId;
-    }
-});
 
 const filteredCategory = computed(() => {
-    return props.categories.filter(category =>
-        category.name.toLowerCase().includes(state.search.toLowerCase())
+    const lowerSearch = state.search.toLowerCase()
+    return props.categories.filter((category) =>
+        category.name.toLowerCase().includes(lowerSearch),
     )
 })
 
 const filteredSubCategory = computed(() => {
-    return props.subcategories.filter(subCategory =>
-        subCategory.name.toLowerCase().includes(state.search.toLowerCase()) &&
-        subCategory.category_id == form.category_id
+    const lowerSearch = state.search.toLowerCase()
+    return props.subcategories.filter(
+        (subCategory) =>
+            subCategory.category_id === form.category_id &&
+            subCategory.name.toLowerCase().includes(lowerSearch),
     )
 })
 
 const filteredSupplier = computed(() => {
-    return props.suppliers.filter(supplier =>
-        supplier.name.toLowerCase().includes(state.search.toLowerCase())
+    const lowerSearch = state.search.toLowerCase()
+    return props.suppliers.filter((supplier) =>
+        supplier.name.toLowerCase().includes(lowerSearch),
     )
 })
-
-const handleSearch = (value) => {
-    state.search = value
-}
-
-const selectCategory = (categoryId) => {
-    const selectedCategory = props.categories.find(category => category.id === categoryId);
-    if (selectedCategory) {
-        form.category_id = selectedCategory.id;
-    }
-    state.openCategory = false;
-};
-
-const selectSubCategory = (subCategoryId) => {
-    const selectedSubCategory = props.subcategories.find(subCategory => subCategory.id === subCategoryId);
-    if (selectedSubCategory) {
-        form.subcategory_id = selectedSubCategory.id;
-    }
-    state.openSubCategory = false;
-};
-
-const selectSupplier = (supplierId) => {
-    const selectedSupplier = props.suppliers.find(supplier => supplier.id === supplierId);
-    if (selectedSupplier) {
-        form.supplier_id = selectedSupplier.id;
-    }
-    state.openSupplier = false;
-};
-
-const selectedCategory = computed(() =>
-    props.categories.find(category => category.id == form.category_id)
-)
-
-const selectedSubCategory = computed(() =>
-    props.subcategories.find(subCategory => subCategory.id == form.subcategory_id)
-)
-
-const selectedSupplier = computed(() =>
-    props.suppliers.find(supplier => supplier.id == form.supplier_id)
-)
-
-const createSupplier = (name) => {
-    console.log(`Creating new supplier: ${name}`)
-    state.showCreateSupplierDialog = false
-}
 
 const isOpen = ref(false);
 
@@ -209,7 +156,7 @@ const isSubmitDisabled = computed(() => {
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
             <Button variant="ghost" size="xs" title="Edit">
-                <Edit :size="18" class="text-green-500" />
+                <Edit :size="18" />
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:min-w-[400px] md:min-w-[1500px]">
@@ -230,7 +177,7 @@ const isSubmitDisabled = computed(() => {
                                 </Label>
                                 <Select v-model="form.transaction_id">
                                     <SelectTrigger
-                                        :class="['col-span-3', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                        :class="['col-span-3 hover:text-foreground hover:bg-slate-100', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
                                         <SelectValue placeholder="Select transaction type" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -253,7 +200,7 @@ const isSubmitDisabled = computed(() => {
                                 <div class="relative items-center w-full col-span-3">
                                     <Input id="transaction_number" v-model="form.transaction_number" type="text" min="0"
                                         oninput="validity.valid||(value='');"
-                                        :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
+                                        :class="['pl-7 uppercase', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
                                     <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                         <Hash class="size-4 text-muted-foreground" />
                                     </span>
@@ -268,36 +215,12 @@ const isSubmitDisabled = computed(() => {
                                 <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                     Supplier Name
                                 </Label>
-                                <Popover v-model:open="state.openSupplier">
-                                    <PopoverTrigger as-child>
-                                        <Button variant="outline"
-                                            :class="['justify-between font-normal col-span-3', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.supplier_id }]">
-                                            {{ selectedSupplier?.name || "Select supplier" }}
-                                            <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="w-[420px] p-0">
-                                        <Command>
-                                            <CommandInput type="search" placeholder="Search supplier"
-                                                @input="handleSearch($event.target.value)" />
-                                            <CreateSupplier />
-                                            <CommandEmpty>
-                                                No supplier found.
-                                            </CommandEmpty>
-                                            <CommandList>
-                                                <CommandGroup>
-                                                    <CommandItem v-model="form.supplier_id"
-                                                        v-for="supplier in filteredSupplier" :key="supplier.id"
-                                                        :value="supplier.id" @select="selectSupplier(supplier.id)">
-                                                        {{ supplier.name }}
-                                                        <Check
-                                                            :class="cn('ml-auto h-4 w-4', state.supplierId === supplier.id ? 'opacity-100' : 'opacity-0')" />
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <DropdownSearch :items="filteredSupplier" label-key="name" value-key="id"
+                                    :class="['col-span-3 justify-between font-normal hover:text-foreground hover:bg-slate-100', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
+                                    :has-error="form.errors.supplier_id" placeholder="Select a supplier"
+                                    v-model="form.supplier_id">
+                                    <Create />
+                                </DropdownSearch>
                                 <InputError class="col-span-5" :message="form.errors.supplier_id" />
                             </div>
                             <!-- Purchase Date -->
@@ -310,7 +233,7 @@ const isSubmitDisabled = computed(() => {
                                         <Button variant="outline"
                                             :class="cn('justify-start text-left font-normal col-span-3', !form.purchase_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.purchase_date })">
                                             <CalendarIcon class="mr-2 size-4" />{{ form.purchase_date
-                                                ? df.format(new Date(form.purchase_date)) : "Select date" }}
+                                                ? df.format(new Date(form.purchase_date)) : "mm/dd/yyyy" }}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent class="w-auto p-0">
@@ -328,20 +251,11 @@ const isSubmitDisabled = computed(() => {
                                 <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                     Category
                                 </Label>
-                                <Select v-model="form.category_id">
-                                    <SelectTrigger
-                                        :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.category_id }]">
-                                        <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem v-for="category in filteredCategory" :key="category.id"
-                                                :value="String(category.id)">
-                                                {{ category.name }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <DropdownSearch :items="filteredCategory" label-key="name" value-key="id"
+                                    :class="['col-span-3 justify-between font-normal hover:text-foreground hover:bg-slate-100', !form.category_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.category_id }]"
+                                    :has-error="form.errors.category_id" placeholder="Select a category"
+                                    v-model="form.category_id">
+                                </DropdownSearch>
                                 <InputError class="col-span-5" :message="form.errors.category_id" />
                             </div>
                             <!-- SubCategory -->
@@ -351,20 +265,12 @@ const isSubmitDisabled = computed(() => {
                                         Sub Category
                                     </span>
                                 </Label>
-                                <Select v-model="form.subcategory_id">
-                                    <SelectTrigger
-                                        :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]">
-                                        <SelectValue placeholder="Select sub category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem v-for="subcategory in filteredSubCategory" :key="subcategory.id"
-                                                :value="String(subcategory.id)">
-                                                {{ subcategory.name }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <DropdownSearch :items="filteredSubCategory" label-key="name" value-key="id"
+                                    :class="['col-span-3 justify-between font-normal hover:text-foreground hover:bg-slate-100', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
+                                    :disabled="!form.category_id" :has-error="form.errors.subcategory_id"
+                                    placeholder="Select a sub category" v-model="form.subcategory_id">
+                                    <CreateSubcategory />
+                                </DropdownSearch>
                                 <InputError class="col-span-5" :message="form.errors.subcategory_id" />
                             </div>
                         </div>
@@ -392,7 +298,7 @@ const isSubmitDisabled = computed(() => {
                                     <div class="col-span-1">
                                         <Select v-model="form.unit_id">
                                             <SelectTrigger
-                                                :class="[!form.unit_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.unit_id }]">
+                                                :class="['hover:text-foreground hover:bg-slate-100', !form.unit_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.unit_id }]">
                                                 <SelectValue placeholder="Unit" />
                                             </SelectTrigger>
                                             <SelectContent>

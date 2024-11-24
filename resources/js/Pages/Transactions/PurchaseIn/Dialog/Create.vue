@@ -3,21 +3,20 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { useForm } from '@inertiajs/vue3'
-import { computed, h, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
-import { CalendarIcon, Check, ChevronDown, HandCoins, Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes } from 'lucide-vue-next'
+import { CalendarIcon, Hash, Loader2, PhilippinePeso, PlusCircle, Boxes } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command'
 import Label from '@/Components/ui/label/Label.vue'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import { Calendar } from '@/Components/ui/calendar'
 import InputError from '@/Components/InputError.vue'
-import CreateSupplier from './CreateSupplier.vue'
 import CreateSubcategory from './CreateSubcategory.vue'
 import Swal from 'sweetalert2';
 import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
 import DropdownSearch from '@/Components/DropdownSearch.vue'
+import Create from '@/Pages/Settings/Suppliers/Dialog/Create.vue'
 
 const props = defineProps({
     units: Object,
@@ -48,7 +47,6 @@ const df = new Intl.DateTimeFormat('en-PH', {
 });
 
 const selectedDate = ref(null)
-
 const isPopoverOpen = ref(false);
 
 const handleDateSelect = (date) => {
@@ -78,25 +76,25 @@ const state = reactive({
 })
 
 const filteredCategory = computed(() => {
-    const lowerSearch = state.search.toLowerCase();
-    return props.categories.filter(category =>
-        category.name.toLowerCase().includes(lowerSearch)
-    );
+    const lowerSearch = state.search.toLowerCase()
+    return props.categories.filter((category) =>
+        category.name.toLowerCase().includes(lowerSearch),
+    )
 })
 
-// Todo - reset filteredSubCategory whenever i change the value of filteredCategory
 const filteredSubCategory = computed(() => {
-    const lowerSearch = state.search.toLowerCase();
-    return props.subcategories.filter(subCategory =>
-        subCategory.category_id === form.category_id &&
-        subCategory.name.toLowerCase().includes(lowerSearch)
-    );
+    const lowerSearch = state.search.toLowerCase()
+    return props.subcategories.filter(
+        (subCategory) =>
+            subCategory.category_id === form.category_id &&
+            subCategory.name.toLowerCase().includes(lowerSearch),
+    )
 })
 
 const filteredSupplier = computed(() => {
-    const lowerSearch = state.search.toLowerCase();
-    return props.suppliers.filter(supplier =>
-        supplier.name.toLowerCase().includes(lowerSearch)
+    const lowerSearch = state.search.toLowerCase()
+    return props.suppliers.filter((supplier) =>
+        supplier.name.toLowerCase().includes(lowerSearch),
     )
 })
 
@@ -104,10 +102,13 @@ const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const routeReload = () => {
-    form.get(route('purchase-in'))
+    form.get(route('purchase-in'));
+    closeSheet();
 }
 
 const submit = () => {
@@ -115,11 +116,9 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            form.reset();
-            closeSheet();
             routeReload();
             Swal.fire({
-                title: "Created!",
+                title: "Success!",
                 text: "Transaction successfully created!",
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
@@ -145,6 +144,8 @@ const isSubmitDisabled = computed(() => {
         !form.transaction_number;
     return isForm || form.processing;
 });
+
+const routing = 'purchase-in';
 
 </script>
 
@@ -177,7 +178,7 @@ const isSubmitDisabled = computed(() => {
                                     </Label>
                                     <Select v-model="form.transaction_id">
                                         <SelectTrigger
-                                            :class="['col-span-3', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                            :class="['col-span-3 hover:text-foreground hover:bg-slate-100', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
                                             <SelectValue placeholder="Select transaction type" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -215,8 +216,12 @@ const isSubmitDisabled = computed(() => {
                                     <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                         Supplier Name
                                     </Label>
-                                    <DropdownSearch v-model="form.supplier_id" :items="filteredSupplier"
-                                        placeholder="Select supplier" :has-error="form.errors.supplier_id" />
+                                    <DropdownSearch :items="filteredSupplier" label-key="name" value-key="id"
+                                        :class="['col-span-3 justify-between font-normal', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
+                                        :has-error="form.errors.supplier_id" placeholder="Select a supplier"
+                                        v-model="form.supplier_id">
+                                        <Create :route="routing" />
+                                    </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.supplier_id" />
                                 </div>
                                 <!-- Purchase Date -->
@@ -231,7 +236,7 @@ const isSubmitDisabled = computed(() => {
                                                 <CalendarIcon class="mr-2 size-4" />
                                                 {{ form.purchase_date
                                                     ? df.format(new Date(form.purchase_date))
-                                                    : "Select date" }}
+                                                    : "mm/dd/yyyy" }}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent class="w-auto p-0">
@@ -249,8 +254,10 @@ const isSubmitDisabled = computed(() => {
                                     <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                         Category
                                     </Label>
-                                    <DropdownSearch v-model="form.category_id" :items="filteredCategory"
-                                        placeholder="Select sub category" :has-error="form.errors.category_id" />
+                                    <DropdownSearch :items="filteredCategory" label-key="name" value-key="id"
+                                        :class="['col-span-3 justify-between font-normal', !form.category_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.category_id }]"
+                                        :has-error="form.errors.category_id" placeholder="Select a category"
+                                        v-model="form.category_id" />
                                     <InputError class="col-span-5" :message="form.errors.category_id" />
                                 </div>
                                 <!-- SubCategory -->
@@ -260,9 +267,12 @@ const isSubmitDisabled = computed(() => {
                                             Sub Category
                                         </span>
                                     </Label>
-                                    <DropdownSearch v-model="form.subcategory_id" :items="filteredSubCategory"
-                                        :disabled="!form.category_id" placeholder="Select sub category"
-                                        :has-error="form.errors.subcategory_id" />
+                                    <DropdownSearch :items="filteredSubCategory" label-key="name" value-key="id"
+                                        :class="['col-span-3 justify-between font-normal', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
+                                        :has-error="form.errors.subcategory_id" :disabled="!form.category_id"
+                                        placeholder="Select a sub category" v-model="form.subcategory_id">
+                                        <CreateSubcategory :categories="categories" />
+                                    </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.subcategory_id" />
                                 </div>
                             </div>
@@ -290,7 +300,7 @@ const isSubmitDisabled = computed(() => {
                                         <div class="col-span-1">
                                             <Select v-model="form.unit_id">
                                                 <SelectTrigger
-                                                    :class="[!form.unit_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.unit_id }]">
+                                                    :class="['hover:text-foreground hover:bg-slate-100', !form.unit_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.unit_id }]">
                                                     <SelectValue placeholder="Unit" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -302,7 +312,7 @@ const isSubmitDisabled = computed(() => {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div class="col-span-5">
+                                        <div v-if="form.errors.quantity || form.errors.unit_id" class="col-span-5">
                                             <InputError :message="form.errors.quantity" />
                                             <InputError :message="form.errors.unit_id" />
                                         </div>

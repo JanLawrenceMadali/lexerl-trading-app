@@ -1,5 +1,5 @@
 <script setup>
-import { SquareArrowOutUpRight } from 'lucide-vue-next'
+import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
 import { Separator } from '@/Components/ui/separator'
@@ -33,7 +33,7 @@ const landed_cost = formatCurrency(data.landed_cost);
     <Dialog>
         <DialogTrigger as-child>
             <Button variant="ghost" size="xs" title="View">
-                <SquareArrowOutUpRight :size="18" />
+                <Eye :size="18" />
             </Button>
         </DialogTrigger>
         <DialogContent>
@@ -71,7 +71,7 @@ const landed_cost = formatCurrency(data.landed_cost);
                             data.supplier_contact_number }}</span>
                     </li>
                 </ul>
-                <Separator />
+
                 <div class="font-semibold"> Product Details </div>
                 <ul class="grid gap-3">
                     <li class="flex items-center justify-between">
