@@ -4,7 +4,7 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { Checkbox } from '@/Components/ui/checkbox/index'
@@ -16,34 +16,6 @@ const props = defineProps({
 })
 
 const data = ref(props.sales)
-
-const TIME_UNITS = [
-    { unit: 'year', seconds: 31536000 },
-    { unit: 'month', seconds: 2592000 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 }
-];
-
-const timeAgo = (date) => {
-    const secondsElapsed = Math.floor((new Date() - date) / 1000);
-
-    for (const { unit, seconds } of TIME_UNITS) {
-        const interval = Math.floor(secondsElapsed / seconds);
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-        }
-    }
-
-    return 'just now';
-};
-
-const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-}).format(value)
 
 const formattedCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
@@ -97,6 +69,19 @@ const columns = [
             return h('div', { class: 'px-2' }, [
                 h('div', {}, formattedDate),
                 h('div', { class: 'text-xs text-gray-500' })
+            ]);
+        },
+    },
+    {
+        accessorKey: 'due_dates',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Due Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const { days } = row.original;
+
+            return h('div', { class: 'px-2' }, [
+                h('div', { class: 'font-medium' }, days),
             ]);
         },
     },
@@ -217,6 +202,19 @@ const bulkUpdate = () => {
     });
 };
 
+const isExporting = ref(false)
+
+const exportData = () => {
+    isExporting.value = true
+
+    // Directly navigate to the download route
+    window.location.href = route('collectibles.export');
+
+    // Simulate finishing the export (optional, for UX only)
+    setTimeout(() => {
+        isExporting.value = false;
+    }, 1000); // Adjust the time to match your expected download latency
+}
 </script>
 
 <template>
@@ -227,10 +225,19 @@ const bulkUpdate = () => {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Button size="sm" @click="bulkUpdate" class="gap-1 uppercase bg-green-600 h-7"
-            :disabled="selectedIds.length === 0">
-            Mark as paid
-        </Button>
+        <div class="flex items-center gap-2">
+            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
+                @click="exportData">
+                <File class="h-3.5 w-3.5" />
+                <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    {{ isExporting ? 'Exporting...' : 'Export' }}
+                </span>
+            </Button>
+            <Button size="sm" @click="bulkUpdate" class="gap-1 uppercase bg-green-600 h-7"
+                :disabled="selectedIds.length === 0">
+                Mark as paid
+            </Button>
+        </div>
     </div>
     <span class="text-sm text-red-500">{{ form.errors.selectedIds }}</span>
     <div class="border rounded-md">

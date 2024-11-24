@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CollectiblesExport;
 use App\Models\ActivityLog;
 use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CollectibleController extends Controller
 {
@@ -51,13 +53,22 @@ class CollectibleController extends Controller
         try {
             DB::transaction(function () use ($validatedData) {
                 Sale::whereIn('id', array_column($validatedData['selectedIds'], 'id'))
-                    ->update(['status_id' => 1]);
+                    ->update(['status_id' => 1, 'due_date_id' => null]);
 
                 $this->logs('Sales have been marked as paid');
             });
         } catch (\Exception $e) {
             report($e);
         }
+    }
+
+    public function export()
+    {
+        sleep(1);
+        $date = now()->format('Ymd');
+        $fileName = "collectibles_{$date}.xlsx";
+        $this->logs('Collectibles Exported');
+        return Excel::download(new CollectiblesExport, $fileName);
     }
 
     private function logs(string $action)
