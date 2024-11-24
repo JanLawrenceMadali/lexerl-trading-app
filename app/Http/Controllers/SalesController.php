@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesExport;
 use App\Http\Requests\SaleRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
@@ -16,6 +17,7 @@ use App\Models\Transaction;
 use App\Models\Unit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SalesController extends Controller
 {
@@ -131,19 +133,49 @@ class SalesController extends Controller
                 $productAttachments = [];
 
                 foreach ($validated['products'] as $index => $product) {
-                    $inventory = Inventory::where(['category_id' => $product['category_id'], 'subcategory_id' => $product['subcategory_id'], 'unit_id' => $product['unit_id']])->first();
+                    // Combine queries to reduce database calls
+                    $totalQuantity = Inventory::where([
+                        'category_id' => $product['category_id'],
+                        'subcategory_id' => $product['subcategory_id'],
+                        'unit_id' => $product['unit_id']
+                    ])->sum('quantity');
 
-                    if (!$inventory || $inventory->quantity < $product['quantity']) {
-                        $availableQuantity = $inventory ? $inventory->quantity : 0;
-                        $validationErrors["products.{$index}.quantity"] = "Insufficient requested quantity. Only {$availableQuantity} available.";
+                    // Check if inventory exists and has sufficient quantity
+                    if ($totalQuantity < $product['quantity']) {
+                        $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$totalQuantity} available.";
                         continue;
-                    } else {
-                        $newQuantity = max(0, $inventory->quantity - $product['quantity']);
-                        $inventory->update(['quantity' => $newQuantity]);
                     }
 
-                    $product_id = Product::where(['category_id' => $product['category_id'], 'subcategory_id' => $product['subcategory_id']])->value('id');
+                    // Update inventory quantities
+                    $remainingQuantityToDeduct = $product['quantity'];
+                    $inventories = Inventory::where([
+                        'category_id' => $product['category_id'],
+                        'subcategory_id' => $product['subcategory_id'],
+                        'unit_id' => $product['unit_id']
+                    ])
+                        ->where('quantity', '>', 0)
+                        ->orderBy('created_at', 'asc')  // FIFO approach
+                        ->get();
 
+                    foreach ($inventories as $inventory) {
+                        if ($remainingQuantityToDeduct <= 0) break;
+
+                        $deductAmount = min($inventory->quantity, $remainingQuantityToDeduct);
+                        $inventory->quantity -= $deductAmount;
+                        $inventory->save();
+
+                        $remainingQuantityToDeduct -= $deductAmount;
+                    }
+
+                    // Get product ID using single query with select
+                    $product_id = Product::where([
+                        'category_id' => $product['category_id'],
+                        'subcategory_id' => $product['subcategory_id']
+                    ])
+                        ->select('id')
+                        ->value('id');
+
+                    // Prepare product attachment data
                     $productAttachments[$product_id] = [
                         'amount' => $product['amount'],
                         'unit_id' => $product['unit_id'],
@@ -177,6 +209,7 @@ class SalesController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $sale) {
+                // Update sale details
                 $sale->update([
                     'sale_date' => $validated['sale_date'],
                     'status_id' => $validated['status_id'],
@@ -191,38 +224,42 @@ class SalesController extends Controller
                 $validationErrors = [];
                 $productAttachments = [];
 
+                // Loop through each product to handle inventory and sale updates
                 foreach ($validated['products'] as $index => $product) {
-                    $product_id = Product::where(['category_id' => $product['category_id'], 'subcategory_id' => $product['subcategory_id']])->value('id');
+                    $product_id = Product::where([
+                        'category_id' => $product['category_id'],
+                        'subcategory_id' => $product['subcategory_id']
+                    ])->value('id');
 
                     if (!$product_id) {
-                        $validationErrors["products.{$index}.category_id"] = "Product not found for category ID {$product['category_id']} and subcategory ID {$product['subcategory_id']}.";
+                        $validationErrors["products.{$index}.category_id"] =
+                            "Product not found for category ID {$product['category_id']} and subcategory ID {$product['subcategory_id']}.";
                         continue;
                     }
 
                     $inventory = Inventory::where(['category_id' => $product['category_id'], 'subcategory_id' => $product['subcategory_id'], 'unit_id' => $product['unit_id']])->first();
 
-                    foreach ($sale->products as $index => $saleProduct) {
-                        $oldSaleQuantity = $saleProduct->pivot->quantity;
-                        $currentInventory = $inventory ? $inventory->quantity : 0;
-                        $newSaleQuantity = $product['quantity'];
-                        $quantityDifference = $oldSaleQuantity - $newSaleQuantity;
+                    $existingSaleProduct = $sale->products()->wherePivot('product_id', $product_id)->first();
+                    $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
 
-                        if (!$inventory || $inventory->quantity + $quantityDifference < 0) {
-                            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$currentInventory} available.";
-                            continue;
-                        }
+                    $newSaleQuantity = $product['quantity'];
+                    $quantityDifference = $oldSaleQuantity - $newSaleQuantity;
 
-                        // Update inventory
-                        $inventory->increment('quantity', $quantityDifference);
-
-                        // Update sale product quantity
-                        $saleProduct->pivot->update(['quantity' => $newSaleQuantity]);
+                    // Validate inventory for this product
+                    if (!$inventory || $inventory->quantity + $quantityDifference < 0) {
+                        $validationErrors["products.{$index}.quantity"] =
+                            "Insufficient stock. Only {$inventory->quantity} available.";
+                        continue;
                     }
 
+                    // Update inventory for this product
+                    $inventory->increment('quantity', $quantityDifference);
+
+                    // Prepare data for syncing sale products
                     $productAttachments[$product_id] = [
                         'amount' => $product['amount'],
                         'unit_id' => $product['unit_id'],
-                        'quantity' => $product['quantity'],
+                        'quantity' => $newSaleQuantity,
                         'selling_price' => $product['selling_price'],
                     ];
                 }
@@ -231,7 +268,7 @@ class SalesController extends Controller
                     throw ValidationException::withMessages($validationErrors);
                 }
 
-                // Attach products to the sale
+                // Sync all products with the sale
                 $sale->products()->sync($productAttachments);
 
                 $this->logs('Sale Updated');
@@ -240,6 +277,7 @@ class SalesController extends Controller
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->back()->with('error', 'An error occurred while updating the sale.');
         }
     }
 
@@ -254,6 +292,15 @@ class SalesController extends Controller
         } catch (\Throwable $e) {
             report($e);
         }
+    }
+
+    public function export()
+    {
+        sleep(1);
+        $date = now()->format('Ymd');
+        $fileName = "sales_{$date}.xlsx";
+        $this->logs('Sales Exported');
+        return Excel::download(new SalesExport, $fileName);
     }
 
     private function logs(string $action)

@@ -5,7 +5,7 @@ import { Input } from '@/Components/ui/input'
 import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, Search, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
@@ -26,30 +26,6 @@ const props = defineProps({
 })
 
 const data = ref(props.sales)
-
-const reloadDataTable = () => {
-    data.value = props.sales
-}
-
-const handleSalesCreated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Created!",
-        text: "Transaction successfully created!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
-
-const handleSalesUpdated = () => {
-    reloadDataTable()
-    Swal.fire({
-        title: "Updated!",
-        text: "Transaction successfully updated!",
-        iconHtml: '<img src="/assets/icons/Success.png">',
-        confirmButtonColor: "#1B1212",
-    });
-}
 
 const handleSalesDeleted = (id) => {
     Swal.fire({
@@ -205,7 +181,6 @@ const columns = [
                     transactions,
                     sales: sales,
                     subcategories,
-                    onSalesUpdated: handleSalesUpdated
                 }),
                 h(Button, {
                     size: 'xs',
@@ -276,6 +251,19 @@ function getNestedValue(obj, path) {
     }, obj);
 }
 
+const isExporting = ref(false)
+
+const exportData = () => {
+    isExporting.value = true
+
+    // Directly navigate to the download route
+    window.location.href = route('sales.export');
+
+    // Simulate finishing the export (optional, for UX only)
+    setTimeout(() => {
+        isExporting.value = false;
+    }, 1000); // Adjust the time to match your expected download latency
+}
 </script>
 
 <template>
@@ -286,9 +274,18 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create @sales-created="handleSalesCreated" :sales="sales" :categories="categories"
-            :subcategories="subcategories" :customers="customers" :transactions="transactions" :units="units"
-            :dues="dues" :inventories="inventories" :products="products" />
+
+        <div class="flex items-center gap-2">
+            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting" @click="exportData">
+                <File class="h-3.5 w-3.5" />
+                <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    {{ isExporting ? 'Exporting...' : 'Export' }}
+                </span>
+            </Button>
+            <Create :sales="sales" :categories="categories" :subcategories="subcategories" :customers="customers"
+                :transactions="transactions" :units="units" :dues="dues" :inventories="inventories"
+                :products="products" />
+        </div>
     </div>
     <div class="border rounded-md">
         <Table>

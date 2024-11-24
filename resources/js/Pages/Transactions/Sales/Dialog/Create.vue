@@ -14,6 +14,8 @@ import InputError from '@/Components/InputError.vue'
 import { Calendar } from '@/Components/ui/calendar'
 import DropdownSearch from '@/Components/DropdownSearch.vue'
 import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
+import Create from '@/Pages/Settings/Customers/Dialog/Create.vue'
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     dues: Object,
@@ -95,13 +97,13 @@ watch(() => form.products, (newProducts) => {
 }, { deep: true });
 
 const state = reactive({
-    search: '',
-    openCustomer: false,
+    search: ''
 })
 
 const filteredCustomer = computed(() => {
-    return props.customers.filter(customer =>
-        customer.name.toLowerCase().includes(state.search.toLowerCase())
+    const lowerSearch = state.search.toLowerCase()
+    return props.customers.filter((customer) =>
+        customer.name.toLowerCase().includes(lowerSearch),
     )
 })
 
@@ -165,25 +167,7 @@ const totalQuantity = computed(() => {
     return form.products.flatMap(calculateProductQuantity);
 });
 
-const handleSearch = (value) => {
-    state.search = value
-}
-
-const selectCustomer = (customerId) => {
-    state.search = '';
-    state.customerId = customerId;
-    const selectedCustomer = props.customers.find(customer => customer.id === customerId);
-    if (selectedCustomer) {
-        form.customer_id = selectedCustomer.id;
-    }
-    state.openCustomer = false;
-};
-
-const customerMap = new Map(props.customers.map(customer => [customer.id, customer]));
-const selectedCustomer = computed(() => customerMap.get(state.customerId));
-
 const isOpen = ref(false);
-const emit = defineEmits(['sales-created'])
 
 const closeModal = () => {
     isOpen.value = false;
@@ -191,14 +175,23 @@ const closeModal = () => {
     form.clearErrors();
 };
 
+const routeReload = () => {
+    form.get(route('sales'))
+    closeModal();
+};
+
 const submit = () => {
     form.post(route('sales.store'), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            closeModal();
-            form.get(route('sales'))
-            emit('sales-created')
+            routeReload();
+            Swal.fire({
+                title: "Success!",
+                text: "Transaction successfully created!",
+                iconHtml: '<img src="/assets/icons/Success.png">',
+                confirmButtonColor: "#1B1212",
+            });
         },
         onError: (errors) => {
             // console.log(errors);
@@ -221,6 +214,7 @@ const isSubmitDisabled = computed(() => {
     return isForm || form.processing;
 });
 
+const routing = 'sales';
 </script>
 
 <template>
@@ -251,10 +245,12 @@ const isSubmitDisabled = computed(() => {
                                     <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                         Customer Name
                                     </Label>
-                                    <div class="col-span-3">
-                                        <DropdownSearch v-model="form.customer_id" :items="filteredCustomer"
-                                            placeholder="Select customer" :has-error="form.errors.customer_id" />
-                                    </div>
+                                    <DropdownSearch :items="filteredCustomer" label-key="name" value-key="id"
+                                        :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
+                                        :has-error="form.errors.customer_id" placeholder="Select a customer"
+                                        v-model="form.customer_id">
+                                        <Create :route="routing" />
+                                    </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>
                                 <!-- Sale Date -->
@@ -269,7 +265,7 @@ const isSubmitDisabled = computed(() => {
                                                 <CalendarIcon class="mr-2 size-4" />
                                                 {{ form.sale_date
                                                     ? df.format(new Date(form.sale_date))
-                                                    : "Select Date" }}
+                                                    : "mm/dd/yyyy" }}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent class="w-auto p-0">
@@ -289,7 +285,7 @@ const isSubmitDisabled = computed(() => {
                                     </Label>
                                     <Select v-model="form.transaction_id">
                                         <SelectTrigger
-                                            :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                            :class="['col-span-3 hover:text-foreground hover:bg-slate-100', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
                                             <SelectValue placeholder="Select transaction type" />
                                         </SelectTrigger>
                                         <SelectContent>

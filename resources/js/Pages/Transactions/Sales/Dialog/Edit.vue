@@ -5,14 +5,17 @@ import { Button } from '@/Components/ui/button'
 import { useForm } from '@inertiajs/vue3'
 import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
-import { CalendarIcon, Check, ChevronDown, Trash2, Edit, Hash, Loader2, PhilippinePeso, Plus, Boxes } from 'lucide-vue-next'
+import { CalendarIcon, Trash2, Edit, Hash, Loader2, PhilippinePeso, Plus, Boxes } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command'
 import Label from '@/Components/ui/label/Label.vue'
 import InputError from '@/Components/InputError.vue'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import { Calendar } from '@/Components/ui/calendar'
+import DropdownSearch from '@/Components/DropdownSearch.vue'
+import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
+import Create from '@/Pages/Settings/Customers/Dialog/Create.vue'
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     dues: Object,
@@ -34,7 +37,7 @@ const form = useForm({
     sale_date: sales.value.sale_date,
     due_date_id: sales.value.due_date_id === null ? sales.value.due_date_id : String(sales.value.due_date_id),
     description: sales.value.description,
-    customer_id: String(sales.value.customer_id),
+    customer_id: sales.value.customer_id,
     transaction_id: String(sales.value.transaction_id),
     transaction_number: sales.value.transaction_number,
     total_amount: sales.value.total_amount,
@@ -109,15 +112,33 @@ const state = reactive({
     openSubcategory: {},
 })
 
-const filteredSubcategory = (categoryId) => {
-    return props.subcategories.filter(subcategory => subcategory.category_id == categoryId);
-};
+const filteredCustomer = computed(() => {
+    const lowerSearch = state.search.toLowerCase()
+    return props.customers.filter((customer) =>
+        customer.name.toLowerCase().includes(lowerSearch),
+    )
+})
 
-const filteredUnit = computed(() => {
-    return props.units.filter(unit =>
-        props.inventories.some(item => item.unit_id === unit.id)
+const filteredCategory = computed(() => {
+    return props.categories.filter(category =>
+        props.inventories.some(inventory => inventory.category_id === category.id)
     )
 });
+
+const filteredSubcategory = (categoryId) => {
+    return props.subcategories.filter(subcategory =>
+        props.inventories.some(inventory => inventory.subcategory_id === subcategory.id && inventory.category_id == categoryId)
+    );
+};
+
+const filteredUnit = (products) => {
+    return props.units.filter(unit =>
+        props.inventories.some(inventory => inventory.unit_id === unit.id
+            && inventory.subcategory_id == products.subcategory_id
+            && inventory.category_id == products.category_id
+        )
+    )
+};
 
 watch(() => form.products, (newProducts) => {
     newProducts.forEach((product, index) => {
@@ -138,15 +159,12 @@ const totalQuantity = computed(() => {
         if (!category_id && !subcategory_id && !unit_id) return 0;
 
         const productTotal = props.inventories.reduce((total, item) => {
-            const matchingProduct = props.products.find(p => p.id === item.product_id);
-            if (!matchingProduct) return total;
-
-            const isMatchingCategory = !category_id || category_id === matchingProduct.category_id;
-            const isMatchingSubcategory = !subcategory_id || subcategory_id === matchingProduct.subcategory_id;
-            const isMatchingUnit = !unit_id || item.unit_id == unit_id;
+            const isMatchingCategory = !category_id || category_id == item.category_id;
+            const isMatchingSubcategory = !subcategory_id || subcategory_id == item.subcategory_id;
+            const isMatchingUnit = !unit_id || unit_id == item.unit_id;
 
             if (isMatchingCategory && isMatchingSubcategory && isMatchingUnit) {
-                return item.quantity;
+                return total + item.quantity;
             }
             return total;
         }, 0);
@@ -162,7 +180,6 @@ const totalQuantity = computed(() => {
 });
 
 const isOpen = ref(false);
-const emit = defineEmits(['sales-updated'])
 
 const closeModal = () => {
     isOpen.value = false;
@@ -170,14 +187,23 @@ const closeModal = () => {
     form.clearErrors();
 };
 
+const routeReload = () => {
+    form.get(route('sales'))
+    closeModal();
+};
+
 const submit = () => {
     form.patch(route('sales.update', props.sales.id), {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
-            closeModal();
-            form.get(route('sales'))
-            emit('sales-updated', props.sales.id)
+            routeReload();
+            Swal.fire({
+                title: "Updated!",
+                text: "Transaction successfully updated!",
+                iconHtml: '<img src="/assets/icons/Success.png">',
+                confirmButtonColor: "#1B1212",
+            });
         },
         onError: (errors) => {
             // console.log(errors);
@@ -206,7 +232,7 @@ const isSubmitDisabled = computed(() => {
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
             <Button variant="ghost" size="xs" title="Edit">
-                <Edit :size="18" class="text-green-500" />
+                <Edit :size="18" />
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:min-w-[400px] md:min-w-[1500px]">
@@ -226,20 +252,12 @@ const isSubmitDisabled = computed(() => {
                                 <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                     Customer Name
                                 </Label>
-                                <Select v-model="form.customer_id">
-                                    <SelectTrigger
-                                        :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]">
-                                        <SelectValue placeholder="Select Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem v-for="customer in customers" :key="customer.id"
-                                                :value="String(customer.id)">
-                                                {{ customer.name }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <DropdownSearch :items="filteredCustomer" label-key="name" value-key="id"
+                                    :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
+                                    :has-error="form.errors.customer_id" placeholder="Select a customer"
+                                    v-model="form.customer_id">
+                                    <Create />
+                                </DropdownSearch>
                                 <InputError class="col-span-5" :message="form.errors.customer_id" />
                             </div>
                             <!-- Sale Date -->
@@ -250,10 +268,11 @@ const isSubmitDisabled = computed(() => {
                                 <Popover v-model:open="isPopoverOpen">
                                     <PopoverTrigger as-child>
                                         <Button variant="outline"
-                                            :class="cn('justify-start text-left font-normal col-span-3', !form.sale_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.customer_id })">
+                                            :class="cn('justify-start text-left font-normal col-span-3', !form.sale_date && 'text-muted-foreground', { 'border-red-600 focus-visible:ring-red-500': form.errors.sale_date })">
                                             <CalendarIcon class="mr-2 size-4" />
-                                            {{ form.sale_date ? df.format(new Date(form.sale_date)) : "Select Date"
-                                            }}
+                                            {{ form.sale_date
+                                                ? df.format(new Date(form.sale_date))
+                                                : "mm/dd/yyyy" }}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent class="w-auto p-0">
@@ -273,7 +292,7 @@ const isSubmitDisabled = computed(() => {
                                 </Label>
                                 <Select v-model="form.transaction_id">
                                     <SelectTrigger
-                                        :class="['col-span-3', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
+                                        :class="['col-span-3 hover:text-foreground hover:bg-slate-100', !form.transaction_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.transaction_id }]">
                                         <SelectValue placeholder="Select transaction type" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -296,7 +315,7 @@ const isSubmitDisabled = computed(() => {
                                 <div class="relative items-center w-full col-span-3">
                                     <Input id="transaction_number" v-model="form.transaction_number" type="text" min="0"
                                         oninput="validity.valid||(value='');"
-                                        :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
+                                        :class="['pl-7 uppercase', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
                                     <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                         <Hash class="size-4 text-muted-foreground" />
                                     </span>
@@ -354,8 +373,8 @@ const isSubmitDisabled = computed(() => {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
-                                                        <SelectItem v-for="category in categories" :key="category.id"
-                                                            :value="String(category.id)">
+                                                        <SelectItem v-for="category in filteredCategory"
+                                                            :key="category.id" :value="String(category.id)">
                                                             {{ category.name }}
                                                         </SelectItem>
                                                     </SelectGroup>
@@ -364,7 +383,7 @@ const isSubmitDisabled = computed(() => {
                                             <InputError :message="form.errors[`products.${index}.category_id`]" />
                                         </TableCell>
                                         <TableCell> <!-- SubCategory -->
-                                            <Select v-model="product.subcategory_id">
+                                            <Select v-model="product.subcategory_id" :disabled="!product.category_id">
                                                 <SelectTrigger
                                                     :class="['min-w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.subcategory_id`] }]">
                                                     <SelectValue placeholder="Select sub category" />
@@ -382,14 +401,14 @@ const isSubmitDisabled = computed(() => {
                                             <InputError :message="form.errors[`products.${index}.subcategory_id`]" />
                                         </TableCell>
                                         <TableCell> <!-- Unit -->
-                                            <Select v-model="product.unit_id">
+                                            <Select v-model="product.unit_id" :disabled="!product.subcategory_id">
                                                 <SelectTrigger
                                                     :class="['w-[180px]', { 'border-red-600 focus:ring-red-500': form.errors[`products.${index}.unit_id`] }]">
                                                     <SelectValue placeholder="Select unit" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
-                                                        <SelectItem v-for="unit in filteredUnit" :key="unit.id"
+                                                        <SelectItem v-for="unit in filteredUnit(product)" :key="unit.id"
                                                             :value="String(unit.id)">
                                                             {{ unit.abbreviation }}
                                                         </SelectItem>
@@ -419,18 +438,15 @@ const isSubmitDisabled = computed(() => {
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                     <Boxes class="size-4 text-muted-foreground" />
                                                 </span>
-                                                <!-- <small :class="['absolute font-medium top-2.5 right-3',
-                                                    totalQuantity[index] > product.quantity
-                                                        ? 'text-green-600'
-                                                        : 'text-red-600 animate-pulse']">
-                                                    {{ totalQuantity[index] - product.quantity }} left
-                                                </small> -->
+                                                <small :class="['absolute text-green-600 font-medium top-2.5 right-3']">
+                                                    {{ totalQuantity[index] }} left
+                                                </small>
                                             </div>
                                             <InputError :message="form.errors[`products.${index}.quantity`]" />
                                         </TableCell>
                                         <TableCell> <!-- Amount -->
                                             <div class="relative items-center">
-                                                <Input v-model="product.amount" type="number" disabled
+                                                <FormattedNumberInput v-model="product.amount" disabled
                                                     class="pl-7 bg-slate-200" />
                                                 <span
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
@@ -461,15 +477,15 @@ const isSubmitDisabled = computed(() => {
                                 <Textarea placeholder="Type your additional details here. (optional)"
                                     v-model="form.description" id="description" class="col-span-3" />
                             </div>
+                            <!-- total amount -->
                             <div class="grid items-center gap-4 text-right">
-                                <!-- total amount -->
                                 <div class="grid items-center grid-cols-5 gap-3">
                                     <Label for="total_amount"
                                         class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-2">
                                         Total Amount
                                     </Label>
                                     <div class="relative items-center col-span-3">
-                                        <Input v-model="form.total_amount" type="number" disabled
+                                        <FormattedNumberInput v-model="form.total_amount" disabled
                                             class="pl-7 bg-slate-200" />
                                         <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                             <PhilippinePeso class="size-4 text-muted-foreground" />
@@ -521,8 +537,7 @@ const isSubmitDisabled = computed(() => {
                             <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
                                 Cancel
                             </Button>
-                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
-                                :disabled="isSubmitDisabled">
+                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
                                 <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                 Submit
                             </Button>

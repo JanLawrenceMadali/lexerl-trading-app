@@ -1,8 +1,7 @@
 <script setup>
-import { SquareArrowOutUpRight } from 'lucide-vue-next'
+import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
-import { Separator } from '@/Components/ui/separator'
 import { ref } from "vue";
 
 const props = defineProps({ sales: Object })
@@ -53,7 +52,7 @@ const formatCurrency = (value) => {
     <Dialog>
         <DialogTrigger as-child>
             <Button variant="ghost" size="xs" title="View">
-                <SquareArrowOutUpRight :size="18" />
+                <Eye :size="18" />
             </Button>
         </DialogTrigger>
         <DialogContent class="grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
@@ -109,13 +108,13 @@ const formatCurrency = (value) => {
                         </span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Landed Cost</span> <span>{{ formatCurrency(product.selling_price) }}</span>
+                        <span class="text-muted-foreground">Selling Price</span> <span>{{ formatCurrency(product.selling_price) }}</span>
                     </li>
                     <li class="flex items-center justify-between">
                         <span class="text-muted-foreground">Amount</span> <span>{{ formatCurrency(product.amount) }}</span>
                     </li>
                 </ul>
-                <Separator />
+
                 <span class="flex items-center justify-between">
                     <span class="text-muted-foreground">Total Amount:</span>
                     <span>{{ formatCurrency(sales.total_amount) }}</span>
