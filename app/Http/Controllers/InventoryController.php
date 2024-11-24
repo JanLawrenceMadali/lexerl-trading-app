@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PurchaseInExport;
 use App\Http\Requests\InventoryRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
@@ -14,14 +15,15 @@ use App\Models\Unit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryController extends Controller
 {
     public function index()
     {
-        $units = Unit::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get();
-        $subcategories = Subcategory::orderBy('name')->get();
+        $units = Unit::all();
+        $categories = Category::all();
+        $subcategories = Subcategory::all();
         $transactions = Transaction::orderBy('type')->get();
         $suppliers = Supplier::orderBy('name')->get();
         $inventories = DB::table('inventories')
@@ -55,6 +57,7 @@ class InventoryController extends Controller
                 'transactions.id as transaction_id',
             )
             ->orderBy('inventories.id', 'desc')
+            ->where('inventories.quantity', '>', 0)
             ->get();
 
         // return $inventories;
@@ -122,6 +125,15 @@ class InventoryController extends Controller
         } catch (\Exception $e) {
             report($e);
         }
+    }
+
+    public function export()
+    {
+        sleep(1);
+        $date = now()->format('Ymd');
+        $fileName = "purchase_in_{$date}.xlsx";
+        $this->logs('PurchaseIn Exported');
+        return Excel::download(new PurchaseInExport, $fileName);
     }
 
     private function logs(string $action)

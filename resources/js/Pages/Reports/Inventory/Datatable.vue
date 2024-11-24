@@ -4,7 +4,7 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 
@@ -44,23 +44,23 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
 
 const columns = [
     {
-        accessorKey: 'category_name',
+        accessorKey: 'category',
         header: ({ column }) => {
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const { category_name } = row.original;
-            return h('div', { class: 'px-2' }, h('div', category_name));
+            const { category } = row.original;
+            return h('div', { class: 'px-2' }, h('div', category));
         },
     },
     {
-        accessorKey: 'subcategory_name',
+        accessorKey: 'subcategory',
         header: ({ column }) => {
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sub Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const { subcategory_name } = row.original;
-            return h('div', { class: 'px-2' }, h('div', subcategory_name));
+            const { subcategory } = row.original;
+            return h('div', { class: 'px-2' }, h('div', subcategory));
         },
     },
     {
@@ -113,8 +113,8 @@ const table = useVueTable({
         const searchableFields = [
             'unit',
             'quantity',
-            'category_name',
-            'subcategory_name',
+            'category',
+            'subcategory',
         ];
 
         return searchableFields.some(field => {
@@ -131,6 +131,20 @@ function getNestedValue(obj, path) {
     }, obj);
 }
 
+const isExporting = ref(false)
+
+const exportData = () => {
+    isExporting.value = true
+
+    // Directly navigate to the download route
+    window.location.href = route('current_inventory.export');
+
+    // Simulate finishing the export (optional, for UX only)
+    setTimeout(() => {
+        isExporting.value = false;
+    }, 1000); // Adjust the time to match your expected download latency
+}
+
 </script>
 
 <template>
@@ -141,6 +155,12 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
+        <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting" @click="exportData">
+            <File class="h-3.5 w-3.5" />
+            <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                {{ isExporting ? 'Exporting...' : 'Export' }}
+            </span>
+        </Button>
     </div>
     <div class="border rounded-md">
         <Table>
