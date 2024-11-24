@@ -27,7 +27,7 @@ const handlePurchaseDeleted = (id) => {
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
         cancelButtonColor: "#1B1212",
-        confirmButtonText: "Yes",
+        confirmButtonText: "Yes, delete it",
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('supplier.destroy', id), {
