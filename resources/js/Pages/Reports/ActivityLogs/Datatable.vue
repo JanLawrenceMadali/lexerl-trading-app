@@ -4,15 +4,16 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import { Link, router } from '@inertiajs/vue3'
 
 const props = defineProps({
-    logs: Object,
+    activity_logs: Object,
 })
 
-const data = ref(props.logs)
+const data = ref(props.activity_logs)
 
 const TIME_UNITS = [
     { unit: 'year', seconds: 31536000 },
@@ -137,6 +138,20 @@ function getNestedValue(obj, path) {
     }, obj);
 }
 
+const isExporting = ref(false)
+
+const exportData = () => {
+    isExporting.value = true
+
+    // Directly navigate to the download route
+    window.location.href = route('activity_logs.export');
+
+    // Simulate finishing the export (optional, for UX only)
+    setTimeout(() => {
+        isExporting.value = false;
+    }, 1000); // Adjust the time to match your expected download latency
+}
+
 </script>
 
 <template>
@@ -147,6 +162,12 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
+        <!-- <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting" @click="exportData">
+            <File class="h-3.5 w-3.5" />
+            <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                {{ isExporting ? 'Exporting...' : 'Export' }}
+            </span>
+        </Button> -->
     </div>
     <div class="border rounded-md">
         <Table>

@@ -5,12 +5,12 @@ import Header from '@/Components/Header.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const props = defineProps({
-    logs: Object
+    activity_logs: Object
 })
 
 const items = ref([
     { label: 'Reports', href: '#' },
-    { label: 'Activity Logs', href: 'activity_logs' },
+    { label: 'Logs', href: 'activity_logs' },
 ])
 </script>
 
@@ -21,13 +21,13 @@ const items = ref([
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Activity Logs</CardTitle>
+                    <CardTitle>Logs</CardTitle>
                     <CardDescription class="flex items-center justify-between">
                         Manage your purchases and view their information.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Datatable :logs="logs" />
+                    <Datatable :activity_logs="activity_logs" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>
