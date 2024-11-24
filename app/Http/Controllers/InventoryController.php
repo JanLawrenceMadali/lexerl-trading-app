@@ -7,7 +7,7 @@ use App\Http\Requests\InventoryRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Inventory;
-use App\Models\Product;
+use App\Models\Purchases;
 use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -26,20 +26,20 @@ class InventoryController extends Controller
         $subcategories = Subcategory::all();
         $transactions = Transaction::orderBy('type')->get();
         $suppliers = Supplier::orderBy('name')->get();
-        $inventories = DB::table('inventories')
-            ->join('units', 'inventories.unit_id', '=', 'units.id')
-            ->join('suppliers', 'inventories.supplier_id', '=', 'suppliers.id')
-            ->join('transactions', 'inventories.transaction_id', '=', 'transactions.id')
-            ->join('categories', 'inventories.category_id', '=', 'categories.id')
-            ->join('subcategories', 'inventories.subcategory_id', '=', 'subcategories.id')
+        $inventories = DB::table('purchases')
+            ->join('units', 'purchases.unit_id', '=', 'units.id')
+            ->join('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+            ->join('transactions', 'purchases.transaction_id', '=', 'transactions.id')
+            ->join('categories', 'purchases.category_id', '=', 'categories.id')
+            ->join('subcategories', 'purchases.subcategory_id', '=', 'subcategories.id')
             ->select(
-                'inventories.id',
-                'inventories.quantity',
-                'inventories.purchase_date',
-                'inventories.amount',
-                'inventories.transaction_number',
-                'inventories.landed_cost',
-                'inventories.description',
+                'purchases.id',
+                'purchases.quantity',
+                'purchases.purchase_date',
+                'purchases.amount',
+                'purchases.transaction_number',
+                'purchases.landed_cost',
+                'purchases.description',
                 'units.abbreviation',
                 'units.id as unit_id',
                 'suppliers.id as supplier_id',
@@ -56,8 +56,7 @@ class InventoryController extends Controller
                 'transactions.type as transaction_type',
                 'transactions.id as transaction_id',
             )
-            ->orderBy('inventories.id', 'desc')
-            ->where('inventories.quantity', '>', 0)
+            ->orderBy('purchases.id', 'desc')
             ->get();
 
         // return $inventories;
@@ -77,7 +76,7 @@ class InventoryController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                $inventory = Inventory::create([
+                $data = [
                     'amount' => $validated['amount'],
                     'unit_id' => $validated['unit_id'],
                     'quantity' => $validated['quantity'],
@@ -89,11 +88,11 @@ class InventoryController extends Controller
                     'subcategory_id' => $validated['subcategory_id'],
                     'transaction_id' => $validated['transaction_id'],
                     'transaction_number' => $validated['transaction_number'],
-                ]);
+                ];
+                Inventory::create($data);
+                Purchases::create($data);
 
                 $this->logs('Purchase Created');
-
-                return $inventory;
             });
         } catch (\Exception $e) {
             report($e);
@@ -107,6 +106,7 @@ class InventoryController extends Controller
         try {
             DB::transaction(function () use ($validated, $inventory) {
                 $inventory->update($validated);
+                Purchases::where('id', $inventory->id)->update($validated);
                 $this->logs('Purchase Updated');
             });
         } catch (\Exception $e) {
@@ -119,6 +119,7 @@ class InventoryController extends Controller
         try {
             DB::transaction(function () use ($inventory) {
                 $inventory->delete();
+                Purchases::where('id', $inventory->id)->delete();
 
                 $this->logs('Purchase Deleted');
             });
