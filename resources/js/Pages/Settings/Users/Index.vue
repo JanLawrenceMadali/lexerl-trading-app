@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from "vue";
 import Datatable from './Datatable.vue';
 import Settings from '../Index.vue'
 

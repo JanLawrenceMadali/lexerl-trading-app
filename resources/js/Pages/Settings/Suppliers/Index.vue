@@ -1,17 +1,11 @@
 <script setup>
-import { ref } from "vue";
 import Datatable from './Datatable.vue';
-import Header from '@/Components/Header.vue';
 import Settings from '../Index.vue'
 
 const props = defineProps({
     suppliers: Object
 })
 
-const items = ref([
-    { label: 'Settings', href: 'settings' },
-    { label: 'Suppliers', href: 'suppliers' },
-])
 </script>
 
 <template>

@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from "vue";
 import Datatable from './Datatable.vue';
 import Settings from '../Index.vue'
 
@@ -7,10 +6,6 @@ const props = defineProps({
     categories: Object
 })
 
-const items = ref([
-    { label: 'Settings', href: 'settings' },
-    { label: 'Category', href: 'categories' },
-])
 </script>
 
 <template>
