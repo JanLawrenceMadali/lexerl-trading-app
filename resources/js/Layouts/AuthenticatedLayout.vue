@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeftRight, Cog, FileSearch, LayoutDashboard, Printer } from 'lucide-vue-next'
+import { ArrowLeftRight, Box, Cog, FileSearch, LayoutDashboard, Logs, Printer } from 'lucide-vue-next'
 import MenuTab from '@/Components/MenuTab.vue'
 import SubmenuTab from '@/Components/SubmenuTab.vue'
 import ApplicationLogo from '@/Components/ApplicationLogo.vue'
@@ -16,15 +16,20 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue'
                     <span class="sr-only">Lexerl Trading App</span>
                     </Link>
                 </div>
-                <MenuTab label="Dashboard" :icon="LayoutDashboard" route="dashboard" />
-                <MenuTab label="Search" :icon="FileSearch" route="search" />
+                <MenuTab label="Dashboard" :icon="LayoutDashboard" route="dashboard"
+                    :custom-class="$page.component === 'Dashboard' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'" />
                 <SubmenuTab label="Transactions" :icon="ArrowLeftRight"
                     :menu-items="['Purchase In', 'Sales', 'Collectibles']"
-                    :menu-routes="['purchase-in', 'sales', 'collectibles']" />
-                <SubmenuTab label="Reports" :icon="Printer"
-                    :menu-items="['Current Inventory', 'Purchase In reports', 'Sales Report', 'System Logs']"
-                    :menu-routes="['inventory_logs', '#', 'sale_logs', 'activity_logs']" />
-                <MenuTab label="Settings" :icon="Cog" route="settings" />
+                    :menu-routes="['purchase-in', 'sales', 'collectibles']" :custome-class="$page.component === 'Transactions/PurchaseIn/Index'
+                        ? 'bg-slate-100 !text-slate-800' : $page.component === 'Transactions/Sales/Index'
+                            ? 'bg-slate-100 !text-slate-800' : $page.component === 'Transactions/Collectibles/Index'
+                                ? 'bg-slate-100 !text-slate-800' : 'text-muted-foreground'" />
+                <MenuTab label="Inventory" :icon="Box" route="current_inventory"
+                    :custom-class="$page.component === 'Reports/Inventory/Index' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'" />
+                <MenuTab label="Logs" :icon="Logs" route="activity_logs"
+                    :custom-class="$page.component === 'Reports/ActivityLogs/Index' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'" />
+                <MenuTab label="Settings" :icon="Cog" route="users"
+                    :custom-class="$page.component === 'Settings/Users/Index' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'" />
             </nav>
         </aside>
         <main class="flex flex-col sm:gap-4 sm:py-4 sm:pl-32">
