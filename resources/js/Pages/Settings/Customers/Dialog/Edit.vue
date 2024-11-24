@@ -31,17 +31,17 @@ const closeSheet = () => {
 };
 
 const submit = () => {
-    form.patch(route('supplier.update', data.value), {
+    form.patch(route('customer.update', data.value), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(route('settings.suppliers'))
+            form.get(route('customers'))
 
             Swal.fire({
                 title: "Success!",
-                text: "Supplier successfully updated!",
+                text: response.props.flash.message,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });
@@ -61,7 +61,7 @@ const submit = () => {
                 <Edit :size="18" class="text-green-500" />
             </Button>
         </DialogTrigger>
-        <DialogContent class="sm:max-w-[1200px]">
+        <DialogContent>
             <DialogHeader>
                 <DialogTitle>Create new supplier</DialogTitle>
                 <DialogDescription>
@@ -69,37 +69,35 @@ const submit = () => {
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
-                <div class="grid grid-cols-2 gap-4 py-4">
-                    <div class="grid items-center grid-cols-5 gap-4">
-                        <Label for="name" class="col-span-2 text-right">Name</Label>
-                        <Input v-model="form.name" id="name" type="text" class="col-span-3" />
-                        <InputError class="col-span-5 text-right" :message="form.errors.name" />
-                    </div>
-                    <div class="grid items-center grid-cols-5 gap-4">
-                        <Label for="contact_person" class="col-span-2 text-right">Contact Person</Label>
-                        <Input v-model="form.contact_person" id="contact_person" type="text" class="col-span-3" />
-                        <InputError class="col-span-5 text-right" :message="form.errors.contact_person" />
-                    </div>
-                    <div class="grid items-center grid-cols-5 gap-4">
-                        <Label for="email" class="col-span-2 text-right">Email</Label>
-                        <Input v-model="form.email" id="email" type="email" class="col-span-3" />
-                        <InputError class="col-span-5 text-right" :message="form.errors.email" />
-                    </div>
-                    <div class="grid items-center grid-cols-5 gap-4">
-                        <Label for="contact_number" class="col-span-2 text-right">Contact Number</Label>
-                        <Input v-model="form.contact_number" id="contact_number" type="text" class="col-span-3" />
-                        <InputError class="col-span-5 text-right" :message="form.errors.contact_number" />
-                    </div>
-                    <div class="grid items-center grid-cols-4 gap-4">
-                        <Label for="address1" class="text-right">Address1</Label>
-                        <Input v-model="form.address1" id="address1" type="text" class="col-span-3" />
-                        <InputError class="col-span-4 text-right" :message="form.errors.address1" />
-                    </div>
-                    <div class="grid items-center grid-cols-4 gap-4">
-                        <Label for="address2" class="text-right">Address2</Label>
-                        <Input v-model="form.address2" id="address2" type="text" class="col-span-3" />
-                        <InputError class="col-span-4 text-right" :message="form.errors.address2" />
-                    </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="name">Name</Label>
+                    <Input v-model="form.name" id="name" type="text" />
+                    <InputError :message="form.errors.name" />
+                </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="email">Email</Label>
+                    <Input v-model="form.email" id="email" type="email" />
+                    <InputError :message="form.errors.email" />
+                </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="contact_person">Contact Person</Label>
+                    <Input v-model="form.contact_person" id="contact_person" type="text" />
+                    <InputError :message="form.errors.contact_person" />
+                </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="contact_number">Contact Number</Label>
+                    <Input v-model="form.contact_number" id="contact_number" type="text" />
+                    <InputError :message="form.errors.contact_number" />
+                </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="address1">Address1</Label>
+                    <Input v-model="form.address1" id="address1" type="text" />
+                    <InputError :message="form.errors.address1" />
+                </div>
+                <div class="grid gap-2 my-4">
+                    <Label for="address2">Address2</Label>
+                    <Input v-model="form.address2" id="addres2s" type="text" />
+                    <InputError :message="form.errors.address2" />
                 </div>
                 <DialogFooter>
                     <Button variant="secondary" type="submit">

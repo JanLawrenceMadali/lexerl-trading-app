@@ -30,8 +30,11 @@ class CustomerController extends Controller
 
                 $this->logs('Customer Created');
             });
+
+            return redirect()->route('customers')->with('message', 'Customer created successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('customers')->with('message', 'Something went wrong');
         }
     }
 
@@ -45,8 +48,11 @@ class CustomerController extends Controller
 
                 $this->logs('Customer Updated');
             });
+
+            return redirect()->route('customers')->with('message', 'Customer updated successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('customers')->with('message', 'Something went wrong');
         }
     }
 
@@ -58,8 +64,11 @@ class CustomerController extends Controller
 
                 $this->logs('Customer Deleted');
             });
+
+            return redirect()->route('customers')->with('message', 'Customer deleted successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('customers')->with('message', 'Something went wrong');
         }
     }
 
