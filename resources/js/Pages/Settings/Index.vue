@@ -19,19 +19,19 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Users/Index' }">
                     Manage Users
                     </Link>
-                    <Link :href="route('settings.suppliers')"
+                    <Link :href="route('suppliers')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Suppliers/Index' }">
                     Manage Suppliers
                     </Link>
-                    <Link :href="route('settings.customers')"
+                    <Link :href="route('customers')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Customers/Index' }">
                     Manage Customers
                     </Link>
-                    <Link :href="route('settings.categories')"
+                    <Link :href="route('categories')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Category/Index' }">
                     Manage Categories
                     </Link>
-                    <Link :href="route('settings.subcategories')"
+                    <Link :href="route('subcategories')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Subcategory/Index' }">
                     Manage Subcategories
                     </Link>

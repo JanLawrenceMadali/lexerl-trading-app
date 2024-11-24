@@ -31,11 +31,11 @@ const handlePurchaseDeleted = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('supplier.destroy', id), {
-                onSuccess: () => {
-                    router.get(route('settings.suppliers'))
+                onSuccess: (response) => {
+                    router.get(route('suppliers'))
                     Swal.fire({
                         title: "Deleted!",
-                        text: "Supplier successfully removed!",
+                        text: response.props.flash.message,
                         iconHtml: '<img src="/assets/icons/Success.png">',
                         confirmButtonColor: "#1B1212",
                     });

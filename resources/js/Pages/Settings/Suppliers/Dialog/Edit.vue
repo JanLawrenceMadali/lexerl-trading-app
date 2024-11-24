@@ -34,14 +34,14 @@ const submit = () => {
     form.patch(route('supplier.update', data.value), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(route('settings.suppliers'))
+            form.get(route('suppliers'))
 
             Swal.fire({
                 title: "Success!",
-                text: "Supplier successfully updated!",
+                text: response.props.flash.message,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });

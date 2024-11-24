@@ -84,28 +84,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     // Supplier
     Route::prefix('suppliers')->group(function () {
-        Route::get('/', [SupplierController::class, 'index'])->name('settings.suppliers');
+        Route::get('/', [SupplierController::class, 'index'])->name('suppliers');
         Route::post('/store', [SupplierController::class, 'store'])->name('supplier.store');
         Route::patch('/update/{supplier}', [SupplierController::class, 'update'])->name('supplier.update');
         Route::delete('/destroy/{supplier}', [SupplierController::class, 'destroy'])->name('supplier.destroy');
     });
     // Customer
     Route::prefix('customers')->group(function () {
-        Route::get('/', [CustomerController::class, 'index'])->name('settings.customers');
+        Route::get('/', [CustomerController::class, 'index'])->name('customers');
         Route::post('/store', [CustomerController::class, 'store'])->name('customer.store');
         Route::patch('/update/{customer}', [CustomerController::class, 'update'])->name('customer.update');
         Route::delete('/destroy/{customer}', [CustomerController::class, 'destroy'])->name('customer.destroy');
     });
     // Category
     Route::prefix('categories')->group(function () {
-        Route::get('/', [CategoryController::class, 'index'])->name('settings.categories');
+        Route::get('/', [CategoryController::class, 'index'])->name('categories');
         Route::post('/store', [CategoryController::class, 'store'])->name('categories.store');
         // Route::patch('/update/{categories}', [SubcategoryController::class, 'update'])->name('categories.update');
         // Route::delete('/destroy/{categories}', [SubcategoryController::class, 'destroy'])->name('categories.destroy');
     });
     // Subcategory
     Route::prefix('subcategories')->group(function () {
-        Route::get('/', [SubCategoryController::class, 'index'])->name('settings.subcategories');
+        Route::get('/', [SubCategoryController::class, 'index'])->name('subcategories');
         Route::post('/store', [SubCategoryController::class, 'store'])->name('subcategory.store');
         // Route::patch('/update/{subcategory}', [SubcategoryController::class, 'update'])->name('subcategory.update');
         // Route::delete('/destroy/{subcategory}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');

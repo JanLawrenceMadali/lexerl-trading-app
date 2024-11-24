@@ -29,8 +29,11 @@ class SupplierController extends Controller
 
                 $this->logs('Supplier Created');
             });
+
+            return redirect()->route('suppliers')->with('message', 'Supplier created successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('suppliers')->with('message', 'Something went wrong');
         }
     }
 
@@ -44,8 +47,11 @@ class SupplierController extends Controller
 
                 $this->logs('Supplier Updated');
             });
+
+            return redirect()->route('suppliers')->with('message', 'Supplier updated successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('suppliers')->with('message', 'Something went wrong');
         }
     }
 
@@ -57,8 +63,11 @@ class SupplierController extends Controller
 
                 $this->logs('Supplier Deleted');
             });
+
+            return redirect()->route('suppliers')->with('message', 'Supplier deleted successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('suppliers')->with('message', 'Something went wrong');
         }
     }
 

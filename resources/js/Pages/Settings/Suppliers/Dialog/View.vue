@@ -1,8 +1,7 @@
 <script setup>
-import { SquareArrowOutUpRight } from 'lucide-vue-next'
+import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
-import { Separator } from '@/Components/ui/separator'
 import { ref } from 'vue';
 
 const props = defineProps({ suppliers: Object })
@@ -15,7 +14,7 @@ const data = ref(props.suppliers)
     <Dialog>
         <DialogTrigger as-child>
             <Button variant="ghost" size="xs" title="View">
-                <SquareArrowOutUpRight :size="18" />
+                <Eye :size="18" />
             </Button>
         </DialogTrigger>
         <DialogContent>
