@@ -89,7 +89,7 @@ const props = defineProps({
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                        <Link :href="route('settings.users')" class="w-full text-start">
+                        <Link :href="route('users')" class="w-full text-start">
                         Settings
                         </Link>
                     </DropdownMenuItem>
