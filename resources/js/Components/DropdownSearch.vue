@@ -1,104 +1,104 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, Transition } from 'vue';
-import { Input } from './ui/input';
-import { XIcon } from 'lucide-vue-next';
+import { ref, computed, watch, watchEffect } from 'vue';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Button } from './ui/button';
+import { Check, ChevronDown } from 'lucide-vue-next';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { cn } from '@/lib/utils';
 
 const props = defineProps({
     items: {
         type: Array,
-        required: true
+        required: true,
+        default: () => [],
     },
-    labelKey: {
-        type: String,
-        default: 'name'
-    },
-    valueKey: {
-        type: String,
-        default: 'id'
-    },
-    disabled: {
-        type: Boolean,
-        default: false
-    },
-    placeholder: {
-        type: String,
-        default: 'Search...'
-    },
-    hasError: {
-        type: String,
-        required: false
+    labelKey: { type: String, default: 'name' },
+    valueKey: { type: String, default: 'id' },
+    placeholder: { type: String, default: 'Select an item...' },
+    modelValue: { required: false, default: null },
+    hasError: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false },
+    class: { type: String, default: '' },
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+const localValue = ref(props.modelValue ?? null); // Ensure we default to null or a valid value
+
+watch(() => props.modelValue, (newVal) => {
+    localValue.value = newVal ?? null;
+});
+
+const open = ref(false);
+const searchText = ref('');
+
+// Function to handle the search input
+const handleSearch = (query) => {
+    searchText.value = query;
+};
+
+// Clear search text when popover is closed
+watch(open, (isOpen) => {
+    if (!isOpen) {
+        searchText.value = '';
     }
 });
 
-const emit = defineEmits(['update:modelValue', 'select']);
-
-const search = ref('');
-const showDropdown = ref(false);
-const isItemSelected = ref(false);
-
 const filteredItems = computed(() => {
+    if (!props.items || props.items.length === 0) return [];  // Return empty array if items is empty
+    if (!searchText.value) return props.items;
+    const lowercasedSearchText = searchText.value.toLowerCase();
     return props.items.filter(item =>
-        item[props.labelKey].toLowerCase().includes(search.value.toLowerCase())
+        item[props.labelKey]?.toLowerCase().includes(lowercasedSearchText)
     );
 });
 
-const selectItem = (item) => {
-    search.value = item[props.labelKey];
-    emit('update:modelValue', item[props.valueKey]);
-    emit('select', item);
-    showDropdown.value = false;
-    isItemSelected.value = true;
-};
-
-const clearSelection = () => {
-    search.value = '';
-    emit('update:modelValue', null);
-    isItemSelected.value = false;
-};
-
-const closeDropdown = (e) => {
-    if (!e.target.closest('.dropdown-search')) {
-        showDropdown.value = false;
-        if (!isItemSelected.value) {
-            clearSelection();
-        }
+const handleSelect = (value) => {
+    if (value !== undefined && value !== null) {
+        localValue.value = value;
+        emit('update:modelValue', value);
+        open.value = false;
     }
 };
 
-onMounted(() => {
-    document.addEventListener('click', closeDropdown);
+const selectedLabel = computed(() => {
+    // Safely access the selected item, and ensure it's not null
+    const selectedItem = props.items.find(
+        (item) => item[props.valueKey] === localValue.value
+    );
+    return selectedItem ? selectedItem[props.labelKey] : null;
 });
-
-onUnmounted(() => {
-    document.removeEventListener('click', closeDropdown);
-});
-
 </script>
 
 <template>
-    <div class="relative col-span-3 dropdown-search">
-        <div class="relative">
-            <Input type="text" v-model="search" @focus="showDropdown = true" :placeholder="placeholder"
-                :disabled="disabled" :class="{ 'border-red-600 focus-visible:ring-red-500': hasError }" />
-            <button v-if="isItemSelected" @click="clearSelection"
-                class="absolute transform -translate-y-1/2 right-3 top-1/2">
-                <XIcon class="text-red-600 size-4" />
-            </button>
-        </div>
-        <Transition enter-active-class="transition duration-150 ease-in" enter-from-class="transform scale-95 opacity-0"
-            enter-to-class="transform scale-100 opacity-100">
-            <div v-if="showDropdown"
-                class="absolute z-10 w-full p-2 mt-1 overflow-auto bg-white border rounded-md shadow-lg max-h-60">
-                <div v-if="filteredItems.length > 0">
-                    <div v-for="item in filteredItems" :key="item[valueKey]" @click="selectItem(item)"
-                        class="p-2 text-sm text-left rounded-md cursor-pointer hover:bg-slate-100">
-                        {{ item[labelKey] }}
-                    </div>
-                </div>
-                <div v-else class="p-2 text-sm text-center text-gray-500">
-                    No items found
-                </div>
-            </div>
-        </Transition>
-    </div>
+    <Popover v-model:open="open">
+        <PopoverTrigger as-child>
+            <Button variant="outline" role="combobox" :aria-expanded="open" :disabled="disabled"
+                :class="props.class">
+                {{ selectedLabel || props.placeholder }}
+                <ChevronDown class="w-4 h-4 ml-2 opacity-50 shrink-0" />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-[418px] p-0">
+            <Command>
+                <CommandInput type="search" placeholder="Search..." @input="handleSearch($event.target.value)" />
+                <slot />
+                <CommandEmpty v-if="filteredItems.length === 0" class="grid gap-4">
+                    No items found.
+                </CommandEmpty>
+                <CommandList>
+                    <CommandGroup>
+                        <CommandItem v-for="item in filteredItems" :key="item[props.valueKey]"
+                            :value="item[props.valueKey]" @select="() => handleSelect(item[props.valueKey])">
+                            {{ item[props.labelKey] }}
+                            <Check :class="cn(
+                                'ml-auto h-4 w-4',
+                                localValue === item[props.valueKey] ? 'opacity-100' : 'opacity-0'
+                            )" />
+                        </CommandItem>
+                    </CommandGroup>
+                </CommandList>
+            </Command>
+        </PopoverContent>
+    </Popover>
 </template>
