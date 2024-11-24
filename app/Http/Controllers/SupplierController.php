@@ -34,6 +34,34 @@ class SupplierController extends Controller
         }
     }
 
+    public function update(SupplierRequest $supplierRequest, Supplier $supplier)
+    {
+        $validated = $supplierRequest->validated();
+
+        try {
+            DB::transaction(function () use ($supplier, $validated) {
+                $supplier->update($validated);
+
+                $this->logs('Supplier Updated');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    public function destroy(Supplier $supplier)
+    {
+        try {
+            DB::transaction(function () use ($supplier) {
+                $supplier->delete();
+
+                $this->logs('Supplier Deleted');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
     private function logs(string $action)
     {
         ActivityLog::create([
