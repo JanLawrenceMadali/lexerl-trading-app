@@ -33,6 +33,5 @@ class DatabaseSeeder extends Seeder
             // SaleSeeder::class,
             // InventorySeeder::class,
         ]);
-        User::factory(30)->create();
     }
 }
