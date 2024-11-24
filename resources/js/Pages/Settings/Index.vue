@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
 </script>
 
 <template>
@@ -12,17 +13,32 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
                 </h1>
             </div>
             <div
-                class="mx-auto grid w-full max-w-full items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
+                class="mx-auto grid w-full max-w-full items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[200px_1fr]">
                 <nav class="grid gap-4 text-sm text-muted-foreground">
-                    <Link :href="route('settings.users')"
-                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Users/Index' }">Manage users
+                    <Link :href="route('users')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Users/Index' }">
+                    Manage Users
                     </Link>
                     <Link :href="route('settings.suppliers')"
-                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Suppliers/Index' }">Manage suppliers
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Suppliers/Index' }">
+                    Manage Suppliers
                     </Link>
-                    <a href="#">Support</a>
-                    <a href="#">Organizations</a>
-                    <a href="#">Advanced</a>
+                    <Link :href="route('settings.customers')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Customers/Index' }">
+                    Manage Customers
+                    </Link>
+                    <Link :href="route('settings.categories')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Category/Index' }">
+                    Manage Categories
+                    </Link>
+                    <Link :href="route('settings.subcategories')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Subcategory/Index' }">
+                    Manage Subcategories
+                    </Link>
+                    <Link :href="route('backup')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/BackupDatabases/Index' }">
+                    Manage Backup Database
+                    </Link>
                 </nav>
                 <div class="grid gap-6">
                     <slot />
