@@ -10,8 +10,9 @@ class UserController extends Controller
 {
     public function index()
     {
+        $users = User::with('roles')->latest()->get();
         return inertia('Settings/Users/Index', [
-            'users' => User::latest()->get()
+            'users' => $users
         ]);
     }
 }
