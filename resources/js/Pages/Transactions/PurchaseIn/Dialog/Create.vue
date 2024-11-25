@@ -12,7 +12,7 @@ import Label from '@/Components/ui/label/Label.vue'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import { Calendar } from '@/Components/ui/calendar'
 import InputError from '@/Components/InputError.vue'
-import CreateSubcategory from './CreateSubcategory.vue'
+import CreateSubcategory from '../../../Settings/Subcategory/Dialog/CreateSubcategory.vue'
 import Swal from 'sweetalert2';
 import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
 import DropdownSearch from '@/Components/DropdownSearch.vue'
