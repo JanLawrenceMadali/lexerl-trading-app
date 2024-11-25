@@ -4,15 +4,47 @@ import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import CreateSubcategory from './Dialog/CreateSubcategory.vue'
+import View from './Dialog/View.vue'
+import Edit from './Dialog/Edit.vue'
+import { router } from '@inertiajs/vue3'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
     subcategories: Object,
+    categories: Object
 })
 
 const data = ref(props.subcategories)
+
+const handleDeleted = (id) => {
+    Swal.fire({
+        title: '<h2 class="custom-title">Are you sure you want to delete this supplier?</h2>',
+        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        iconHtml: '<img src="/assets/icons/Warning.png">',
+        showCancelButton: true,
+        confirmButtonColor: "#C00F0C",
+        cancelButtonColor: "#1B1212",
+        confirmButtonText: "Yes, delete it",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('subcategory.destroy', id), {
+                onSuccess: (response) => {
+                    router.get(route('subcategories'))
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: response.props.flash.success,
+                        iconHtml: '<img src="/assets/icons/Success.png">',
+                        confirmButtonColor: "#1B1212",
+                    });
+                }
+            })
+        }
+    });
+}
 
 const TIME_UNITS = [
     { unit: 'year', seconds: 31536000 },
@@ -71,7 +103,33 @@ const columns = [
                 h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
             ]);
         },
-    }
+    },
+    {
+        id: 'actions',
+        enableHiding: false,
+        cell: ({ row }) => {
+            const subcategories = row.original;
+            const categories = props.categories
+
+            return h('div', { class: 'flex items-center gap-1' }, [
+                h(View, {
+                    subcategories: subcategories,
+                    categories: categories
+                }),
+                h(Edit, {
+                    subcategories: subcategories,
+                    categories: categories
+                }),
+                h(Button, {
+                    size: 'xs',
+                    variant: 'ghost',
+                    class: 'text-red-600 hover:text-red-800',
+                    title: 'Delete',
+                    onClick: () => handleDeleted(subcategories.id)
+                }, () => h(Trash2, { class: 'size-5' })),
+            ]);
+        },
+    },
 ]
 
 const sorting = ref([])
@@ -127,6 +185,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
+        <CreateSubcategory :categories="categories" />
     </div>
     <div class="border rounded-md">
         <Table>

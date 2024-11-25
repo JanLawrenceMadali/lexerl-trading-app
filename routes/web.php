@@ -107,8 +107,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('subcategories')->group(function () {
         Route::get('/', [SubCategoryController::class, 'index'])->name('subcategories');
         Route::post('/store', [SubCategoryController::class, 'store'])->name('subcategory.store');
-        // Route::patch('/update/{subcategory}', [SubcategoryController::class, 'update'])->name('subcategory.update');
-        // Route::delete('/destroy/{subcategory}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
+        Route::patch('/update/{subcategory}', [SubcategoryController::class, 'update'])->name('subcategory.update');
+        Route::delete('/destroy/{subcategory}', [SubcategoryController::class, 'destroy'])->name('subcategory.destroy');
     });
 
     // Backup

@@ -3,7 +3,8 @@ import Datatable from './Datatable.vue';
 import Settings from '../Index.vue'
 
 const props = defineProps({
-    subcategories: Object
+    subcategories: Object,
+    categories: Object
 })
 </script>
 
@@ -19,7 +20,7 @@ const props = defineProps({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Datatable :subcategories="subcategories" />
+                    <Datatable :subcategories="subcategories" :categories="categories" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>

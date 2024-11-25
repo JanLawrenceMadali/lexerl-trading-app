@@ -14,7 +14,7 @@ class SubCategoryController extends Controller
     public function index()
     {
         $categories = Category::latest()->get();
-        $subcategories = Subcategory::latest()->get();
+        $subcategories = Subcategory::with('categories')->latest()->get();
         return inertia('Settings/Subcategory/Index', [
             'subcategories' => $subcategories,
             'categories' => $categories,
@@ -31,6 +31,40 @@ class SubCategoryController extends Controller
 
                 $this->logs('Sub Category Created');
             });
+
+            return redirect()->route('subcategories')->with('success', 'Sub Category created successfully');
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    public function update(SubcategoryRequest $subcategoryRequest, Subcategory $subcategory)
+    {
+        $validated = $subcategoryRequest->validated();
+
+        try {
+            DB::transaction(function () use ($validated, $subcategory) {
+                $subcategory->update($validated);
+
+                $this->logs('Sub Category Updated');
+            });
+
+            return redirect()->route('subcategories')->with('success', 'Sub Category updated successfully');
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    public function destroy(Subcategory $subcategory)
+    {
+        try {
+            DB::transaction(function () use ($subcategory) {
+                $subcategory->delete();
+
+                $this->logs('Sub Category Deleted');
+            });
+
+            return redirect()->route('subcategories')->with('success', 'Sub Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
         }
