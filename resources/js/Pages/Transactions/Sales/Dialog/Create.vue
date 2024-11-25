@@ -249,7 +249,7 @@ const routing = 'sales';
                                         :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
                                         :has-error="form.errors.customer_id" placeholder="Select a customer"
                                         v-model="form.customer_id">
-                                        <Create :route="routing" />
+                                        <Create :routing="routing" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>

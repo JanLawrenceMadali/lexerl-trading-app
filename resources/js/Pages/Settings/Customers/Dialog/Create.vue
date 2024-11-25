@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    route: String,
+    routing: String,
 });
 
 const form = useForm({
@@ -36,8 +36,8 @@ const submit = () => {
         onSuccess: (response) => {
             form.reset();
             closeSheet();
-            if (props.route === 'sales') {
-                form.get(route('sales'))
+            if (props.routing) {
+                form.get(route(props.routing))
             } else {
                 form.get(route('customers'))
             }

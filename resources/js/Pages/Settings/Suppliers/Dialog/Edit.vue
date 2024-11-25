@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    suppliers: Object
+    suppliers: Object,
+    routing: String
 })
 
 const data = ref(props.suppliers)
@@ -37,7 +38,11 @@ const submit = () => {
         onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(route('suppliers'))
+            if (props.routing) {
+                form.get(route(props.routing))
+            } else {
+                form.get(route('suppliers'))
+            }
 
             Swal.fire({
                 title: "Success!",

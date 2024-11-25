@@ -12,15 +12,14 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    categories: Object
+    categories: Object,
+    routing: String
 })
 
 const form = useForm({
     name: null,
     category_id: null,
 })
-
-const page = usePage();
 
 const isOpen = ref(false);
 
@@ -35,7 +34,11 @@ const submit = () => {
         onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(`${page.url}`)
+            if (props.routing) {
+                form.get(route(props.routing));
+            } else {
+                form.get(route('subcategories'));
+            }
 
             Swal.fire({
                 title: "Success!",

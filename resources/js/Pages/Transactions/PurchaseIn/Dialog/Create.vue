@@ -220,7 +220,7 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
                                         :has-error="form.errors.supplier_id" placeholder="Select a supplier"
                                         v-model="form.supplier_id">
-                                        <Create :route="routing" />
+                                        <Create :routing="routing" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.supplier_id" />
                                 </div>
@@ -271,7 +271,7 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
                                         :has-error="form.errors.subcategory_id" :disabled="!form.category_id"
                                         placeholder="Select a sub category" v-model="form.subcategory_id">
-                                        <CreateSubcategory :categories="categories" />
+                                        <CreateSubcategory :categories="categories" :routing="routing" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.subcategory_id" />
                                 </div>

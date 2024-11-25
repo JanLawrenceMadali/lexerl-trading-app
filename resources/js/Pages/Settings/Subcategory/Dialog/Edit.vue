@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 const props = defineProps({
     subcategories: Object,
     categories: Object,
+    routing: String
 })
 
 const data = ref(props.subcategories)
@@ -35,7 +36,11 @@ const submit = () => {
         onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(route('subcategories'))
+            if (props.routing) {
+                form.get(route(props.routing));
+            } else {
+                form.get(route('subcategories'));
+            }
 
             Swal.fire({
                 title: "Success!",

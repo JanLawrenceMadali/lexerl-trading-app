@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 
 const props = defineProps({
     customers: Object,
+    routing: String
 })
 
 const data = ref(props.customers)
@@ -37,7 +38,11 @@ const submit = () => {
         onSuccess: (response) => {
             form.reset();
             closeSheet();
-            form.get(route('customers'))
+            if (props.routing) {
+                form.get(route(props.routing))
+            } else {
+                form.get(route('customers'))
+            }
 
             Swal.fire({
                 title: "Success!",
