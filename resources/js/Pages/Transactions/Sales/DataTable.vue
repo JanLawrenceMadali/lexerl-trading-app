@@ -102,17 +102,10 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sale Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original
-            const date = new Date(sale.sale_date)
-            const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-            }).format(date)
+            const { sale_date } = row.original
 
             return h('div', { class: 'px-2' }, [
-                h('div', {}, formattedDate),
-                h('div', { class: 'text-xs text-gray-500' })
+                h('div', sale_date)
             ]);
         },
     },

@@ -28,15 +28,6 @@ const sales = {
     })),
 }
 
-
-const date = new Date(sales.sale_date)
-
-const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-}).format(date)
-
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
         style: 'currency',
@@ -61,7 +52,7 @@ const formatCurrency = (value) => {
                     {{ data.transaction_type }} - {{ data.transaction_number }}
                 </DialogTitle>
                 <DialogDescription>
-                    Sale Date: {{ formattedDate }}
+                    Sale Date: {{ data.sale_date }}
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-4 px-6 py-4 overflow-y-auto text-sm">
@@ -108,10 +99,12 @@ const formatCurrency = (value) => {
                         </span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Selling Price</span> <span>{{ formatCurrency(product.selling_price) }}</span>
+                        <span class="text-muted-foreground">Selling Price</span> <span>{{
+                            formatCurrency(product.selling_price) }}</span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Amount</span> <span>{{ formatCurrency(product.amount) }}</span>
+                        <span class="text-muted-foreground">Amount</span> <span>{{ formatCurrency(product.amount)
+                            }}</span>
                     </li>
                 </ul>
 

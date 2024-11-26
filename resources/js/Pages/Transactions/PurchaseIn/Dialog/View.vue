@@ -8,13 +8,6 @@ const props = defineProps({ inventory: Object })
 
 const data = props.inventory
 
-const date = new Date(data.purchase_date)
-const formattedDate = new Intl.DateTimeFormat('en-PH', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-}).format(date)
-
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
         style: 'currency',
@@ -42,7 +35,7 @@ const landed_cost = formatCurrency(data.landed_cost);
                     {{ data.transaction_type }} - {{ data.transaction_number }}
                 </DialogTitle>
                 <DialogDescription>
-                    Purchase Date: {{ formattedDate }}
+                    Purchase Date: {{ data.purchase_date }}
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-3 text-sm">
