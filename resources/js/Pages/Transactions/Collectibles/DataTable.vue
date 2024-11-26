@@ -61,7 +61,7 @@ const columns = [
             const sale = row.original
             const date = new Date(sale.sale_date)
             const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                month: 'long',
+                month: 'short',
                 day: 'numeric',
                 year: 'numeric',
             }).format(date)

@@ -69,7 +69,7 @@ const removeProduct = (index) => {
 }
 
 const df = new Intl.DateTimeFormat('en-PH', {
-    month: 'numeric',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
 });

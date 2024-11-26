@@ -37,7 +37,7 @@ const timeAgo = (date) => {
 };
 
 const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
 }).format(value)
