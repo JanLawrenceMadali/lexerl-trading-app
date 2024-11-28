@@ -1,21 +1,52 @@
 <script setup>
 import { h, ref, computed, watch } from 'vue'
-import { valueUpdater } from '@/lib/utils'
+import { cn, valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, Search } from 'lucide-vue-next'
+import { ArrowUpDown, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, RefreshCcw, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { Checkbox } from '@/Components/ui/checkbox/index'
 import { useForm } from '@inertiajs/vue3'
 import Swal from 'sweetalert2';
+import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
+import { RangeCalendar } from '@/Components/ui/range-calendar';
+import { getLocalTimeZone } from '@internationalized/date'
 
 const props = defineProps({
     sales: Object,
 })
 
 const data = ref(props.sales)
+
+const df = new Intl.DateTimeFormat('en-PH', {
+    dateStyle: 'medium',
+});
+
+const range = ref({
+    start: null,
+    end: null,
+})
+
+const filteredData = computed(() => {
+    return data.value.filter(item => {
+        const sale_date = new Date(item.sale_date);
+
+        const isDateInRange =
+            (!range.value.start || sale_date >= range.value.start.toDate(getLocalTimeZone())) &&
+            (!range.value.end || sale_date <= range.value.end.toDate(getLocalTimeZone()));
+
+        return isDateInRange;
+    });
+});
+
+const resetDateRange = () => {
+    range.value = {
+        start: null,
+        end: null,
+    };
+};
 
 const formattedCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
@@ -48,8 +79,13 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction No.', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original;
-            return h('div', { class: 'px-2' }, `# ${sale.transaction_number}`);
+            const { transaction_type } = row.original;
+            const { transaction_number } = row.original;
+
+            return h('div', { class: 'px-2' }, [
+                h('div', transaction_type),
+                h('div', { class: 'text-sm text-gray-500' }, `# ${transaction_number}`)
+            ]);
         },
     },
     {
@@ -58,17 +94,10 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Sale Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original
-            const date = new Date(sale.sale_date)
-            const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            }).format(date)
+            const { sale_date } = row.original
 
             return h('div', { class: 'px-2' }, [
-                h('div', {}, formattedDate),
-                h('div', { class: 'text-xs text-gray-500' })
+                h('div', sale_date),
             ]);
         },
     },
@@ -91,9 +120,9 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Customer Name', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original;
-            const customer_name = sale.customer_name
-            const customer_email = sale.customer_email
+            const { customer_name } = row.original;
+            const { customer_email } = row.original;
+
             return h('div', { class: 'px-2' }, [
                 h('div', { class: 'font-medium' }, customer_name),
                 h('div', { class: 'text-slate-500' }, customer_email)
@@ -106,8 +135,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Total Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original;
-            const total_amount = sale.total_amount
+            const { total_amount } = row.original;
+
             return h('div', { class: 'px-2' }, formattedCurrency(total_amount));
         },
     },
@@ -117,8 +146,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Payment Method', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const sale = row.original;
-            const payment_method = sale.payment_method
+            const { payment_method } = row.original;
+
             return h('div', { class: 'px-2' }, payment_method);
         },
     }
@@ -129,7 +158,7 @@ const filter = ref('')
 const rowSelection = ref({})
 
 const table = useVueTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -150,12 +179,13 @@ const table = useVueTable({
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
-            'transaction_number',
             'sale_date',
+            'total_amount',
             'customer_name',
             'customer_email',
-            'total_amount',
             'payment_method',
+            'transaction_type',
+            'transaction_number',
         ];
 
         return searchableFields.some(field => {
@@ -207,13 +237,22 @@ const isExporting = ref(false)
 const exportData = () => {
     isExporting.value = true
 
-    // Directly navigate to the download route
-    window.location.href = route('collectibles.export');
+    const params = {
+        start_date: range.value.start
+            ? df.format(range.value.start.toDate(getLocalTimeZone()))
+            : null,
+        end_date: range.value.end
+            ? df.format(range.value.end.toDate(getLocalTimeZone()))
+            : null,
+    };
+    const queryString = new URLSearchParams(params).toString();
+    const exportUrl = `${route('collectibles.export')}?${queryString}`;
 
-    // Simulate finishing the export (optional, for UX only)
+    window.location.href = exportUrl;
+
     setTimeout(() => {
         isExporting.value = false;
-    }, 1000); // Adjust the time to match your expected download latency
+    }, 1000);
 }
 </script>
 
@@ -226,7 +265,33 @@ const exportData = () => {
             </span>
         </div>
         <div class="flex items-center gap-2">
-            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
+            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start" @click="resetDateRange">
+                <RefreshCcw class="h-3.5 w-3.5" />
+            </Button>
+            <Popover>
+                <PopoverTrigger as-child>
+                    <Button variant="outline"
+                        :class="cn('h-7 justify-start gap-2 text-left font-normal', !range && 'text-muted-foreground')">
+                        <CalendarRange class="w-4 h-4" />
+                        <template v-if="range.start">
+                            <template v-if="range.end">
+                                {{ df.format(range.start.toDate(getLocalTimeZone())) }} - {{
+                                    df.format(range.end.toDate(getLocalTimeZone())) }}
+                            </template>
+
+                            <template v-else>
+                                {{ df.format(range.start.toDate(getLocalTimeZone())) }}
+                            </template>
+                        </template>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                    <RangeCalendar v-model="range" initial-focus :number-of-months="1"
+                        @update:start-value="(startDate) => range.start = startDate" />
+                </PopoverContent>
+            </Popover>
+            <Button size="sm" variant="outline" class="gap-1 h-7"
+                :disabled="isExporting || data.length === 0 || range.start === null || range.end === null"
                 @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">

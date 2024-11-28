@@ -1,7 +1,6 @@
 <script setup>
-import { ArrowLeftRight, CircleUser, Cog, FileSearch, Home, LayoutDashboard, LineChart, Menu, Package, Package2, Printer, ShoppingCart, Users } from 'lucide-vue-next';
+import { ArrowLeftRight, CircleUser, Cog, FileSearch, LayoutDashboard, Menu, Printer } from 'lucide-vue-next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { Badge } from './ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import ApplicationLogo from './ApplicationLogo.vue';
 import { Link } from '@inertiajs/vue3';

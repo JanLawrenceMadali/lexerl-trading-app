@@ -1,12 +1,10 @@
 <script setup>
 import { Button } from '@/Components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
-import { DatabaseBackup, Download, RotateCcw, Trash } from 'lucide-vue-next';
+import { DatabaseBackup, Download, Trash } from 'lucide-vue-next';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Swal from 'sweetalert2';
-import { Label } from '@/Components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { Input } from '@/Components/ui/input';
 
 const props = defineProps({

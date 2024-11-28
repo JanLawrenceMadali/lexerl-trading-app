@@ -1,8 +1,7 @@
 <script setup>
 import { ref } from 'vue';
-import { Edit, Plus } from 'lucide-vue-next';
+import { Edit, Loader2 } from 'lucide-vue-next';
 import { useForm } from '@inertiajs/vue3'
-import { Loader2 } from 'lucide-vue-next';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Button } from '@/Components/ui/button';

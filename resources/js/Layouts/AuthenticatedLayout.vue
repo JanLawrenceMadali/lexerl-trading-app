@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowLeftRight, Box, Cog, FileSearch, LayoutDashboard, Logs, Printer } from 'lucide-vue-next'
+import { ArrowLeftRight, Box, Cog, LayoutDashboard, Logs } from 'lucide-vue-next'
 import MenuTab from '@/Components/MenuTab.vue'
 import SubmenuTab from '@/Components/SubmenuTab.vue'
 import ApplicationLogo from '@/Components/ApplicationLogo.vue'

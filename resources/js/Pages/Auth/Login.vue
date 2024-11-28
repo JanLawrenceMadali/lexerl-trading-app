@@ -6,8 +6,7 @@ import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
-import { LogIn } from 'lucide-vue-next';
-import { Loader2 } from 'lucide-vue-next';
+import { LogIn, Loader2 } from 'lucide-vue-next';
 
 defineProps({
     canResetPassword: {

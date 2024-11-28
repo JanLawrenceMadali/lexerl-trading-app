@@ -1,17 +1,20 @@
 <script setup>
-import { h, ref } from 'vue'
-import { valueUpdater } from '@/lib/utils'
+import { computed, h, ref } from 'vue'
+import { cn, valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
-import { router, usePage } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2, File } from 'lucide-vue-next'
-import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2, File, CalendarIcon, RefreshCcw, CalendarRange } from 'lucide-vue-next'
+import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
 import Edit from './Dialog/Edit.vue';
 import Swal from 'sweetalert2';
 import View from './Dialog/View.vue';
+import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
+import { RangeCalendar } from '@/Components/ui/range-calendar';
+import { getLocalTimeZone } from '@internationalized/date'
 
 const props = defineProps({
     units: Object,
@@ -23,6 +26,34 @@ const props = defineProps({
 })
 
 const data = ref(props.inventories)
+
+const df = new Intl.DateTimeFormat('en-PH', {
+    dateStyle: 'medium',
+});
+
+const range = ref({
+    start: null,
+    end: null,
+})
+
+const filteredData = computed(() => {
+    return data.value.filter(item => {
+        const purchaseDate = new Date(item.purchase_date);
+
+        const isDateInRange =
+            (!range.value.start || purchaseDate >= range.value.start.toDate(getLocalTimeZone())) &&
+            (!range.value.end || purchaseDate <= range.value.end.toDate(getLocalTimeZone()));
+
+        return isDateInRange;
+    });
+});
+
+const resetDateRange = () => {
+    range.value = {
+        start: null,
+        end: null,
+    };
+};
 
 const handlePurchaseDeleted = (id) => {
     Swal.fire({
@@ -37,7 +68,6 @@ const handlePurchaseDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('purchase-in.destroy', id), {
                 onSuccess: () => {
-                    data.value = data.value.filter(item => item.id !== id);
                     router.get(route('purchase-in'))
                     Swal.fire({
                         title: "Deleted!",
@@ -50,28 +80,6 @@ const handlePurchaseDeleted = (id) => {
         }
     });
 }
-
-const TIME_UNITS = [
-    { unit: 'year', seconds: 31536000 },
-    { unit: 'month', seconds: 2592000 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 }
-];
-
-const timeAgo = (date) => {
-    const secondsElapsed = Math.floor((new Date() - date) / 1000);
-
-    for (const { unit, seconds } of TIME_UNITS) {
-        const interval = Math.floor(secondsElapsed / seconds);
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-        }
-    }
-
-    return 'just now';
-};
 
 const formattedCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
@@ -89,9 +97,9 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original;
-            const transaction_type = inventory.transaction_type
-            const transaction_number = inventory.transaction_number
+            const { transaction_type } = row.original;
+            const { transaction_number } = row.original;
+
             return h('div', { class: 'px-2' }, [
                 h('div', transaction_type),
                 h('div', { class: 'text-sm text-gray-500' }, `# ${transaction_number}`)
@@ -104,16 +112,10 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Purchase Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original
-            const date = new Date(inventory.purchase_date)
-            const formattedDate = new Intl.DateTimeFormat('en-PH', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-            }).format(date)
+            const { purchase_date } = row.original
 
             return h('div', { class: 'px-2' }, [
-                h('div', formattedDate)
+                h('div', purchase_date)
             ]);
         },
     },
@@ -123,9 +125,9 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Supplier', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original;
-            const supplier_name = inventory.supplier_name
-            const supplier_email = inventory.supplier_email
+            const { supplier_name } = row.original;
+            const { supplier_email } = row.original;
+
             return h('div', { class: 'px-2' }, [
                 h('div', { class: 'font-medium' }, supplier_name),
                 h('div', { class: 'text-slate-500' }, supplier_email)
@@ -138,9 +140,9 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Category', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original;
-            const category_name = inventory.category_name
-            const subcategory_name = inventory.subcategory_name
+            const { category_name } = row.original;
+            const { subcategory_name } = row.original;
+
             return h('div', { class: 'px-2' }, [
                 h('div', { class: 'font-medium' }, category_name),
                 h('div', { class: 'text-slate-500' }, subcategory_name)
@@ -153,10 +155,10 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Quantity', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original
-            const quantity = inventory.quantity
-            const units = inventory.abbreviation
-            return h('div', { class: 'px-2' }, `${quantity} ${units}`)
+            const { quantity } = row.original
+            const { abbreviation } = row.original
+
+            return h('div', { class: 'px-2' }, `${quantity} ${abbreviation}`)
         },
     },
     {
@@ -165,8 +167,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Landed Cost', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original;
-            const landed_cost = inventory.landed_cost
+            const { landed_cost } = row.original;
+
             return h('div', { class: 'px-2' }, formattedCurrency(landed_cost));
         },
     },
@@ -176,8 +178,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Amount', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const inventory = row.original;
-            const amount = inventory.amount
+            const { amount } = row.original;
+
             return h('div', { class: 'px-2' }, formattedCurrency(amount));
         },
     },
@@ -187,7 +189,7 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Notes', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const description = row.getValue('description');
+            const { description } = row.original;
             return h('div', { title: description, class: 'px-2 truncate w-40' }, description)
         },
     },
@@ -204,7 +206,7 @@ const columns = [
 
             return h('div', { class: 'flex items-center gap-1' }, [
                 h(View, {
-                    inventory: inventory,
+                    inventory,
                 }),
                 h(Edit, {
                     units,
@@ -228,24 +230,15 @@ const columns = [
 
 const sorting = ref([])
 const filter = ref('')
-const columnFilters = ref([])
-const columnVisibility = ref({})
-const rowSelection = ref({})
-const expanded = ref({})
 
 const table = useVueTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
-    onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
-    onColumnVisibilityChange: updaterOrValue => valueUpdater(updaterOrValue, columnVisibility),
-    onRowSelectionChange: updaterOrValue => valueUpdater(updaterOrValue, rowSelection),
-    onExpandedChange: updaterOrValue => valueUpdater(updaterOrValue, expanded),
     initialState: {
         pagination: {
             pageSize: 5,
@@ -253,10 +246,6 @@ const table = useVueTable({
     },
     state: {
         get sorting() { return sorting.value },
-        get columnFilters() { return columnFilters.value },
-        get columnVisibility() { return columnVisibility.value },
-        get rowSelection() { return rowSelection.value },
-        get expanded() { return expanded.value },
         get globalFilter() { return filter.value }
     },
     globalFilterFn: (row, columnId, filterValue) => {
@@ -292,16 +281,27 @@ function getNestedValue(obj, path) {
 const isExporting = ref(false)
 
 const exportData = () => {
-    isExporting.value = true
 
-    // Directly navigate to the download route
-    window.location.href = route('purchase-in.export');
+    isExporting.value = true;
 
-    // Simulate finishing the export (optional, for UX only)
+    const params = {
+        start_date: range.value.start
+            ? df.format(range.value.start.toDate(getLocalTimeZone()))
+            : null,
+        end_date: range.value.end
+            ? df.format(range.value.end.toDate(getLocalTimeZone()))
+            : null,
+    };
+
+    const queryString = new URLSearchParams(params).toString();
+    const exportUrl = `${route('purchase-in.export')}?${queryString}`;
+
+    window.location.href = exportUrl;
+
     setTimeout(() => {
         isExporting.value = false;
-    }, 1000); // Adjust the time to match your expected download latency
-}
+    }, 1000);
+};
 </script>
 
 <template>
@@ -313,7 +313,33 @@ const exportData = () => {
             </span>
         </div>
         <div class="flex items-center gap-2">
-            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting" @click="exportData">
+            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start" @click="resetDateRange">
+                <RefreshCcw class="h-3.5 w-3.5" />
+            </Button>
+            <Popover>
+                <PopoverTrigger as-child>
+                    <Button variant="outline"
+                        :class="cn('h-7 justify-start gap-2 text-left font-normal', !range && 'text-muted-foreground')">
+                        <CalendarRange class="w-4 h-4" />
+                        <template v-if="range.start">
+                            <template v-if="range.end">
+                                {{ df.format(range.start.toDate(getLocalTimeZone())) }} - {{
+                                    df.format(range.end.toDate(getLocalTimeZone())) }}
+                            </template>
+
+                            <template v-else>
+                                {{ df.format(range.start.toDate(getLocalTimeZone())) }}
+                            </template>
+                        </template>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                    <RangeCalendar v-model="range" initial-focus :number-of-months="1"
+                        @update:start-value="(startDate) => range.start = startDate" />
+                </PopoverContent>
+            </Popover>
+            <Button size="sm" variant="outline" class="gap-1 h-7"
+                :disabled="isExporting || range.start === null || range.end === null" @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {{ isExporting ? 'Exporting...' : 'Export' }}
