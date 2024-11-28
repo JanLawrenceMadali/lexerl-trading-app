@@ -62,13 +62,21 @@ class CollectibleController extends Controller
         }
     }
 
-    public function export()
+    public function export(Request $request)
     {
         sleep(1);
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $export = new CollectiblesExport($startDate, $endDate);
+
         $date = now()->format('Ymd');
         $fileName = "collectibles_{$date}.xlsx";
+
         $this->logs('Collectibles Exported');
-        return Excel::download(new CollectiblesExport, $fileName);
+
+        return Excel::download($export, $fileName);
     }
 
     private function logs(string $action)

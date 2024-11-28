@@ -15,11 +15,24 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
+    protected $startDate;
+    protected $endDate;
+
+    public function __construct($startDate = null, $endDate = null)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+    }
+
     public function collection()
     {
-        $sales = Sale::has('products')->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')->get();
+        $sales = Sale::has('products')
+        ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
+        ->when($this->startDate && $this->endDate, function ($query) {
+            $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
+        })
+        ->get();
 
-        // Flatten sales data into rows for export
         $data = $sales->flatMap(function ($sale) {
             return $sale->products->map(function ($product) use ($sale) {
                 $units = Unit::all()->keyBy('id');
@@ -43,10 +56,8 @@ class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAut
             });
         });
 
-        // Calculate the total amount for all sales
         $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount']));
 
-        // Add the total row
         $data->push([
             'ID' => '',
             'Transaction Type' => '',
@@ -69,11 +80,8 @@ class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAut
 
     public function headings(): array
     {
-        // Get date range for the sales data
-        $sales = Sale::has('products')->get();
-
-        $fromDate = $sales->min('created_at')->format('M d, Y');
-        $toDate = $sales->max('created_at')->format('M d, Y');
+        $fromDate = $this->startDate ? $this->startDate : 'N/A';
+        $toDate = $this->endDate ? $this->endDate : 'N/A';
 
         return [
             ['Lexerl Trading - Sales'],

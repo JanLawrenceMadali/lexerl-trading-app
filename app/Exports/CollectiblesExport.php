@@ -4,7 +4,6 @@ namespace App\Exports;
 
 use App\Models\Sale;
 use App\Models\Unit;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -16,14 +15,25 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
+    protected $startDate;
+    protected $endDate;
+
+    public function __construct($startDate = null, $endDate = null)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+    }
+
     public function collection()
     {
         $sales = Sale::has('products')
-        ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
-        ->where('status_id', 2)
-        ->get();
+            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
+            ->where('status_id', 2)
+            ->when($this->startDate && $this->endDate, function ($query) {
+                $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
+            })
+            ->get();
 
-        // Flatten sales data into rows for export
         $data = $sales->flatMap(function ($sale) {
             return $sale->products->map(function ($product) use ($sale) {
                 $units = Unit::all()->keyBy('id');
@@ -47,10 +57,8 @@ class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, Sh
             });
         });
 
-        // Calculate total amount
         $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount']));
 
-        // Push total row
         $data->push([
             'ID'                => '',
             'Transaction Type'  => '',
@@ -73,13 +81,8 @@ class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, Sh
 
     public function headings(): array
     {
-        // Fetch sales for dynamic date range
-        $sales = Sale::has('products')
-        ->where('status_id', 2)
-        ->get();
-
-        $fromDate = $sales->isNotEmpty() ? $sales->min('created_at')->format('M d, Y') : 'N/A';
-        $toDate = $sales->isNotEmpty() ? $sales->max('created_at')->format('M d, Y') : 'N/A';
+        $fromDate = $this->startDate ? $this->startDate : 'N/A';
+        $toDate = $this->endDate ? $this->endDate : 'N/A';
 
         return [
             ['Lexerl Trading - Collectibles'],

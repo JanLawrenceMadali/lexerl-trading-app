@@ -12,6 +12,7 @@ use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
 use App\Models\Unit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -128,13 +129,21 @@ class InventoryController extends Controller
         }
     }
 
-    public function export()
+    public function export(Request $request)
     {
         sleep(1);
+
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $export = new PurchaseInExport($startDate, $endDate);
+
         $date = now()->format('Ymd');
-        $fileName = "purchase_in_{$date}.xlsx";
+        $fileName = "purchases_{$date}.xlsx";
+
         $this->logs('PurchaseIn Exported');
-        return Excel::download(new PurchaseInExport, $fileName);
+
+        return Excel::download($export, $fileName);
     }
 
     private function logs(string $action)

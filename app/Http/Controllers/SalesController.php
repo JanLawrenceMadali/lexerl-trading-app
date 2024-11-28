@@ -12,9 +12,9 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Subcategory;
-use App\Models\Supplier;
 use App\Models\Transaction;
 use App\Models\Unit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -294,13 +294,21 @@ class SalesController extends Controller
         }
     }
 
-    public function export()
+    public function export(Request $request)
     {
         sleep(1);
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $export = new SalesExport($startDate, $endDate);
+
         $date = now()->format('Ymd');
         $fileName = "sales_{$date}.xlsx";
+
         $this->logs('Sales Exported');
-        return Excel::download(new SalesExport, $fileName);
+
+        return Excel::download($export, $fileName);
     }
 
     private function logs(string $action)

@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Inventory;
+use App\Models\Purchases;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -14,10 +14,22 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
+    protected $startDate;
+    protected $endDate;
+
+    public function __construct($startDate = null, $endDate = null)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+    }
+
     public function collection()
     {
-        $data = Inventory::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
+        $data = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
             ->where('quantity', '>', 0)
+            ->when($this->startDate && $this->endDate, function ($query) {
+                $query->whereBetween('purchase_date', [$this->startDate, $this->endDate]);
+            })
             ->get()
             ->map(function ($inventory) {
                 return [
@@ -28,18 +40,16 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
                     'Category' => $inventory->categories->name ?? '',
                     'Subcategory' => $inventory->subcategories->name ?? '',
                     'Supplier Name' => $inventory->suppliers->name ?? '',
-                    'Quantity' => $inventory->quantity . ' ' . $inventory->units->abbreviation ?? '',
+                    'Quantity' => $inventory->quantity . ' ' . ($inventory->units->abbreviation ?? ''),
                     'Landed Cost' => '₱' . number_format($inventory->landed_cost, 2),
-                    'Amount' => '₱' . number_format($inventory->amount, 2), // Format the Amount
+                    'Amount' => '₱' . number_format($inventory->amount, 2),
                     'Description' => $inventory->description,
                     'Created At' => $inventory->created_at->format('M d, Y'),
                 ];
             });
 
-        // Calculate the total amount (unformatted for calculation, formatted for display)
         $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount'])); // Remove formatting for sum
 
-        // Add a total row
         $data->push([
             'ID' => '', // Empty cell
             'Transaction Type' => '',
@@ -60,13 +70,11 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function headings(): array
     {
-        // Calculate the earliest and latest dates BEFORE appending the total row
-        $data = Inventory::where('quantity', '>', 0)->get();
-        $fromDate = $data->min('created_at')->format('M d, Y'); // Earliest date
-        $toDate = $data->max('created_at')->format('M d, Y');   // Latest date
+        $fromDate = $this->startDate ? $this->startDate : 'N/A';
+        $toDate = $this->endDate ? $this->endDate : 'N/A';
 
         return [
-            ['Lexerl Trading - Purchase In'],
+            ['Lexerl Trading - Purchases'],
             ["From: {$fromDate}"],
             ["To: {$toDate}"],
             [
