@@ -85,7 +85,7 @@ const handleDateSelect = (date) => {
 
 const formatAndSetDate = (date) => {
     if (date) {
-        form.sales_date = df.format(new Date(date));
+        form.sale_date = df.format(new Date(date));
     }
 };
 
