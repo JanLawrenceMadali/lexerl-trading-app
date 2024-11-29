@@ -32,7 +32,7 @@ const closeSheet = () => {
 };
 
 const submit = () => {
-    form.post(route('users.store'), {
+    form.patch(route('users.update', users.value), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
@@ -42,7 +42,7 @@ const submit = () => {
 
             Swal.fire({
                 title: "Success!",
-                text: response.props.flash.message,
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });

@@ -22,7 +22,7 @@ const data = ref(props.users)
 
 const handleDeleted = (id) => {
     Swal.fire({
-        title: '<h2 class="custom-title">Are you sure you want to delete this supplier?</h2>',
+        title: '<h2 class="custom-title">Are you sure you want to delete this user?</h2>',
         html: '<p class="custom-text">Please note that this is irreversible</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
@@ -31,12 +31,12 @@ const handleDeleted = (id) => {
         confirmButtonText: "Yes, delete it",
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('user.destroy', id), {
+            router.delete(route('users.destroy', id), {
                 onSuccess: (response) => {
                     router.get(route('users'))
                     Swal.fire({
                         title: "Deleted!",
-                        text: response.props.flash.message,
+                        text: response.props.flash.success,
                         iconHtml: '<img src="/assets/icons/Success.png">',
                         confirmButtonColor: "#1B1212",
                     });
@@ -113,6 +113,23 @@ const columns = [
         cell: ({ row }) => {
             const { created_at } = row.original
             const date = new Date(created_at)
+
+            const timeAgoString = timeAgo(date);
+
+            return h('div', { class: 'px-2' }, [
+                h('div', formattedDate(date)),
+                h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
+            ]);
+        },
+    },
+    {
+        accessorKey: 'updated_at',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const { updated_at } = row.original
+            const date = new Date(updated_at)
 
             const timeAgoString = timeAgo(date);
 

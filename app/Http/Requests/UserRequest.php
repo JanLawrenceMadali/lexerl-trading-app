@@ -25,8 +25,8 @@ class UserRequest extends FormRequest
     {
         return [
             'username' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
-            'password' => ['required', 'confirmed'],
+            'email' => 'required|string|email|max:255|unique:users,email,' . $this->user?->id,
+            'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id'
         ];
     }

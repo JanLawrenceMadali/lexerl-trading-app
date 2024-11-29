@@ -39,7 +39,7 @@ const submit = () => {
 
             Swal.fire({
                 title: "Success!",
-                text: response.props.flash.message,
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });

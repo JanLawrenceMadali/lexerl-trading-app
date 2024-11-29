@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index()
     {
         $roles = Role::all();
-        $users = User::with('roles')->get();
+        $users = User::with('roles')->latest()->get();
         return inertia('Settings/Users/Index', [
             'users' => $users,
             'roles' => $roles
@@ -28,14 +28,19 @@ class UserController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                User::create($validated);
+                User::create([
+                    'username' => $validated['username'],
+                    'email' => $validated['email'],
+                    'password' => bcrypt($validated['password']),
+                    'role_id' => $validated['role_id']
+                ]);
 
-                $this->logs('User Created');
+                $this->logs('User ' . $validated['username'] . ' was created');
             });
-            return redirect()->route('users')->with('message', 'User created successfully');
+            return redirect()->route('users')->with('success', 'User created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('users')->with('message', 'Something went wrong');
+            return redirect()->route('users')->with('error', 'Something went wrong');
         }
     }
 
@@ -45,14 +50,19 @@ class UserController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $user) {
-                $user->update($validated);
+                $user->update([
+                    'username' => $validated['username'],
+                    'email' => $validated['email'],
+                    'password' => bcrypt($validated['password']),
+                    'role_id' => $validated['role_id']
+                ]);
 
-                $this->logs('User Updated');
+                $this->logs('User ' . $validated['username'] . ' was updated');
             });
-            return redirect()->route('users')->with('message', 'User updated successfully');
+            return redirect()->route('users')->with('success', 'User updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('users')->with('message', 'Something went wrong');
+            return redirect()->route('users')->with('error', 'Something went wrong');
         }
     }
 
@@ -62,12 +72,12 @@ class UserController extends Controller
             DB::transaction(function () use ($user) {
                 $user->delete();
 
-                $this->logs('User Deleted');
+                $this->logs('User ' . $user->username . ' was deleted');
             });
-            return redirect()->route('users')->with('message', 'User deleted successfully');
+            return redirect()->route('users')->with('success', 'User deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('users')->with('message', 'Something went wrong');
+            return redirect()->route('users')->with('error', 'Something went wrong');
         }
     }
 
