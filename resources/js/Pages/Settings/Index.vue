@@ -19,6 +19,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Users/Index' }">
                     Manage Users
                     </Link>
+                    <Link :href="route('units')"
+                        :class="{ 'font-semibold text-primary': $page.component === 'Settings/Units/Index' }">
+                    Manage Units
+                    </Link>
                     <Link :href="route('suppliers')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Suppliers/Index' }">
                     Manage Suppliers
