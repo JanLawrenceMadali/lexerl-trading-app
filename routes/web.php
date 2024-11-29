@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\UnitController;
 use App\Models\ActivityLog;
 use App\Models\Inventory;
 use App\Models\Sale;
@@ -79,8 +80,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users');
         Route::post('/store', [UserController::class, 'store'])->name('users.store');
-        Route::patch('/update/{user}', [UserController::class, 'update'])->name('user.update');
-        Route::delete('/destroy/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+        Route::patch('/update/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/destroy/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+    // Units
+    Route::prefix('units')->group(function () {
+        Route::get('/', [UnitController::class, 'index'])->name('units');
+        Route::post('/store', [UnitController::class, 'store'])->name('units.store');
+        Route::patch('/update/{unit}', [UnitController::class, 'update'])->name('units.update');
+        Route::delete('/destroy/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
     });
     // Supplier
     Route::prefix('suppliers')->group(function () {
