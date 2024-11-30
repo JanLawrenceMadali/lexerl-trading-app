@@ -29,7 +29,7 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($validated) {
                 Subcategory::create($validated);
 
-                $this->logs('Sub Category ' . $validated['name'] . ' was created');
+                $this->logs('created', $validated['name']);
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category created successfully');
@@ -47,7 +47,7 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($validated, $subcategory) {
                 $subcategory->update($validated);
 
-                $this->logs('Sub Category ' . $validated['name'] . ' was updated');
+                $this->logs('updated', $subcategory->name);
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category updated successfully');
@@ -63,7 +63,7 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($subcategory) {
                 $subcategory->delete();
 
-                $this->logs('Sub Category ' . $subcategory->name . ' was deleted');
+                $this->logs('deleted', $subcategory->name);
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category deleted successfully');
@@ -73,12 +73,12 @@ class SubCategoryController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a sub category ' . $description
         ]);
     }
 }

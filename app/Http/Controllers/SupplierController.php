@@ -27,7 +27,7 @@ class SupplierController extends Controller
             DB::transaction(function () use ($validated) {
                 Supplier::create($validated);
 
-                $this->logs('Supplier '. $validated['name']. ' was created');
+                $this->logs('created', $validated['name']);
             });
 
             return redirect()->route('suppliers')->with('success', 'Supplier created successfully');
@@ -45,7 +45,7 @@ class SupplierController extends Controller
             DB::transaction(function () use ($supplier, $validated) {
                 $supplier->update($validated);
 
-                $this->logs('Supplier '. $supplier->name. ' was updated');
+                $this->logs('updated', $supplier->name);
             });
 
             return redirect()->route('suppliers')->with('success', 'Supplier updated successfully');
@@ -61,7 +61,7 @@ class SupplierController extends Controller
             DB::transaction(function () use ($supplier) {
                 $supplier->delete();
 
-                $this->logs('Supplier '. $supplier->name. ' was deleted');
+                $this->logs('deleted', $supplier->name);
             });
 
             return redirect()->route('suppliers')->with('success', 'Supplier deleted successfully');
@@ -71,12 +71,12 @@ class SupplierController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a supplier ' . $description
         ]);
     }
 }

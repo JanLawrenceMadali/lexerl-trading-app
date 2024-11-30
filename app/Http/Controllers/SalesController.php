@@ -15,6 +15,7 @@ use App\Models\Subcategory;
 use App\Models\Transaction;
 use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -117,7 +118,6 @@ class SalesController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                // Create the sale record
                 $sale = Sale::create([
                     'sale_date' => $validated['sale_date'],
                     'status_id' => $validated['status_id'],
@@ -133,20 +133,17 @@ class SalesController extends Controller
                 $productAttachments = [];
 
                 foreach ($validated['products'] as $index => $product) {
-                    // Combine queries to reduce database calls
                     $totalQuantity = Inventory::where([
                         'category_id' => $product['category_id'],
                         'subcategory_id' => $product['subcategory_id'],
                         'unit_id' => $product['unit_id']
                     ])->sum('quantity');
 
-                    // Check if inventory exists and has sufficient quantity
                     if ($totalQuantity < $product['quantity']) {
                         $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$totalQuantity} available.";
                         continue;
                     }
 
-                    // Update inventory quantities
                     $remainingQuantityToDeduct = $product['quantity'];
                     $inventories = Inventory::where([
                         'category_id' => $product['category_id'],
@@ -154,7 +151,7 @@ class SalesController extends Controller
                         'unit_id' => $product['unit_id']
                     ])
                         ->where('quantity', '>', 0)
-                        ->orderBy('created_at', 'asc')  // FIFO approach
+                        ->orderBy('created_at', 'asc')
                         ->get();
 
                     foreach ($inventories as $inventory) {
@@ -167,7 +164,6 @@ class SalesController extends Controller
                         $remainingQuantityToDeduct -= $deductAmount;
                     }
 
-                    // Get product ID using single query with select
                     $product_id = Product::where([
                         'category_id' => $product['category_id'],
                         'subcategory_id' => $product['subcategory_id']
@@ -175,7 +171,6 @@ class SalesController extends Controller
                         ->select('id')
                         ->value('id');
 
-                    // Prepare product attachment data
                     $productAttachments[$product_id] = [
                         'amount' => $product['amount'],
                         'unit_id' => $product['unit_id'],
@@ -188,11 +183,9 @@ class SalesController extends Controller
                     throw ValidationException::withMessages($validationErrors);
                 }
 
-                // Attach products to the sale
                 $sale->products()->attach($productAttachments);
 
-                // Log the activity
-                $this->logs('Sale Created');
+                $this->logs('created', $validated['transaction_number']);
             });
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -209,7 +202,6 @@ class SalesController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $sale) {
-                // Update sale details
                 $sale->update([
                     'sale_date' => $validated['sale_date'],
                     'status_id' => $validated['status_id'],
@@ -252,10 +244,8 @@ class SalesController extends Controller
                         continue;
                     }
 
-                    // Update inventory for this product
                     $inventory->increment('quantity', $quantityDifference);
 
-                    // Prepare data for syncing sale products
                     $productAttachments[$product_id] = [
                         'amount' => $product['amount'],
                         'unit_id' => $product['unit_id'],
@@ -268,10 +258,9 @@ class SalesController extends Controller
                     throw ValidationException::withMessages($validationErrors);
                 }
 
-                // Sync all products with the sale
                 $sale->products()->sync($productAttachments);
 
-                $this->logs('Sale Updated');
+                $this->logs('updated', $sale->transaction_number);
             });
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -287,7 +276,7 @@ class SalesController extends Controller
             DB::transaction(function () use ($sale) {
                 $sale->delete();
 
-                $this->logs('Sale Deleted');
+                $this->logs('deleted', $sale->transaction_numer);
             });
         } catch (\Throwable $e) {
             report($e);
@@ -304,19 +293,19 @@ class SalesController extends Controller
         $export = new SalesExport($startDate, $endDate);
 
         $date = now()->format('Ymd');
-        $fileName = "sales_{$date}.xlsx";
+        $fileName = "sales_report_{$date}.xlsx";
 
-        $this->logs('Sales Exported');
+        $this->logs('exported', $fileName);
 
         return Excel::download($export, $fileName);
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
-            'user_id' => auth()->user()->id,
+            'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . auth()->user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a sale ' . $description
         ]);
     }
 }

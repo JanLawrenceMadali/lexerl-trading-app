@@ -52,10 +52,13 @@ class CollectibleController extends Controller
 
         try {
             DB::transaction(function () use ($validatedData) {
-                Sale::whereIn('id', array_column($validatedData['selectedIds'], 'id'))
-                    ->update(['status_id' => 1, 'due_date_id' => null]);
+                foreach ($validatedData['selectedIds'] as $selectedId) {
+                    $sale = Sale::find($selectedId['id']);
+                    $sale->status_id = 1;
+                    $sale->save();
 
-                $this->logs('Sales have been marked as paid');
+                    $this->logs('updated', $sale->transaction_number);
+                }
             });
         } catch (\Exception $e) {
             report($e);
@@ -74,17 +77,17 @@ class CollectibleController extends Controller
         $date = now()->format('Ymd');
         $fileName = "collectibles_{$date}.xlsx";
 
-        $this->logs('Collectibles Exported');
+        $this->logs('exported', $fileName);
 
         return Excel::download($export, $fileName);
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a collectibles ' . $description
         ]);
     }
 }

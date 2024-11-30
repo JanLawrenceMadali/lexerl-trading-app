@@ -27,7 +27,7 @@ class UnitController extends Controller
             DB::transaction(function () use ($validated) {
                 Unit::create($validated);
 
-                $this->logs('Unit ' . $validated['name'] . ' was created');
+                $this->logs('created', $validated['name']);
             });
 
             return redirect()->route('units')->with('success', 'Unit created successfully');
@@ -45,7 +45,7 @@ class UnitController extends Controller
             DB::transaction(function () use ($validated, $unit) {
                 $unit->update($validated);
 
-                $this->logs('Unit ' . $validated['name'] . ' was updated');
+                $this->logs('updated', $unit->name);
             });
 
             return redirect()->route('units')->with('success', 'Unit updated successfully');
@@ -61,7 +61,7 @@ class UnitController extends Controller
             DB::transaction(function () use ($unit) {
                 $unit->delete();
 
-                $this->logs('Unit ' . $unit->name . ' was deleted');
+                $this->logs('deleted', $unit->name);
             });
 
             return redirect()->route('units')->with('success', 'Unit deleted successfully');
@@ -71,12 +71,12 @@ class UnitController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a unit ' . $description
         ]);
     }
 }

@@ -93,7 +93,7 @@ class InventoryController extends Controller
                 Inventory::create($data);
                 Purchases::create($data);
 
-                $this->logs('Purchase Created');
+                $this->logs('created', $validated['transaction_number']);
             });
         } catch (\Exception $e) {
             report($e);
@@ -108,7 +108,8 @@ class InventoryController extends Controller
             DB::transaction(function () use ($validated, $inventory) {
                 $inventory->update($validated);
                 Purchases::where('id', $inventory->id)->update($validated);
-                $this->logs('Purchase Updated');
+
+                $this->logs('updated', $validated['transaction_number']);
             });
         } catch (\Exception $e) {
             report($e);
@@ -122,7 +123,7 @@ class InventoryController extends Controller
                 $inventory->delete();
                 Purchases::where('id', $inventory->id)->delete();
 
-                $this->logs('Purchase Deleted');
+                $this->logs('deleted', $inventory->transaction_number);
             });
         } catch (\Exception $e) {
             report($e);
@@ -139,19 +140,19 @@ class InventoryController extends Controller
         $export = new PurchaseInExport($startDate, $endDate);
 
         $date = now()->format('Ymd');
-        $fileName = "purchases_{$date}.xlsx";
+        $fileName = "purchase_in_report_{$date}.xlsx";
 
-        $this->logs('PurchaseIn Exported');
+        $this->logs('exported', $fileName);
 
         return Excel::download($export, $fileName);
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a purchase ' . $description
         ]);
     }
 }

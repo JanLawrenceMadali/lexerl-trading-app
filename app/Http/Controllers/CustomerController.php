@@ -28,7 +28,7 @@ class CustomerController extends Controller
             DB::transaction(function () use ($validated) {
                 Customer::create($validated);
 
-                $this->logs('Customer ' . $validated['name'] . ' was created');
+                $this->logs('created', $validated['name']);
             });
 
             return redirect()->route('customers')->with('success', 'Customer created successfully');
@@ -46,7 +46,7 @@ class CustomerController extends Controller
             DB::transaction(function () use ($validated, $customer) {
                 $customer->update($validated);
 
-                $this->logs('Customer ' . $validated['name'] . ' was updated');
+                $this->logs('updated', $customer->name);
             });
 
             return redirect()->route('customers')->with('success', 'Customer updated successfully');
@@ -62,7 +62,7 @@ class CustomerController extends Controller
             DB::transaction(function () use ($customer) {
                 $customer->delete();
 
-                $this->logs('Customer ' . $customer->name . ' was deleted');
+                $this->logs('deleted', $customer->name);
             });
 
             return redirect()->route('customers')->with('success', 'Customer deleted successfully');
@@ -72,12 +72,12 @@ class CustomerController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a customer ' . $description
         ]);
     }
 }

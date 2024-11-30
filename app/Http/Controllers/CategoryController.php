@@ -26,7 +26,7 @@ class CategoryController extends Controller
             DB::transaction(function () use ($validated) {
                 Category::create($validated);
 
-                $this->logs('Category ' . $validated['name'] . ' was created');
+                $this->logs('created', $validated['name']);
             });
             return redirect()->route('categories')->with('success', 'Category created successfully');
         } catch (\Throwable $e) {
@@ -43,7 +43,7 @@ class CategoryController extends Controller
             DB::transaction(function () use ($validated, $category) {
                 $category->update($validated);
 
-                $this->logs('Category ' . $validated['name'] . ' was updated');
+                $this->logs('updated', $category->name);
             });
             return redirect()->route('categories')->with('success', 'Category updated successfully');
         } catch (\Throwable $e) {
@@ -58,7 +58,7 @@ class CategoryController extends Controller
             DB::transaction(function () use ($category) {
                 $category->delete();
 
-                $this->logs('Category ' . $category->name . ' was deleted');
+                $this->logs('deleted', $category->name);
             });
             return redirect()->route('categories')->with('success', 'Category deleted successfully');
         } catch (\Throwable $e) {
@@ -67,12 +67,12 @@ class CategoryController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a category ' . $description
         ]);
     }
 }

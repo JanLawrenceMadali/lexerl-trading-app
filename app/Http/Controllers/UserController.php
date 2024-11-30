@@ -35,7 +35,7 @@ class UserController extends Controller
                     'role_id' => $validated['role_id']
                 ]);
 
-                $this->logs('User ' . $validated['username'] . ' was created');
+                $this->logs('created', $validated['username']);
             });
             return redirect()->route('users')->with('success', 'User created successfully');
         } catch (\Throwable $e) {
@@ -57,7 +57,7 @@ class UserController extends Controller
                     'role_id' => $validated['role_id']
                 ]);
 
-                $this->logs('User ' . $validated['username'] . ' was updated');
+                $this->logs('updated', $user->username);
             });
             return redirect()->route('users')->with('success', 'User updated successfully');
         } catch (\Throwable $e) {
@@ -72,7 +72,7 @@ class UserController extends Controller
             DB::transaction(function () use ($user) {
                 $user->delete();
 
-                $this->logs('User ' . $user->username . ' was deleted');
+                $this->logs('deleted', $user->username);
             });
             return redirect()->route('users')->with('success', 'User deleted successfully');
         } catch (\Throwable $e) {
@@ -81,12 +81,12 @@ class UserController extends Controller
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a user ' . $description
         ]);
     }
 }
