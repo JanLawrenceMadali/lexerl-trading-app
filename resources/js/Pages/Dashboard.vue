@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { ScrollArea } from '@/Components/ui/scroll-area'
-import { PhilippinePeso, SquareArrowOutUpRight } from 'lucide-vue-next'
+import { ArrowRightFromLine, CirclePlus, Delete, Download, PhilippinePeso, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import Header from '@/Components/Header.vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
@@ -27,6 +27,15 @@ const formatCurrency = (value) => {
         maximumFractionDigits: 2
     }).format(value);
 };
+
+const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+}).format(value)
 
 </script>
 
@@ -112,19 +121,42 @@ const formatCurrency = (value) => {
                             </Link>
                         </CardTitle>
                     </CardHeader>
-                    <ScrollArea class="h-[450px]">
+                    <ScrollArea class="h-[450px] mr-2">
                         <CardContent class="grid gap-6">
-                            <div v-for="log in activity_logs" :key="log" class="flex items-center justify-between">
-                                <div class="grid gap-1">
-                                    <p class="text-sm font-medium leading-none">
-                                        {{ log.users.username }}
-                                    </p>
-                                    <p class="text-sm text-muted-foreground">
-                                        {{ log.users.email }}
-                                    </p>
-                                </div>
-                                <div class="w-1/2 text-sm font-medium">
-                                    {{ log.description }}
+                            <div v-for="log in activity_logs" :key="log"
+                                :class="['flex items-center justify-between p-2 rounded-lg']">
+                                <div class="flex items-center gap-4">
+                                    <span v-if="log.action === 'created'">
+                                        <CirclePlus class="text-emerald-500 size-6" />
+                                        <!-- Bright green for new items -->
+                                    </span>
+                                    <span v-else-if="log.action === 'updated'">
+                                        <RefreshCcw class="text-amber-500 size-6" />
+                                    </span>
+                                    <span v-else-if="log.action === 'deleted'">
+                                        <Delete class="text-rose-600 size-6" />
+                                    </span>
+                                    <span v-else-if="log.action === 'exported'">
+                                        <ArrowRightFromLine class="text-blue-500 size-6" />
+                                    </span>
+                                    <span v-else-if="log.action === 'manual'">
+                                        <Wrench class="text-purple-500 size-6" />
+                                    </span>
+                                    <span v-else-if="log.action === 'download'">
+                                        <Download class="text-cyan-500 size-6" />
+                                    </span>
+                                    <span v-else-if="log.action === 'restore'">
+                                        <Redo class="text-indigo-500 size-6" />
+                                    </span>
+
+                                    <div class="grid gap-1">
+                                        <p class="text-sm font-medium leading-none">
+                                            {{ log.description }}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ formattedDate(new Date(log.created_at)) }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                             <div v-if="activity_logs.length === 0" class="flex items-center justify-center">
