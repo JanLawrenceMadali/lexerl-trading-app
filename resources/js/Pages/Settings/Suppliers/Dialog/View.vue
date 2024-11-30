@@ -35,20 +35,20 @@ const data = ref(props.suppliers)
                         <span class="text-muted-foreground">Email</span> <span>{{ data.email }}</span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Address 1</span> <span class="w-1/2 text-right">{{
-                            data.address1 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Address 2</span> <span class="w-1/2 text-right">{{
-                            data.address2 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
                         <span class="text-muted-foreground ">Contact Person</span> <span>{{
                             data.contact_person }}</span>
                     </li>
                     <li class="flex items-center justify-between">
                         <span class="text-muted-foreground ">Contact Number</span> <span>{{
                             data.contact_number }}</span>
+                    </li>
+                    <li class="flex items-center justify-between">
+                        <span class="text-muted-foreground ">Address 1</span> <span class="w-1/2 text-right">{{
+                            data.address1 }}</span>
+                    </li>
+                    <li class="flex items-center justify-between">
+                        <span class="text-muted-foreground ">Address 2</span> <span class="w-1/2 text-right">{{
+                            data.address2 }}</span>
                     </li>
                 </ul>
             </div>
