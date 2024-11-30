@@ -6,7 +6,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 class BackupController extends Controller
@@ -33,6 +33,7 @@ class BackupController extends Controller
     public function manualBackup()
     {
         sleep(1);
+
         $databasePath = database_path('database.sqlite');
         $backupDirectory = storage_path('app/backups');
         $backupFileName = now()->format('Y-m-d_H-i-s') . '_database.sqlite';
@@ -40,16 +41,21 @@ class BackupController extends Controller
 
         try {
             // Ensure the backup directory exists
-            if (!file_exists($backupDirectory)) {
-                mkdir($backupDirectory, 0755, true);
-            }
+            Storage::makeDirectory('backups');
 
             // Copy the database file to the backup location
+            if (!file_exists($databasePath)) {
+                return redirect()->back()->with('error', 'Database file does not exist.');
+            }
+
             copy($databasePath, $backupPath);
 
-            $this->logs('Manual Backup Database');
+            $this->logs('manual', $backupFileName);
+
+            return redirect()->back()->with('success', 'Database backup created successfully.');
         } catch (\Exception $e) {
             report($e);
+            return redirect()->back()->with('error', 'Failed to create a backup: ' . $e->getMessage());
         }
     }
 
@@ -59,7 +65,7 @@ class BackupController extends Controller
         $backupPath = storage_path('app/backups/' . $filename);
 
         if (!file_exists($backupPath)) {
-            abort(404, 'File not found.');
+            return redirect()->back()->with('error', 'Backup file not found.');
         }
 
         // Create a ZIP file
@@ -67,14 +73,15 @@ class BackupController extends Controller
         $zipPath = storage_path('app/backups/' . $zipFileName);
 
         $zip = new ZipArchive;
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-            $zip->addFile($backupPath, basename($backupPath));
-            $zip->close();
-        } else {
-            abort(500, 'Could not create ZIP file.');
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+            return redirect()->back()->with('error', 'Failed to create ZIP file. Check permissions.');
         }
 
-        $this->logs('Download Backup Database');
+        $zip->addFile($backupPath, basename($backupPath));
+        $zip->close();
+
+        $this->logs('download', $zipFileName);
+
         // Return the ZIP file for download
         return response()->download($zipPath)->deleteFileAfterSend(true);
     }
@@ -99,7 +106,7 @@ class BackupController extends Controller
             File::delete($file);
         }
 
-        $this->logs('Clean All Backup Database');
+        $this->logs('deleted');
 
         return redirect()->back()->with('success', 'All backups successfully deleted.');
     }
@@ -107,16 +114,20 @@ class BackupController extends Controller
     public function restore(Request $request)
     {
         $request->validate([
-            'backup_file' => 'required|file|max:10240', // 10MB max size
+            'backup_file' => 'required|file|max:' . env('UPLOAD_MAX_SIZE', 10240), // 10MB max size (configurable)
         ]);
 
         $uploadedFile = $request->file('backup_file');
         $databasePath = database_path('database.sqlite');
 
+        // Declare the variable outside the try block
+        $backupCurrentDatabase = null;
+
         try {
             // Backup the current database (optional)
             $timestamp = now()->format('Y_m_d_His');
             $backupCurrentDatabase = storage_path("app/backups/backup_$timestamp.sqlite");
+
             if (file_exists($databasePath)) {
                 File::copy($databasePath, $backupCurrentDatabase);
             }
@@ -124,19 +135,24 @@ class BackupController extends Controller
             // Move the uploaded file and replace the current database
             $uploadedFile->move(database_path(), 'database.sqlite');
 
-            $this->logs('Restore Backup Database');
+            $this->logs('restore', $uploadedFile->getClientOriginalName());
+
             return redirect()->back()->with('success', 'Database successfully restored from the uploaded backup.');
         } catch (\Exception $e) {
+            // Rollback to previous database in case of failure
+            if ($backupCurrentDatabase && file_exists($backupCurrentDatabase)) {
+                File::copy($backupCurrentDatabase, $databasePath);
+            }
             return redirect()->back()->with('error', 'Failed to restore database: ' . $e->getMessage());
         }
     }
 
-    private function logs(string $action)
+    private function logs(string $action, string $description = null)
     {
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => $action,
-            'description' => $action . ' by ' . Auth::user()->username,
+            'description' => Auth::user()->username . ' ' . $action . ' a backup ' . $description
         ]);
     }
 }
