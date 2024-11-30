@@ -61,9 +61,9 @@ const submit = () => {
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Create new category</DialogTitle>
+                <DialogTitle>Add new category</DialogTitle>
                 <DialogDescription>
-                    Enter the category details. Click save when you're done.
+                    Fill in the form below to add a new category. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">

@@ -62,9 +62,9 @@ const submit = () => {
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Create new user</DialogTitle>
+                <DialogTitle>Add new user</DialogTitle>
                 <DialogDescription>
-                    Enter the user details. Click save when you're done.
+                    Fill in the form below to add a new user. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">

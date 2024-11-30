@@ -58,9 +58,9 @@ const submit = () => {
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Create new units</DialogTitle>
+                <DialogTitle>Add new units</DialogTitle>
                 <DialogDescription>
-                    Enter the units details. Click save when you're done.
+                    Fill in the form below to add a new units. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">

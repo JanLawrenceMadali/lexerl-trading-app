@@ -29,7 +29,7 @@ const closeSheet = () => {
 };
 
 const submit = () => {
-    form.post(route('customer.store'), {
+    form.post(route('customers.store'), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
@@ -43,13 +43,13 @@ const submit = () => {
 
             Swal.fire({
                 title: "Success!",
-                text: response.props.flash.message,
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });
         },
         onError: (error) => {
-            console.log(error);
+            // console.log(error);
         }
     })
 }
@@ -66,9 +66,9 @@ const submit = () => {
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Create new customer</DialogTitle>
+                <DialogTitle>Add new customer</DialogTitle>
                 <DialogDescription>
-                    Enter the customer details. Click save when you're done.
+                    Fill in the form below to add a new customer. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
@@ -98,7 +98,7 @@ const submit = () => {
                     <InputError :message="form.errors.address1" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="address2">Address2</Label>
+                    <Label for="address2">Address2 <span class="text-xs text-muted-foreground">(Optional)</span></Label>
                     <Input v-model="form.address2" id="addres2s" type="text" />
                     <InputError :message="form.errors.address2" />
                 </div>

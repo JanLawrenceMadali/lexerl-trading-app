@@ -7,19 +7,17 @@ import { Label } from '@/Components/ui/label';
 import { Button } from '@/Components/ui/button';
 import InputError from '@/Components/InputError.vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select/index';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
+    categories: Object,
     routing: String
-});
+})
 
 const form = useForm({
     name: null,
-    email: null,
-    address1: null,
-    address2: null,
-    contact_person: null,
-    contact_number: null,
+    category_id: null,
 })
 
 const isOpen = ref(false);
@@ -29,16 +27,16 @@ const closeSheet = () => {
 };
 
 const submit = () => {
-    form.post(route('suppliers.store'), {
+    form.post(route('subcategories.store'), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
             form.reset();
             closeSheet();
             if (props.routing) {
-                form.get(route(props.routing))
+                form.get(route(props.routing));
             } else {
-                form.get(route('suppliers'))
+                form.get(route('subcategories'));
             }
 
             Swal.fire({
@@ -61,46 +59,38 @@ const submit = () => {
         <DialogTrigger as-child>
             <Button variant="outline" size="sm" class="m-2">
                 <Plus class="mr-1 size-4" />
-                Add new supplier
+                Add new sub category
             </Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Add new supplier</DialogTitle>
+                <DialogTitle>Create new Sub Category</DialogTitle>
                 <DialogDescription>
-                    Fill in the details of the new supplier. Click submit when you're done.
+                    Fill in the details of the new sub category and assign which category. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
                     <Label for="name">Name</Label>
-                    <Input v-model="form.name" id="name" type="text" />
+                    <Input v-model="form.name" id="name" />
                     <InputError :message="form.errors.name" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="email">Email</Label>
-                    <Input v-model="form.email" id="email" type="email" />
-                    <InputError :message="form.errors.email" />
-                </div>
-                <div class="grid gap-2 my-4">
-                    <Label for="contact_person">Contact Person</Label>
-                    <Input v-model="form.contact_person" id="contact_person" type="text" />
-                    <InputError :message="form.errors.contact_person" />
-                </div>
-                <div class="grid gap-2 my-4">
-                    <Label for="contact_number">Contact Number</Label>
-                    <Input v-model="form.contact_number" id="contact_number" type="text" />
-                    <InputError :message="form.errors.contact_number" />
-                </div>
-                <div class="grid gap-2 my-4">
-                    <Label for="address1">Address1</Label>
-                    <Input v-model="form.address1" id="address1" type="text" />
-                    <InputError :message="form.errors.address1" />
-                </div>
-                <div class="grid gap-2 my-4">
-                    <Label for="address2">Address2 <span class="text-xs text-muted-foreground">(Optional)</span></Label>
-                    <Input v-model="form.address2" id="address2" type="text" />
-                    <InputError :message="form.errors.address2" />
+                    <Label>Category</Label>
+                    <Select v-model="form.category_id">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem v-for="category in categories" :key="category.id"
+                                    :value="String(category.id)">
+                                    {{ category.name }}
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <InputError :message="form.errors.category_id" />
                 </div>
                 <DialogFooter>
                     <Button variant="secondary" type="submit">
