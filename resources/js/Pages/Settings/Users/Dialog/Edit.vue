@@ -66,7 +66,7 @@ const submit = () => {
             <DialogHeader>
                 <DialogTitle>Edit user</DialogTitle>
                 <DialogDescription>
-                    Enter the user details. Click save when you're done.
+                    Make changes to user here. Click save changes when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
@@ -110,7 +110,7 @@ const submit = () => {
                 <DialogFooter>
                     <Button variant="secondary" type="submit">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
-                        Submit
+                        Save changes
                     </Button>
                 </DialogFooter>
             </form>

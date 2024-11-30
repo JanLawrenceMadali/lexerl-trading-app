@@ -58,9 +58,9 @@ const submit = () => {
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Create new category</DialogTitle>
+                <DialogTitle>Edit category</DialogTitle>
                 <DialogDescription>
-                    Enter the category details. Click save when you're done.
+                    Make changes to the category here. Click save changes when you're done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
@@ -72,7 +72,7 @@ const submit = () => {
                 <DialogFooter>
                     <Button variant="secondary" type="submit">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
-                        Submit
+                        Save changes
                     </Button>
                 </DialogFooter>
             </form>
