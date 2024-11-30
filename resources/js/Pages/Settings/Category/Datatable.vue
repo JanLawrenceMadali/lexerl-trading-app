@@ -105,6 +105,23 @@ const columns = [
         },
     },
     {
+        accessorKey: 'updated_at',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const { updated_at } = row.original
+            const date = new Date(updated_at)
+
+            const timeAgoString = timeAgo(date);
+
+            return h('div', { class: 'px-2' }, [
+                h('div', formattedDate(date)),
+                h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
+            ]);
+        },
+    },
+    {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {

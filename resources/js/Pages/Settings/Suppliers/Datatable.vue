@@ -30,12 +30,12 @@ const handlePurchaseDeleted = (id) => {
         confirmButtonText: "Yes, delete it",
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('supplier.destroy', id), {
+            router.delete(route('suppliers.destroy', id), {
                 onSuccess: (response) => {
                     router.get(route('suppliers'))
                     Swal.fire({
                         title: "Deleted!",
-                        text: response.props.flash.message,
+                        text: response.props.flash.success,
                         iconHtml: '<img src="/assets/icons/Success.png">',
                         confirmButtonColor: "#1B1212",
                     });
@@ -130,6 +130,23 @@ const columns = [
         cell: ({ row }) => {
             const { created_at } = row.original
             const date = new Date(created_at)
+
+            const timeAgoString = timeAgo(date);
+
+            return h('div', { class: 'px-2' }, [
+                h('div', formattedDate(date)),
+                h('div', { class: 'text-xs text-gray-500' }, timeAgoString)
+            ]);
+        },
+    },
+    {
+        accessorKey: 'updated_at',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Updated At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const { updated_at } = row.original
+            const date = new Date(updated_at)
 
             const timeAgoString = timeAgo(date);
 
