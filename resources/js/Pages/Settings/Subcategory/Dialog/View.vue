@@ -23,10 +23,10 @@ const data = ref(props.subcategories)
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>
-                    Category details
+                    Sub Category details
                 </DialogTitle>
                 <DialogDescription>
-                    View category details
+                    View sub category details
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-3 text-sm">

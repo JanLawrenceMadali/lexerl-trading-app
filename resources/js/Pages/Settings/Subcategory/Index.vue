@@ -16,7 +16,7 @@ const props = defineProps({
                 <CardHeader>
                     <CardTitle>Sub Category</CardTitle>
                     <CardDescription class="flex items-center justify-between">
-                        Manage subcategories and view their information.
+                        Manage sub categories and view their information.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

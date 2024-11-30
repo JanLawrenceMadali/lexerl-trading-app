@@ -37,7 +37,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
                     </Link>
                     <Link :href="route('subcategories')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/Subcategory/Index' }">
-                    Manage Subcategories
+                    Manage Sub Categories
                     </Link>
                     <Link :href="route('backup')"
                         :class="{ 'font-semibold text-primary': $page.component === 'Settings/BackupDatabases/Index' }">
