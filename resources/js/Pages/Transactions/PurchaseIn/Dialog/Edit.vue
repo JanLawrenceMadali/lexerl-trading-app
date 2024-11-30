@@ -14,7 +14,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Calendar } from '@/Components/ui/calendar'
 import Swal from 'sweetalert2';
 import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
-import CreateSubcategory from '../../../Settings/Subcategory/Dialog/CreateSubcategory.vue'
+import CreateSubcategory from '../../../Settings/Subcategory/Dialog/Create.vue'
 import DropdownSearch from '@/Components/DropdownSearch.vue'
 import Create from '@/Pages/Settings/Suppliers/Dialog/Create.vue'
 
