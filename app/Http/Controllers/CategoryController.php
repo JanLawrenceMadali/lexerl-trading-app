@@ -26,11 +26,12 @@ class CategoryController extends Controller
             DB::transaction(function () use ($validated) {
                 Category::create($validated);
 
-                $this->logs('Category Created');
+                $this->logs('Category ' . $validated['name'] . ' was created');
             });
             return redirect()->route('categories')->with('success', 'Category created successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('categories')->with('error', 'Something went wrong');
         }
     }
 
@@ -42,11 +43,12 @@ class CategoryController extends Controller
             DB::transaction(function () use ($validated, $category) {
                 $category->update($validated);
 
-                $this->logs('Category Updated');
+                $this->logs('Category ' . $validated['name'] . ' was updated');
             });
             return redirect()->route('categories')->with('success', 'Category updated successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('categories')->with('error', 'Something went wrong');
         }
     }
 
@@ -56,11 +58,12 @@ class CategoryController extends Controller
             DB::transaction(function () use ($category) {
                 $category->delete();
 
-                $this->logs('Category Deleted');
+                $this->logs('Category ' . $category->name . ' was deleted');
             });
             return redirect()->route('categories')->with('success', 'Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('categories')->with('error', 'Something went wrong');
         }
     }
 

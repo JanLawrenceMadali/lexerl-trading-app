@@ -29,12 +29,13 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($validated) {
                 Subcategory::create($validated);
 
-                $this->logs('Sub Category Created');
+                $this->logs('Sub Category ' . $validated['name'] . ' was created');
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category created successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('subcategories')->with('error', 'Something went wrong');
         }
     }
 
@@ -46,12 +47,13 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($validated, $subcategory) {
                 $subcategory->update($validated);
 
-                $this->logs('Sub Category Updated');
+                $this->logs('Sub Category ' . $validated['name'] . ' was updated');
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category updated successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('subcategories')->with('error', 'Something went wrong');
         }
     }
 
@@ -61,12 +63,13 @@ class SubCategoryController extends Controller
             DB::transaction(function () use ($subcategory) {
                 $subcategory->delete();
 
-                $this->logs('Sub Category Deleted');
+                $this->logs('Sub Category ' . $subcategory->name . ' was deleted');
             });
 
             return redirect()->route('subcategories')->with('success', 'Sub Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->route('subcategories')->with('error', 'Something went wrong');
         }
     }
 

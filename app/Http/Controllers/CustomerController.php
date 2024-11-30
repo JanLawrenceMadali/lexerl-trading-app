@@ -28,13 +28,13 @@ class CustomerController extends Controller
             DB::transaction(function () use ($validated) {
                 Customer::create($validated);
 
-                $this->logs('Customer Created');
+                $this->logs('Customer ' . $validated['name'] . ' was created');
             });
 
-            return redirect()->route('customers')->with('message', 'Customer created successfully');
+            return redirect()->route('customers')->with('success', 'Customer created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('message', 'Something went wrong');
+            return redirect()->route('customers')->with('error', 'Something went wrong');
         }
     }
 
@@ -46,13 +46,13 @@ class CustomerController extends Controller
             DB::transaction(function () use ($validated, $customer) {
                 $customer->update($validated);
 
-                $this->logs('Customer Updated');
+                $this->logs('Customer ' . $validated['name'] . ' was updated');
             });
 
-            return redirect()->route('customers')->with('message', 'Customer updated successfully');
+            return redirect()->route('customers')->with('success', 'Customer updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('message', 'Something went wrong');
+            return redirect()->route('customers')->with('error', 'Something went wrong');
         }
     }
 
@@ -62,13 +62,13 @@ class CustomerController extends Controller
             DB::transaction(function () use ($customer) {
                 $customer->delete();
 
-                $this->logs('Customer Deleted');
+                $this->logs('Customer ' . $customer->name . ' was deleted');
             });
 
-            return redirect()->route('customers')->with('message', 'Customer deleted successfully');
+            return redirect()->route('customers')->with('success', 'Customer deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('message', 'Something went wrong');
+            return redirect()->route('customers')->with('error', 'Something went wrong');
         }
     }
 

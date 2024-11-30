@@ -27,13 +27,13 @@ class SupplierController extends Controller
             DB::transaction(function () use ($validated) {
                 Supplier::create($validated);
 
-                $this->logs('Supplier Created');
+                $this->logs('Supplier '. $validated['name']. ' was created');
             });
 
-            return redirect()->route('suppliers')->with('message', 'Supplier created successfully');
+            return redirect()->route('suppliers')->with('success', 'Supplier created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('message', 'Something went wrong');
+            return redirect()->route('suppliers')->with('error', 'Something went wrong');
         }
     }
 
@@ -45,13 +45,13 @@ class SupplierController extends Controller
             DB::transaction(function () use ($supplier, $validated) {
                 $supplier->update($validated);
 
-                $this->logs('Supplier Updated');
+                $this->logs('Supplier '. $supplier->name. ' was updated');
             });
 
-            return redirect()->route('suppliers')->with('message', 'Supplier updated successfully');
+            return redirect()->route('suppliers')->with('success', 'Supplier updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('message', 'Something went wrong');
+            return redirect()->route('suppliers')->with('error', 'Something went wrong');
         }
     }
 
@@ -61,13 +61,13 @@ class SupplierController extends Controller
             DB::transaction(function () use ($supplier) {
                 $supplier->delete();
 
-                $this->logs('Supplier Deleted');
+                $this->logs('Supplier '. $supplier->name. ' was deleted');
             });
 
-            return redirect()->route('suppliers')->with('message', 'Supplier deleted successfully');
+            return redirect()->route('suppliers')->with('success', 'Supplier deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('message', 'Something went wrong');
+            return redirect()->route('suppliers')->with('error', 'Something went wrong');
         }
     }
 
