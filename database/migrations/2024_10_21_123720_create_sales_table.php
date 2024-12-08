@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\Customer;
+use App\Models\DueDate;
+use App\Models\Status;
+use App\Models\Transaction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,10 +21,10 @@ return new class extends Migration
             $table->string('transaction_number');
             $table->decimal('total_amount', 10, 2);
             $table->string('description')->nullable();
-            $table->foreignId('status_id')->constrained();
-            $table->foreignId('customer_id')->constrained();
-            $table->foreignId('transaction_id')->constrained();
-            $table->foreignId('due_date_id')->nullable()->constrained();
+            $table->foreignIdFor(Status::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Customer::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Transaction::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(DueDate::class)->nullable()->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
     }

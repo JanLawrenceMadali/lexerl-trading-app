@@ -1,8 +1,9 @@
 <?php
 
-use App\Models\Inventory;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Subcategory;
 use App\Models\Unit;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -17,8 +18,8 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained();
-            $table->foreignId('subcategory_id')->constrained();
+            $table->foreignIdFor(Category::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Subcategory::class)->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
 
