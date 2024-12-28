@@ -19,10 +19,14 @@ const props = defineProps({
 
 const data = ref(props.suppliers)
 
+const handleSupplier = (supplier) => {
+    data.value = supplier
+}
+
 const handlePurchaseDeleted = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this supplier?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        html: '<p class="custom-text">Please note that this is irreversible and all related data to this supplier will be deleted.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
@@ -32,13 +36,22 @@ const handlePurchaseDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('suppliers.destroy', id), {
                 onSuccess: (response) => {
-                    router.get(route('suppliers'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.success,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                    data.value = response.props.suppliers
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire({
+                            title: "Oops! Something went wrong",
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
                 }
             })
         }
@@ -168,6 +181,7 @@ const columns = [
                 }),
                 h(Edit, {
                     suppliers: suppliers,
+                    onUpdateSupplier: handleSupplier
                 }),
                 h(Button, {
                     size: 'xs',
@@ -239,7 +253,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create />
+        <Create @create-supplier="handleSupplier" />
     </div>
     <div class="border rounded-md">
         <Table>

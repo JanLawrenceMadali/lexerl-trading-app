@@ -24,8 +24,8 @@ class UserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $this->user?->id,
+            'username' => 'required|string|max:255|unique:users,username,' . $this->user?->id,
+            'email' => 'required|email|unique:users,email,' . $this->user?->id,
             'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id'
         ];
@@ -34,7 +34,18 @@ class UserRequest extends FormRequest
     public function messages()
     {
         return [
-            'role_id.required' => 'The role field is required.',
+            'username.required' => 'Username is required.',
+            'username.string' => 'Username must be a string.',
+            'username.max' => 'Username must not exceed 255 characters.',
+            'username.unique' => 'Username is already taken.',
+            'email.required' => 'Email is required.',
+            'email.email' => 'Invalid email format.',
+            'email.unique' => 'Email is already taken.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
+            'role_id.required' => 'Role is required.',
+            'role_id.exists' => 'Selected role does not exist.'
         ];
     }
 }

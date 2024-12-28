@@ -9,18 +9,18 @@ import InputError from '@/Components/InputError.vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog';
 import Swal from 'sweetalert2';
 
-const props = defineProps({
-    route: String,
-});
+const emit = defineEmits(['create-category']);
 
 const form = useForm({
     name: null
-})
+});
 
 const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
@@ -28,20 +28,24 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('create-category', response.props.categories);
             closeSheet();
-            if (props.route === 'sales') {
-                form.get(route('sales'))
-            } else {
-                form.get(route('categories'))
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
             }
 
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
         },
         onError: (error) => {
             console.log(error);
@@ -68,12 +72,12 @@ const submit = () => {
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label for="name">Name</Label>
+                    <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" type="text" />
                     <InputError :message="form.errors.name" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>

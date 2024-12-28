@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue';
 import DataTable from './DataTable.vue';
-import Header from '@/Components/Header.vue';
 import { CardHeader } from '@/Components/ui/card';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -15,25 +14,26 @@ const props = defineProps({
 
 })
 
-const units = props.units
-const suppliers = props.suppliers
-const categories = props.categories
-const inventories = props.inventories
-const transactions = props.transactions
-const subcategories = props.subcategories
+const units = ref(props.units)
+const suppliers = ref(props.suppliers)
+const categories = ref(props.categories)
+const inventories = ref(props.inventories)
+const transactions = ref(props.transactions)
+const subcategories = ref(props.subcategories)
 
-const items = ref([
-    { label: 'Transactions', href: '#' },
-    { label: 'Purchases In', href: 'purchase-in' },
-])
+const handleSubcategoryCreated = (subcategory) => {
+    subcategories.value = subcategory
+};
 
+const handleSupplierCreated = (supplier) => {
+    suppliers.value = supplier
+};
 </script>
 
 <template>
 
     <Head title="Purchases In" />
     <AuthenticatedLayout>
-        <Header :items="items" />
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
             <Card>
                 <CardHeader>
@@ -44,7 +44,8 @@ const items = ref([
                 </CardHeader>
                 <CardContent>
                     <DataTable :inventories="inventories" :categories="categories" :subcategories="subcategories"
-                        :suppliers="suppliers" :transactions="transactions" :units="units" />
+                        :suppliers="suppliers" :transactions="transactions" :units="units"
+                        @create-subcategory="handleSubcategoryCreated" @create-supplier="handleSupplierCreated" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>

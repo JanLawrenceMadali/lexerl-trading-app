@@ -3,6 +3,7 @@ import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
 import { ref } from 'vue';
+import { watch } from 'vue';
 
 const props = defineProps({
     categories: Object,
@@ -11,6 +12,9 @@ const props = defineProps({
 
 const data = ref(props.subcategories)
 
+watch(() => props.subcategories, (newSubCategories) => {
+    data.value = newSubCategories
+}, { immediate: true })
 </script>
 
 <template>
@@ -35,7 +39,7 @@ const data = ref(props.subcategories)
                         <span class="text-muted-foreground">Name</span> <span>{{ data.name }}</span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Category</span> <span>{{ data.categories.name }}</span>
+                        <span class="text-muted-foreground">Category</span> <span>{{ data.categories?.name }}</span>
                     </li>
                 </ul>
             </div>

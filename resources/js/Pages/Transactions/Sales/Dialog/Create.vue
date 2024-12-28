@@ -41,7 +41,6 @@ const form = useForm({
     products: [{
         amount: null,
         unit_id: null,
-        category: null,
         quantity: null,
         category_id: null,
         selling_price: null,
@@ -180,18 +179,35 @@ const routeReload = () => {
     closeModal();
 };
 
+const emit = defineEmits(['create-customer']);
+
+const handleCustomerCreated = (customer) => {
+    emit('create-customer', customer);
+}
+
 const submit = () => {
     form.post(route('sales.store'), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
+            console.log(response);
+
             routeReload();
-            Swal.fire({
-                title: "Success!",
-                text: "Transaction successfully created!",
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong.",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
+            }
         },
         onError: (errors) => {
             // console.log(errors);
@@ -215,6 +231,14 @@ const isSubmitDisabled = computed(() => {
 });
 
 const routing = 'sales';
+
+const isOverQuantity = computed(() => {
+    return form.products.some(product => {
+        const { quantity } = product;
+        const total = totalQuantity.value.reduce((total, item) => total + item, 0);
+        return quantity > total;
+    });
+});
 </script>
 
 <template>
@@ -249,7 +273,7 @@ const routing = 'sales';
                                         :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
                                         :has-error="form.errors.customer_id" placeholder="Select a customer"
                                         v-model="form.customer_id">
-                                        <Create :routing="routing" />
+                                        <Create :routing="routing" @create-customer="handleCustomerCreated" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>
@@ -427,9 +451,11 @@ const routing = 'sales';
                                             </TableCell>
                                             <TableCell> <!-- Quantity -->
                                                 <div class="relative items-center">
-                                                    <Input v-model="product.quantity" type="number" min="0"
-                                                        oninput="validity.valid||(value='');"
-                                                        :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }]" />
+                                                    <Input v-model.number="product.quantity" type="number" min="0"
+                                                        step="0.01" :class="[
+                                                            'pl-7',
+                                                            { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }
+                                                        ]" />
                                                     <span
                                                         class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                         <Boxes class="size-4 text-muted-foreground" />
@@ -438,7 +464,10 @@ const routing = 'sales';
                                                         totalQuantity[index] > product.quantity
                                                             ? 'text-green-600'
                                                             : 'text-red-600']">
-                                                        {{ totalQuantity[index] - product.quantity }} left
+                                                        {{ (totalQuantity[index] -
+                                                            product.quantity).toLocaleString('en-US', {
+                                                                minimumFractionDigits: 2, maximumFractionDigits: 2
+                                                            }) }} left
                                                     </small>
                                                 </div>
                                                 <InputError :message="form.errors[`products.${index}.quantity`]" />
@@ -491,7 +520,6 @@ const routing = 'sales';
                                                 <PhilippinePeso class="size-4 text-muted-foreground" />
                                             </span>
                                         </div>
-                                        <InputError class="col-span-5" :message="form.errors.total_amount" />
                                     </div>
                                     <div class="grid items-center grid-cols-10">
                                         <!-- Due Date -->
@@ -536,10 +564,12 @@ const routing = 'sales';
                             </div>
 
                             <DialogFooter class="flex items-center mt-4">
+                                <InputError :message="form.errors.duplicate" />
                                 <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
                                     Cancel
                                 </Button>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
+                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
+                                    :disabled="form.processing || isOverQuantity">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

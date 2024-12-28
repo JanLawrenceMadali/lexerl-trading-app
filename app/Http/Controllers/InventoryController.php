@@ -12,14 +12,21 @@ use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
 use App\Models\Unit;
+use App\Services\ActivityLoggerService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryController extends Controller
 {
+    protected $activityLog;
+
+    public function __construct(ActivityLoggerService $activityLoggerService)
+    {
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
         $units = Unit::all();
@@ -90,13 +97,19 @@ class InventoryController extends Controller
                     'transaction_id' => $validated['transaction_id'],
                     'transaction_number' => $validated['transaction_number'],
                 ];
-                Inventory::create($data);
+                $inventory = Inventory::create($data);
                 Purchases::create($data);
 
-                $this->logs('created', $validated['transaction_number']);
+                $this->activityLog->logInventoryAction(
+                    $inventory,
+                    ActivityLog::ACTION_CREATED,
+                    ['new' => $inventory->toArray()]
+                );
             });
+            return redirect()->back()->with('success', 'Purchase created successfully');
         } catch (\Exception $e) {
             report($e);
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create purchase');
         }
     }
 
@@ -106,13 +119,22 @@ class InventoryController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $inventory) {
+                $oldData = $inventory->toArray();
+
                 $inventory->update($validated);
                 Purchases::where('id', $inventory->id)->update($validated);
 
-                $this->logs('updated', $validated['transaction_number']);
+
+                $this->activityLog->logInventoryAction(
+                    $inventory,
+                    ActivityLog::ACTION_UPDATED,
+                    ['old' => $oldData, 'new' => $inventory->toArray()]
+                );
             });
+            return redirect()->back()->with('success', 'Purchase updated successfully');
         } catch (\Exception $e) {
             report($e);
+            return redirect()->back()->with('error', 'Something went wrong');
         }
     }
 
@@ -123,10 +145,17 @@ class InventoryController extends Controller
                 $inventory->delete();
                 Purchases::where('id', $inventory->id)->delete();
 
-                $this->logs('deleted', $inventory->transaction_number);
+                $this->activityLog->logInventoryAction(
+                    $inventory,
+                    ActivityLog::ACTION_DELETED,
+                    ['old' => $inventory->toArray()]
+                );
             });
+
+            return redirect()->back()->with('success', 'Purchase deleted successfully');
         } catch (\Exception $e) {
             report($e);
+            return redirect()->back()->with('error', 'Something went wrong');
         }
     }
 
@@ -142,17 +171,12 @@ class InventoryController extends Controller
         $date = now()->format('Ymd');
         $fileName = "purchase_in_report_{$date}.xlsx";
 
-        $this->logs('exported', $fileName);
+        $this->activityLog->logPurchaseExport(
+            $fileName,
+            ActivityLog::ACTION_EXPORTED,
+            ['old' => null, 'new' => null,]
+        );
 
         return Excel::download($export, $fileName);
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a purchase ' . $description
-        ]);
     }
 }

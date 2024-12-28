@@ -10,22 +10,21 @@ const props = defineProps({
 </script>
 
 <template>
+
     <Head title="Manage Users" />
     <Settings>
-        <div class="px-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Users</CardTitle>
-                    <CardDescription class="flex items-center justify-between">
-                        Manage users and view their information.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Datatable :users="users" :roles="roles" />
-                </CardContent>
-                <CardFooter>
-                </CardFooter>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Users</CardTitle>
+                <CardDescription class="flex items-center justify-between">
+                    Manage users and view their information.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Datatable :users="users" :roles="roles" />
+            </CardContent>
+            <CardFooter>
+            </CardFooter>
+        </Card>
     </Settings>
 </template>

@@ -2,12 +2,15 @@
 import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({ categories: Object })
 
 const data = ref(props.categories)
 
+watch(() => props.categories, (newCategories) => {
+    data.value = newCategories
+}, { immediate: true })
 </script>
 
 <template>

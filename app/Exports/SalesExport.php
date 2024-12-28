@@ -27,16 +27,17 @@ class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAut
     public function collection()
     {
         $sales = Sale::has('products')
-        ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
-        ->when($this->startDate && $this->endDate, function ($query) {
-            $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
-        })
-        ->get();
+            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
+            ->when($this->startDate !== "null" && $this->endDate !== "null", function ($query) {
+                $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
+            })
+            ->get();
 
-        $data = $sales->flatMap(function ($sale) {
-            return $sale->products->map(function ($product) use ($sale) {
-                $units = Unit::all()->keyBy('id');
-                $unit = $units[$product->pivot->unit_id] ?? '';
+        $units = Unit::all()->keyBy('id');
+
+        $data = $sales->flatMap(function ($sale) use ($units) {
+            return $sale->products->map(function ($product) use ($sale, $units) {
+                $unit = $units[$product->pivot->unit_id] ?? null;
                 return [
                     'ID' => $sale->id,
                     'Transaction Type' => $sale->transactions->type ?? '',
@@ -47,16 +48,18 @@ class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAut
                     'Subcategory' => $product->subcategories->name ?? '',
                     'Quantity' => $product->pivot->quantity . ($unit ? " {$unit->abbreviation}" : ''),
                     'Selling Price' => '₱' . number_format($product->pivot->selling_price, 2),
-                    'Amount' => '₱' . number_format($sale->total_amount, 2),
+                    'Amount' => '₱' . number_format($product->pivot->amount, 2),
                     'Status' => $sale->statuses->name ?? '',
                     'Due Date' => $sale->dues->days ?? '',
                     'Description' => $sale->description,
-                    'Created At' => $sale->created_at->format('M d, Y'),
+                    'Created At' => $sale->created_at->format('M d, Y i:s A'),
                 ];
             });
         });
 
-        $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount']));
+        $totalAmount = $sales->sum(function ($sale) {
+            return $sale->products->sum('pivot.amount');
+        });
 
         $data->push([
             'ID' => '',
@@ -80,11 +83,15 @@ class SalesExport implements FromCollection, WithHeadings, WithStyles, ShouldAut
 
     public function headings(): array
     {
-        $fromDate = $this->startDate ? $this->startDate : 'N/A';
-        $toDate = $this->endDate ? $this->endDate : 'N/A';
+        $collection = $this->collection()->where('ID', '!=', '');
+        $sales =  $collection->map(function ($item) {
+            return $item;
+        });
+        $fromDate = $this->startDate !== "null" ? $this->startDate : $sales->min('Sale Date');
+        $toDate = $this->endDate !== "null" ? $this->endDate : $sales->max('Sale Date');
 
         return [
-            ['Lexerl Trading - Sales'],
+            ['Lexerl Trading - Sales Report'],
             ["From: {$fromDate}"],
             ["To: {$toDate}"],
             [

@@ -1,5 +1,6 @@
 <script setup>
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from './ui/menubar';
+import { ref } from 'vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -17,23 +18,28 @@ const getRoute = (index) => {
     }
     return props.menuRoutes;
 };
+
+const isTriggered = ref(false);
 </script>
 
 <template>
-    <Menubar class="grid mb-12 bg-transparent border-none">
-        <MenubarMenu>
-            <MenubarTrigger
-                :class="[customeClass, 'grid gap-3 cursor-pointer place-items-center hover:bg-slate-100 hover:text-primary text-slate-100']">
+    <DropdownMenu v-model:open="isTriggered">
+        <DropdownMenuTrigger as-child>
+            <div
+                :class="[customeClass, { 'bg-slate-50 text-slate-900': isTriggered },
+                    'grid gap-3 cursor-pointer place-items-center hover:bg-slate-100 rounded-2xl p-3 hover:text-primary text-slate-100']">
                 <component :is="icon" class="size-8" />
-                {{ label }}
-            </MenubarTrigger>
-            <MenubarContent side="right" class="min-w-32">
-                <MenubarItem v-for="(item, index) in menuItems" :key="index">
+                <span class="text-sm">{{ label }}</span>
+            </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent class="w-56" side="right">
+            <DropdownMenuGroup>
+                <DropdownMenuItem v-for="(item, index) in menuItems" :key="item">
                     <Link :href="getRoute(index)" class="w-full text-base">
                     {{ item }}
                     </Link>
-                </MenubarItem>
-            </MenubarContent>
-        </MenubarMenu>
-    </Menubar>
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+        </DropdownMenuContent>
+    </DropdownMenu>
 </template>

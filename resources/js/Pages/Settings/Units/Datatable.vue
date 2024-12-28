@@ -19,10 +19,14 @@ const props = defineProps({
 
 const data = ref(props.units)
 
+const handleUnit = (unit) => {
+    data.value = unit
+}
+
 const handleDeleted = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this unit?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        html: '<p class="custom-text">Please note that this is irreversible and all related data to this unit will be deleted.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
@@ -31,15 +35,26 @@ const handleDeleted = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('units.destroy', id), {
-
                 onSuccess: (response) => {
-                    router.get(route('units'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.success,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                    data.value = response.props.units
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire({
+                            title: "Oops! Something went wrong",
+                            text: response.props.flash.error,
+                            icon: "error",
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
+                },
+                onError: (error) => {
+                    console.error(error)
                 }
             })
         }
@@ -137,21 +152,22 @@ const columns = [
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const categories = row.original;
+            const unit  = row.original;
 
             return h('div', { class: 'flex items-center gap-1' }, [
                 h(View, {
-                    categories: categories,
+                    unit,
                 }),
                 h(Edit, {
-                    categories: categories
+                    unit,
+                    onUpdateUnit: handleUnit
                 }),
                 h(Button, {
                     size: 'xs',
                     variant: 'ghost',
                     class: 'text-red-600 hover:text-red-800',
                     title: 'Delete',
-                    onClick: () => handleDeleted(categories.id)
+                    onClick: () => handleDeleted(unit.id)
                 }, () => h(Trash2, { class: 'size-5' })),
             ]);
         },
@@ -212,7 +228,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create />
+        <Create @create-unit="handleUnit" />
     </div>
     <div class="border rounded-md">
         <Table>

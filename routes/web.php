@@ -27,12 +27,51 @@ Route::get('/dashboard', function () {
     $total_purchase = Inventory::sum('amount');
     $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
     $activity_logs = ActivityLog::with('users')->latest()->get();
+    $monthly_sales = Sale::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
+        ->whereRaw("strftime('%Y', created_at) = ?", [date('Y')])
+        ->whereYear('created_at', now()->year)
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get()
+        ->map(function ($sale) {
+            return [
+                'month' => date('F', mktime(0, 0, 0, $sale->month, 1)),
+                'total' => intval($sale->total)
+            ];
+        });
+
+    // Fill in missing months with zero
+    $all_months = collect([
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+    ])->map(function ($month) {
+        return [
+            'month' => $month,
+            'total' => 0
+        ];
+    });
+
+    // Convert to collection and merge with actual sales
+    $monthly_sales = $all_months->keyBy('month')
+        ->merge($monthly_sales->keyBy('month'))
+        ->values();
 
     return inertia('Dashboard', [
-        'total_sale' => $total_sale,
-        'total_purchase' => $total_purchase,
-        'total_collectible' => $total_collectible,
-        'activity_logs' => $activity_logs
+        'total_sale' => intval($total_sale),
+        'total_purchase' => intval($total_purchase),
+        'total_collectible' => intval($total_collectible),
+        'activity_logs' => $activity_logs,
+        'monthly_sales' => $monthly_sales,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -76,6 +115,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/current_inventory/export', [ReportController::class, 'current_inventory_export'])->name('current_inventory.export');
     Route::get('/sale_logs', [ReportController::class, 'sale_logs'])->name('sale_logs');
 
+    // Settings
+    Route::get('/settings', function () {
+        return redirect(route('users'));
+    })->name('settings');
     // Users
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('users');
@@ -125,6 +168,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/manual', [BackupController::class, 'manualBackup'])->name('backup.manual');
         Route::post('/download', [BackupController::class, 'download'])->name('backup.download');
         Route::delete('/clean-all', [BackupController::class, 'cleanAll'])->name('backup.clean-all');
+        Route::delete('/destroy', [BackupController::class, 'destroy'])->name('backup.destroy');
         Route::post('/restore', [BackupController::class, 'restore'])->name('backup.restore');
     });
 });

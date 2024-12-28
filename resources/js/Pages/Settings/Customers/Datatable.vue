@@ -19,10 +19,14 @@ const props = defineProps({
 
 const data = ref(props.customers)
 
+const handleCustomer = (customer) => {
+    data.value = customer
+}
+
 const handleDeleted = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this customer?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        html: '<p class="custom-text">Please note that this is irreversible and all related data to this customer will be deleted.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
@@ -32,7 +36,7 @@ const handleDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('customers.destroy', id), {
                 onSuccess: (response) => {
-                    router.get(route('customers'))
+                    data.value = response.props.customers
                     Swal.fire({
                         title: "Deleted!",
                         text: response.props.flash.success,
@@ -168,6 +172,7 @@ const columns = [
                 }),
                 h(Edit, {
                     customers: customers,
+                    onUpdateCustomer: handleCustomer
                 }),
                 h(Button, {
                     size: 'xs',
@@ -239,7 +244,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create />
+        <Create @create-customer="handleCustomer" />
     </div>
     <div class="border rounded-md">
         <Table>

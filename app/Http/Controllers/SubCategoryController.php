@@ -5,12 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\ActivityLog;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\SubcategoryRequest;
-use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLoggerService;
+use App\Services\SubCategoryService;
 
 class SubCategoryController extends Controller
 {
+    protected $subcategoryService;
+    protected $activityLog;
+
+    public function __construct(
+        SubCategoryService $subCategoryService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->subcategoryService = $subCategoryService;
+        $this->activityLog = $activityLoggerService;
+    }
     public function index()
     {
         $categories = Category::latest()->get();
@@ -26,16 +36,18 @@ class SubCategoryController extends Controller
         $validated = $subcategoryRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
-                Subcategory::create($validated);
+            $subcategory = $this->subcategoryService->createSubCategory($validated);
 
-                $this->logs('created', $validated['name']);
-            });
+            $this->activityLog->logSubCategoryAction(
+                $subcategory,
+                ActivityLog::ACTION_CREATED,
+                ['new' => $subcategory->toArray()]
+            );
 
-            return redirect()->route('subcategories')->with('success', 'Sub Category created successfully');
+            return redirect()->back()->with('success', 'Sub Category created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('subcategories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create sub category');
         }
     }
 
@@ -44,41 +56,38 @@ class SubCategoryController extends Controller
         $validated = $subcategoryRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated, $subcategory) {
-                $subcategory->update($validated);
+            $oldData = $subcategory->toArray();
 
-                $this->logs('updated', $subcategory->name);
-            });
+            $this->subcategoryService->updateSubCategory($subcategory, $validated);
 
-            return redirect()->route('subcategories')->with('success', 'Sub Category updated successfully');
+            $this->activityLog->logSubCategoryAction(
+                $subcategory,
+                ActivityLog::ACTION_UPDATED,
+                ['old' => $oldData, 'new' => $subcategory->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Sub Category updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('subcategories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create sub category');
         }
     }
 
     public function destroy(Subcategory $subcategory)
     {
         try {
-            DB::transaction(function () use ($subcategory) {
-                $subcategory->delete();
+            $this->subcategoryService->deleteSubCategory($subcategory);
 
-                $this->logs('deleted', $subcategory->name);
-            });
+            $this->activityLog->logSubCategoryAction(
+                $subcategory,
+                ActivityLog::ACTION_DELETED,
+                ['old' => $subcategory->toArray()]
+            );
 
-            return redirect()->route('subcategories')->with('success', 'Sub Category deleted successfully');
+            return redirect()->back()->with('success', 'Sub Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('subcategories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create sub category');
         }
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a sub category ' . $description
-        ]);
     }
 }

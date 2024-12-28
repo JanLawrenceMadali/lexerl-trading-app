@@ -6,10 +6,23 @@ use App\Models\Supplier;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\SupplierRequest;
+use App\Services\ActivityLoggerService;
+use App\Services\SupplierService;
 use Illuminate\Support\Facades\Auth;
 
 class SupplierController extends Controller
 {
+    protected $supplierService;
+    protected $activityLog;
+
+    public function __construct(
+        SupplierService $supplierService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->supplierService = $supplierService;
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
         $suppliers = Supplier::latest()->get();
@@ -24,16 +37,18 @@ class SupplierController extends Controller
         $validated = $supplierRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
-                Supplier::create($validated);
+            $supplier = $this->supplierService->createSupplier($validated);
 
-                $this->logs('created', $validated['name']);
-            });
+            $this->activityLog->logSupplierAction(
+                $supplier,
+                ActivityLog::ACTION_CREATED,
+                ['new' => $supplier->toArray()]
+            );
 
-            return redirect()->route('suppliers')->with('success', 'Supplier created successfully');
+            return redirect()->back()->with('success', 'Supplier created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create supplier');
         }
     }
 
@@ -42,41 +57,38 @@ class SupplierController extends Controller
         $validated = $supplierRequest->validated();
 
         try {
-            DB::transaction(function () use ($supplier, $validated) {
-                $supplier->update($validated);
+            $oldData = $supplier->toArray();
 
-                $this->logs('updated', $supplier->name);
-            });
+            $this->supplierService->updateSupplier($supplier, $validated);
 
-            return redirect()->route('suppliers')->with('success', 'Supplier updated successfully');
+            $this->activityLog->logSupplierAction(
+                $supplier,
+                ActivityLog::ACTION_UPDATED,
+                ['old' => $oldData, 'new' => $supplier->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Supplier updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update supplier');
         }
     }
 
     public function destroy(Supplier $supplier)
     {
         try {
-            DB::transaction(function () use ($supplier) {
-                $supplier->delete();
+            $this->supplierService->deleteSupplier($supplier);
 
-                $this->logs('deleted', $supplier->name);
-            });
+            $this->activityLog->logSupplierAction(
+                $supplier,
+                ActivityLog::ACTION_DELETED,
+                ['old' => $supplier->toArray()]
+            );
 
-            return redirect()->route('suppliers')->with('success', 'Supplier deleted successfully');
+            return redirect()->back()->with('success', 'Supplier deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('suppliers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', 'Something went wrong');
         }
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a supplier ' . $description
-        ]);
     }
 }

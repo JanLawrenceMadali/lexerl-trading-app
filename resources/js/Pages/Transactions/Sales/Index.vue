@@ -1,8 +1,6 @@
 <script setup>
 import { CardHeader } from '@/Components/ui/card';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref } from 'vue';
-import Header from '@/Components/Header.vue';
 import DataTable from './DataTable.vue';
 
 const props = defineProps({
@@ -17,27 +15,12 @@ const props = defineProps({
     subcategories: Object,
 })
 
-const dues = props.dues
-const units = props.units
-const sales = props.sales
-const products = props.products
-const customers = props.customers
-const categories = props.categories
-const transactions = props.transactions
-const subcategories = props.subcategories
-
-const items = ref([
-    { label: 'Transactions', href: '/' },
-    { label: 'Sales', href: 'sales' },
-])
-
 </script>
 
 <template>
 
     <Head title="Sales" />
     <AuthenticatedLayout>
-        <Header :items="items" />
         <div class="px-4 py-4 sm:py-0 md:gap-8 md:px-6">
             <Card>
                 <CardHeader>

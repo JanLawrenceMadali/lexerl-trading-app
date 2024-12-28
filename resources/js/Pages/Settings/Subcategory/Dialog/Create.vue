@@ -11,40 +11,67 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    categories: Object,
-    routing: String
+    categories: { type: Object },
+    category_id: { type: Number, default: null },
+    routing: { type: String }
 })
+
+const emit = defineEmits(['create-subcategory']);
 
 const form = useForm({
     name: null,
-    category_id: null,
+    category_id: props.category_id ? String(props.category_id) : null
 })
 
 const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
+});
 
 const submit = () => {
     form.post(route('subcategories.store'), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('create-subcategory', response.props.subcategories);
             closeSheet();
             if (props.routing) {
-                form.get(route(props.routing));
+                Toast.fire({
+                    icon: "success",
+                    title: "Success!"
+                });
             } else {
-                form.get(route('subcategories'));
+                if (response.props.flash.success) {
+                    Swal.fire({
+                        title: "Success!",
+                        text: response.props.flash.success,
+                        iconHtml: '<img src="/assets/icons/Success.png">',
+                        confirmButtonColor: "#1B1212",
+                    });
+                } else if (response.props.flash.error) {
+                    Swal.fire({
+                        title: "Oops! Something went wrong",
+                        text: response.props.flash.error,
+                        icon: 'error',
+                        confirmButtonColor: "#1B1212",
+                    });
+                }
             }
-
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
         },
         onError: (error) => {
             console.log(error);
@@ -66,17 +93,18 @@ const submit = () => {
             <DialogHeader>
                 <DialogTitle>Create new Sub Category</DialogTitle>
                 <DialogDescription>
-                    Fill in the details of the new sub category and assign which category. Click submit when you're done.
+                    Fill in the details of the new sub category and assign which category. Click submit when you're
+                    done.
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label for="name">Name</Label>
+                    <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" />
                     <InputError :message="form.errors.name" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label>Category</Label>
+                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500">Category</Label>
                     <Select v-model="form.category_id">
                         <SelectTrigger>
                             <SelectValue placeholder="Select category" />
@@ -93,7 +121,7 @@ const submit = () => {
                     <InputError :message="form.errors.category_id" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>

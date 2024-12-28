@@ -6,19 +6,39 @@ use App\Http\Requests\UserRequest;
 use App\Models\ActivityLog;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Services\ActivityLoggerService;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    protected $userService;
+    protected $activityLog;
+
+    public function __construct(
+        UserService $userService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->userService = $userService;
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
-        $roles = Role::all();
-        $users = User::with('roles')->latest()->get();
         return inertia('Settings/Users/Index', [
-            'users' => $users,
-            'roles' => $roles
+            'users' => User::with('roles')
+                ->latest()
+                ->get()
+                ->map(fn($user) => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role_id' => $user->roles->id,
+                    'role' => $user->roles?->name,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ]),
+            'roles' => Role::all(['id', 'name'])
         ]);
     }
 
@@ -27,20 +47,18 @@ class UserController extends Controller
         $validated = $userRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
-                User::create([
-                    'username' => $validated['username'],
-                    'email' => $validated['email'],
-                    'password' => bcrypt($validated['password']),
-                    'role_id' => $validated['role_id']
-                ]);
+            $user = $this->userService->createUser($validated);
 
-                $this->logs('created', $validated['username']);
-            });
-            return redirect()->route('users')->with('success', 'User created successfully');
-        } catch (\Throwable $e) {
+            $this->activityLog->logUserAction(
+                $user,
+                ActivityLog::ACTION_CREATED,
+                ['new' => $user->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'User created successfully');
+        } catch (\Exception $e) {
             report($e);
-            return redirect()->route('users')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create user');
         }
     }
 
@@ -49,44 +67,43 @@ class UserController extends Controller
         $validated = $userRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated, $user) {
-                $user->update([
-                    'username' => $validated['username'],
-                    'email' => $validated['email'],
-                    'password' => bcrypt($validated['password']),
-                    'role_id' => $validated['role_id']
-                ]);
+            $oldData = $user->toArray();
 
-                $this->logs('updated', $user->username);
-            });
-            return redirect()->route('users')->with('success', 'User updated successfully');
-        } catch (\Throwable $e) {
+            $this->userService->updateUser($user, $validated);
+
+            $this->activityLog->logUserAction(
+                $user,
+                ActivityLog::ACTION_UPDATED,
+                ['old' => $oldData, 'new' => $user->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'User updated successfully');
+        } catch (\Exception $e) {
             report($e);
-            return redirect()->route('users')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update user');
         }
     }
 
     public function destroy(User $user)
     {
-        try {
-            DB::transaction(function () use ($user) {
-                $user->delete();
-
-                $this->logs('deleted', $user->username);
-            });
-            return redirect()->route('users')->with('success', 'User deleted successfully');
-        } catch (\Throwable $e) {
-            report($e);
-            return redirect()->route('users')->with('error', 'Something went wrong');
+        // Prevent deleting the current authenticated user
+        if ($user->id === Auth::id()) {
+            return redirect()->back()->with('error', 'You cannot delete your own account');
         }
-    }
 
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a user ' . $description
-        ]);
+        try {
+            $this->userService->deleteUser($user);
+
+            $this->activityLog->logUserAction(
+                $user,
+                ActivityLog::ACTION_DELETED,
+                ['old' => $user->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'User deleted successfully');
+        } catch (\Exception $e) {
+            report($e);
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete user');
+        }
     }
 }

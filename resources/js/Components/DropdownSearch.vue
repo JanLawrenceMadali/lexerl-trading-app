@@ -16,7 +16,7 @@ const props = defineProps({
     valueKey: { type: String, default: 'id' },
     placeholder: { type: String, default: 'Select an item...' },
     modelValue: { required: false, default: null },
-    hasError: { type: Boolean, default: false },
+    hasError: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
     class: { type: String, default: '' },
 });

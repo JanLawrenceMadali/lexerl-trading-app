@@ -39,12 +39,15 @@ class InventoryRequest extends FormRequest
     public function messages()
     {
         return [
-            'unit_id.required' => 'The unit field is required.',
-            'category_id.required' => 'The category field is required.',
-            'supplier_id.required' => 'The supplier field is required.',
-            'subcategory_id.required' => 'The subcategory field is required.',
-            'transaction_id.required' => 'The transaction type field is required.',
-            'transaction_number.required' => 'The transaction number field is required.',
+            'unit_id.required' => 'Unit field is required.',
+            'quantity.required' => 'Quantity field is required.',
+            'landed_cost.required' => 'Landed cost field is required.',
+            'category_id.required' => 'Category field is required.',
+            'supplier_id.required' => 'Supplier field is required.',
+            'purchase_date.required' => 'Purchase date field is required.',
+            'subcategory_id.required' => 'Subcategory field is required.',
+            'transaction_id.required' => 'Transaction type field is required.',
+            'transaction_number.required' => 'Transaction number field is required.',
         ];
     }
 }

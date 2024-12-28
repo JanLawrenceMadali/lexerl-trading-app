@@ -14,14 +14,26 @@ use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Transaction;
 use App\Models\Unit;
+use App\Services\ActivityLoggerService;
+use App\Services\SaleService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SalesController extends Controller
 {
+    protected $activityLog;
+    protected $saleService;
+
+    public function __construct(
+        SaleService $saleService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->saleService = $saleService;
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
         $units = Unit::orderBy('name')->get();
@@ -31,78 +43,77 @@ class SalesController extends Controller
         $subcategories = Subcategory::orderBy('name')->get();
         $customers = Customer::orderBy('name')->get();
         $transactions = Transaction::where('id', '!=', 1)->orderBy('type')->get();
-        $inventories = DB::table('inventories')
-            ->join('units', 'inventories.unit_id', '=', 'units.id')
-            ->join('suppliers', 'inventories.supplier_id', '=', 'suppliers.id')
-            ->join('transactions', 'inventories.transaction_id', '=', 'transactions.id')
-            ->join('categories', 'inventories.category_id', '=', 'categories.id')
-            ->join('subcategories', 'inventories.subcategory_id', '=', 'subcategories.id')
-            ->select(
-                'inventories.id',
-                'inventories.quantity',
-                'inventories.purchase_date',
-                'inventories.amount',
-                'inventories.transaction_number',
-                'inventories.landed_cost',
-                'inventories.description',
-                'units.id as unit_id',
-                'units.abbreviation',
-                'categories.id as category_id',
-                'categories.name as category_name',
-                'subcategories.id as subcategory_id',
-                'subcategories.name as subcategory_name',
-                'suppliers.name as supplier_name',
-                'suppliers.email as supplier_email',
-                'transactions.type as transaction_type',
-            )
-            ->orderBy('inventories.id', 'desc')
-            ->get();
+        $inventories = Inventory::with('units', 'suppliers', 'transactions', 'categories', 'subcategories')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($inventory) {
+                return [
+                    'id' => $inventory->id,
+                    'quantity' => $inventory->quantity,
+                    'purchase_date' => $inventory->purchase_date,
+                    'amount' => $inventory->amount,
+                    'transaction_number' => $inventory->transaction_number,
+                    'landed_cost' => $inventory->landed_cost,
+                    'description' => $inventory->description,
+                    'unit_id' => $inventory->unit_id,
+                    'abbreviation' => $inventory->units->abbreviation,
+                    'category_id' => $inventory->categories->id,
+                    'category_name' => $inventory->categories->name,
+                    'subcategory_id' => $inventory->subcategories->id,
+                    'subcategory_name' => $inventory->subcategories->name,
+                    'supplier_id' => $inventory->suppliers->id,
+                    'supplier_name' => $inventory->suppliers->name,
+                    'supplier_email' => $inventory->suppliers->email,
+                    'transaction_id' => $inventory->transaction_id,
+                    'transaction_type' => $inventory->transactions->type
+                ];
+            });
 
-        $sales = Sale::has('products')->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')->latest()->get();
-
-        $newSales = [];
-
-        foreach ($sales as $sale) {
-            $newSales[] = [
-                'id' => $sale->id,
-                'sale_date' => $sale->sale_date,
-                'transaction_id' => $sale->transaction_id,
-                'transaction_type' => $sale->transactions->type,
-                'transaction_number' => $sale->transaction_number,
-                'total_amount' => $sale->total_amount,
-                'description' => $sale->description,
-                'status_id' => $sale->status_id,
-                'status' => $sale->statuses->name,
-                'customer_id' => $sale->customer_id,
-                'customer_name' => $sale->customers->name,
-                'customer_email' => $sale->customers->email,
-                'customer_address1' => $sale->customers->address1,
-                'customer_address2' => $sale->customers->address2,
-                'customer_contact_person' => $sale->customers->contact_person,
-                'customer_contact_number' => $sale->customers->contact_number,
-                'due_date_id' => $sale->due_date_id,
-                'products' => $sale->products->map(function ($product) {
-                    $unit = $product->pivot->unit_id ? Unit::find($product->pivot->unit_id) : null;
-                    return [
-                        'product_id' => $product->id,
-                        'amount' => $product->pivot->amount,
-                        'unit_id' => $unit->id,
-                        'abbreviation' => $unit->abbreviation,
-                        'quantity' => $product->pivot->quantity,
-                        'category_id' => $product->categories->id,
-                        'category_name' => $product->categories->name,
-                        'subcategory_id' => $product->subcategories->id,
-                        'subcategory_name' => $product->subcategories->name,
-                        'selling_price' => $product->pivot->selling_price,
-                    ];
-                }),
-            ];
-        }
+        $sales = Sale::has('products')
+            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'sale_date' => $sale->sale_date,
+                    'transaction_id' => $sale->transaction_id,
+                    'transaction_type' => $sale->transactions->type,
+                    'transaction_number' => $sale->transaction_number,
+                    'total_amount' => $sale->total_amount,
+                    'description' => $sale->description,
+                    'status_id' => $sale->status_id,
+                    'status' => $sale->statuses->name,
+                    'customer_id' => $sale->customer_id,
+                    'customer_name' => $sale->customers->name,
+                    'customer_email' => $sale->customers->email,
+                    'customer_address1' => $sale->customers->address1,
+                    'customer_address2' => $sale->customers->address2,
+                    'customer_contact_person' => $sale->customers->contact_person,
+                    'customer_contact_number' => $sale->customers->contact_number,
+                    'due_date_id' => $sale->due_date_id,
+                    'products' => $sale->products->map(function ($product) {
+                        $unit = $product->pivot->unit_id ? Unit::find($product->pivot->unit_id) : null;
+                        return [
+                            'product_id' => $product->id,
+                            'amount' => $product->pivot->amount,
+                            'unit_id' => $unit->id,
+                            'abbreviation' => $unit->abbreviation,
+                            'quantity' => $product->pivot->quantity,
+                            'category_id' => $product->categories->id,
+                            'category_name' => $product->categories->name,
+                            'subcategory_id' => $product->subcategories->id,
+                            'subcategory_name' => $product->subcategories->name,
+                            'selling_price' => $product->pivot->selling_price,
+                        ];
+                    }),
+                ];
+            });
 
         return inertia('Transactions/Sales/Index', [
             'dues' => $dues,
             'units' => $units,
-            'sales' => $newSales,
+            'sales' => $sales,
             'products' => $products,
             'customers' => $customers,
             'categories' => $categories,
@@ -114,172 +125,223 @@ class SalesController extends Controller
 
     public function store(SaleRequest $saleRequest)
     {
-        $validated = $saleRequest->validated();
-
         try {
-            DB::transaction(function () use ($validated) {
-                $sale = Sale::create([
-                    'sale_date' => $validated['sale_date'],
-                    'status_id' => $validated['status_id'],
-                    'customer_id' => $validated['customer_id'],
-                    'due_date_id' => $validated['due_date_id'],
-                    'description' => $validated['description'],
-                    'total_amount' => $validated['total_amount'],
-                    'transaction_id' => $validated['transaction_id'],
-                    'transaction_number' => $validated['transaction_number'],
-                ]);
+            DB::transaction(function () use ($saleRequest) {
+                $validated = $saleRequest->validated();
 
-                $validationErrors = [];
-                $productAttachments = [];
+                $sale = Sale::create($this->saleService->prepareSaleData($validated));
 
-                foreach ($validated['products'] as $index => $product) {
-                    $totalQuantity = Inventory::where([
-                        'category_id' => $product['category_id'],
-                        'subcategory_id' => $product['subcategory_id'],
-                        'unit_id' => $product['unit_id']
-                    ])->sum('quantity');
-
-                    if ($totalQuantity < $product['quantity']) {
-                        $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$totalQuantity} available.";
-                        continue;
-                    }
-
-                    $remainingQuantityToDeduct = $product['quantity'];
-                    $inventories = Inventory::where([
-                        'category_id' => $product['category_id'],
-                        'subcategory_id' => $product['subcategory_id'],
-                        'unit_id' => $product['unit_id']
-                    ])
-                        ->where('quantity', '>', 0)
-                        ->orderBy('created_at', 'asc')
-                        ->get();
-
-                    foreach ($inventories as $inventory) {
-                        if ($remainingQuantityToDeduct <= 0) break;
-
-                        $deductAmount = min($inventory->quantity, $remainingQuantityToDeduct);
-                        $inventory->quantity -= $deductAmount;
-                        $inventory->save();
-
-                        $remainingQuantityToDeduct -= $deductAmount;
-                    }
-
-                    $product_id = Product::where([
-                        'category_id' => $product['category_id'],
-                        'subcategory_id' => $product['subcategory_id']
-                    ])
-                        ->select('id')
-                        ->value('id');
-
-                    $productAttachments[$product_id] = [
-                        'amount' => $product['amount'],
-                        'unit_id' => $product['unit_id'],
-                        'quantity' => $product['quantity'],
-                        'selling_price' => $product['selling_price'],
-                    ];
-                }
-
-                if (!empty($validationErrors)) {
-                    throw ValidationException::withMessages($validationErrors);
-                }
+                $productAttachments = $this->processProductInventory($validated['products'], 'create');
 
                 $sale->products()->attach($productAttachments);
 
-                $this->logs('created', $validated['transaction_number']);
+                $this->activityLog->logSaleAction(
+                    $sale,
+                    ActivityLog::ACTION_CREATED,
+                    ['new' => $sale->toArray()]
+                );
+
+                return $sale;
             });
+
+            return redirect()->back()->with('success', 'Sale created successfully');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', 'An unexpected error occurred. Please try again.');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'An unexpected error occurred. Please try again.');
         }
     }
 
     public function update(SaleRequest $saleRequest, Sale $sale)
     {
-        $validated = $saleRequest->validated();
-        if ($validated['status_id'] == 1) $validated['due_date_id'] = null;
-
         try {
-            DB::transaction(function () use ($validated, $sale) {
-                $sale->update([
-                    'sale_date' => $validated['sale_date'],
-                    'status_id' => $validated['status_id'],
-                    'customer_id' => $validated['customer_id'],
-                    'due_date_id' => $validated['due_date_id'],
-                    'description' => $validated['description'],
-                    'total_amount' => $validated['total_amount'],
-                    'transaction_id' => $validated['transaction_id'],
-                    'transaction_number' => $validated['transaction_number'],
-                ]);
+            DB::transaction(function () use ($saleRequest, $sale) {
+                $validated = $saleRequest->validated();
 
-                $validationErrors = [];
-                $productAttachments = [];
+                $oldData = $sale->toArray();
 
-                // Loop through each product to handle inventory and sale updates
-                foreach ($validated['products'] as $index => $product) {
-                    $product_id = Product::where([
-                        'category_id' => $product['category_id'],
-                        'subcategory_id' => $product['subcategory_id']
-                    ])->value('id');
+                $sale->update($this->saleService->prepareSaleData($validated));
 
-                    if (!$product_id) {
-                        $validationErrors["products.{$index}.category_id"] =
-                            "Product not found for category ID {$product['category_id']} and subcategory ID {$product['subcategory_id']}.";
-                        continue;
-                    }
-
-                    $inventory = Inventory::where(['category_id' => $product['category_id'], 'subcategory_id' => $product['subcategory_id'], 'unit_id' => $product['unit_id']])->first();
-
-                    $existingSaleProduct = $sale->products()->wherePivot('product_id', $product_id)->first();
-                    $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
-
-                    $newSaleQuantity = $product['quantity'];
-                    $quantityDifference = $oldSaleQuantity - $newSaleQuantity;
-
-                    // Validate inventory for this product
-                    if (!$inventory || $inventory->quantity + $quantityDifference < 0) {
-                        $validationErrors["products.{$index}.quantity"] =
-                            "Insufficient stock. Only {$inventory->quantity} available.";
-                        continue;
-                    }
-
-                    $inventory->increment('quantity', $quantityDifference);
-
-                    $productAttachments[$product_id] = [
-                        'amount' => $product['amount'],
-                        'unit_id' => $product['unit_id'],
-                        'quantity' => $newSaleQuantity,
-                        'selling_price' => $product['selling_price'],
-                    ];
-                }
-
-                if (!empty($validationErrors)) {
-                    throw ValidationException::withMessages($validationErrors);
-                }
+                $productAttachments = $this->processProductInventory($validated['products'], 'update', $sale);
 
                 $sale->products()->sync($productAttachments);
 
-                $this->logs('updated', $sale->transaction_number);
+                $this->activityLog->logSaleAction(
+                    $sale,
+                    ActivityLog::ACTION_UPDATED,
+                    ['old' => $oldData, 'new' => $sale->toArray()]
+                );
             });
+
+            return redirect()->back()->with('success', 'Sale updated successfully');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', 'An error occurred while updating the sale.');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'An error occurred while updating the sale.');
         }
+    }
+
+    private function processProductInventory(array $products, string $action, ?Sale $existingSale = null): array
+    {
+        $productAttachments = [];
+        $validationErrors = [];
+
+        foreach ($products as $index => $product) {
+            $product['quantity'] = round($product['quantity'], 2);
+
+            $product_id = Product::where([
+                'category_id' => $product['category_id'],
+                'subcategory_id' => $product['subcategory_id']
+            ])->value('id');
+
+            if (!$product_id) {
+                $validationErrors["products.{$index}.category_id"] =
+                    "Product not found for category ID {$product['category_id']} and subcategory ID {$product['subcategory_id']}.";
+                continue;
+            }
+
+            $inventory = Inventory::where([
+                'category_id' => $product['category_id'],
+                'subcategory_id' => $product['subcategory_id'],
+                'unit_id' => $product['unit_id']
+            ])->lockForUpdate()->first();
+
+            if ($action === 'create') {
+                $this->validateInventoryForCreate($inventory, $product, $products, $index, $validationErrors);
+                $this->deductInventory($inventory, $product['quantity']);
+            } elseif ($action === 'update' && $existingSale) {
+                $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $product_id, $validationErrors);
+            }
+
+            $productAttachments[$product_id] = [
+                'amount' => $product['amount'],
+                'unit_id' => $product['unit_id'],
+                'quantity' => $product['quantity'],
+                'selling_price' => $product['selling_price'],
+            ];
+        }
+
+        if (!empty($validationErrors)) {
+            throw ValidationException::withMessages($validationErrors);
+        }
+
+        return $productAttachments;
+    }
+
+    private function validateInventoryForCreate(?Inventory $inventory, array $product, array $products, int $index, array &$validationErrors)
+    {
+        if (!$inventory) {
+            $validationErrors["products.{$index}.quantity"] = "Inventory not found.";
+            return false;
+        }
+
+        if ($inventory->quantity < $product['quantity']) {
+            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$inventory->quantity} available.";
+            return false;
+        }
+
+        foreach ($products as $key => $existingItem) {
+            if ($key === $index) {
+                continue;
+            }
+
+            if (
+                $existingItem['category_id'] === $product['category_id'] &&
+                $existingItem['subcategory_id'] === $product['subcategory_id'] &&
+                $existingItem['unit_id'] === $product['unit_id']
+            ) {
+                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please pick another item.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function validateInventoryForUpdate(
+        ?Inventory $inventory,
+        array $product,
+        array $products,
+        int $index,
+        Sale $existingSale,
+        int $product_id,
+        array &$validationErrors
+    ): bool {
+        $existingSaleProduct = $existingSale->products()->wherePivot('product_id', $product_id)->first();
+        $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
+        $newSaleQuantity = $product['quantity'];
+
+        $quantityDifference = round($oldSaleQuantity - $newSaleQuantity, 2);
+
+        if (!$inventory || $inventory->quantity + $quantityDifference < 0) {
+            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$inventory->quantity} available.";
+            return false;
+        }
+
+        $newQuantity = $inventory->quantity + $quantityDifference;
+        $inventory->update(['quantity' => $newQuantity <= 0.01 ? 0 : $newQuantity]);
+
+        foreach ($products as $key => $existingItem) {
+            if ($key === $index) {
+                continue;
+            }
+
+            if (
+                $existingItem['category_id'] === $product['category_id'] &&
+                $existingItem['subcategory_id'] === $product['subcategory_id'] &&
+                $existingItem['unit_id'] === $product['unit_id']
+            ) {
+                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please pick another item.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function deductInventory(Inventory $inventory, float $quantityToDeduct)
+    {
+        $inventory->quantity = round(max(0, $inventory->quantity - $quantityToDeduct), 2);
+
+        if ($inventory->quantity <= 0.01) {
+            $inventory->quantity = 0;
+        }
+
+        $inventory->save();
     }
 
     public function destroy(Sale $sale)
     {
         try {
             DB::transaction(function () use ($sale) {
+
+                foreach ($sale->products as $product) {
+                    $inventory = Inventory::where([
+                        'category_id' => $product->categories->id,
+                        'subcategory_id' => $product->subcategories->id,
+                        'unit_id' => $product->pivot->unit_id
+                    ])->lockForUpdate()->first();
+
+                    if ($inventory) {
+                        $inventory->quantity += $product->pivot->quantity;
+                        $inventory->save();
+                    }
+                }
+
                 $sale->delete();
 
-                $this->logs('deleted', $sale->transaction_numer);
+                $this->activityLog->logSaleAction(
+                    $sale,
+                    ActivityLog::ACTION_CANCELLED,
+                    ['old' => $sale->toArray()]
+                );
             });
+            return redirect()->back()->with('success', 'Sale deleted successfully');
         } catch (\Throwable $e) {
             report($e);
+            return redirect()->back()->with('error', $e->getMessage() ?? 'An error occurred while deleting the sale.');
         }
     }
 
@@ -295,17 +357,12 @@ class SalesController extends Controller
         $date = now()->format('Ymd');
         $fileName = "sales_report_{$date}.xlsx";
 
-        $this->logs('exported', $fileName);
+        $this->activityLog->logSaleExport(
+            $fileName,
+            ActivityLog::ACTION_EXPORTED,
+            ['old' => null, 'new' => null,]
+        );
 
         return Excel::download($export, $fileName);
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a sale ' . $description
-        ]);
     }
 }

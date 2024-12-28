@@ -14,34 +14,6 @@ const props = defineProps({
 
 const data = ref(props.inventories)
 
-const TIME_UNITS = [
-    { unit: 'year', seconds: 31536000 },
-    { unit: 'month', seconds: 2592000 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 }
-];
-
-const timeAgo = (date) => {
-    const secondsElapsed = Math.floor((new Date() - date) / 1000);
-
-    for (const { unit, seconds } of TIME_UNITS) {
-        const interval = Math.floor(secondsElapsed / seconds);
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-        }
-    }
-
-    return 'just now';
-};
-
-const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-}).format(value)
-
 const columns = [
     {
         accessorKey: 'category',
@@ -136,13 +108,11 @@ const isExporting = ref(false)
 const exportData = () => {
     isExporting.value = true
 
-    // Directly navigate to the download route
     window.location.href = route('current_inventory.export');
 
-    // Simulate finishing the export (optional, for UX only)
     setTimeout(() => {
         isExporting.value = false;
-    }, 1000); // Adjust the time to match your expected download latency
+    }, 1000);
 }
 
 </script>

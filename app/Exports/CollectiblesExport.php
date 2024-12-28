@@ -29,15 +29,16 @@ class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, Sh
         $sales = Sale::has('products')
             ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
             ->where('status_id', 2)
-            ->when($this->startDate && $this->endDate, function ($query) {
+            ->when($this->startDate !== "null" && $this->endDate !== "null", function ($query) {
                 $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
             })
             ->get();
 
-        $data = $sales->flatMap(function ($sale) {
-            return $sale->products->map(function ($product) use ($sale) {
-                $units = Unit::all()->keyBy('id');
-                $unit = $units[$product->pivot->unit_id] ?? '';
+        $units = Unit::all()->keyBy('id');
+
+        $data = $sales->flatMap(function ($sale) use ($units) {
+            return $sale->products->map(function ($product) use ($sale, $units) {
+                $unit = $units[$product->pivot->unit_id] ?? null;
                 return [
                     'ID' => $sale->id,
                     'Transaction Type' => $sale->transactions->type ?? '',
@@ -52,12 +53,14 @@ class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, Sh
                     'Status' => $sale->statuses->name ?? '',
                     'Due Date' => $sale->dues->days ?? '',
                     'Description' => $sale->description,
-                    'Created At' => $sale->created_at->format('M d, Y'),
+                    'Created At' => $sale->created_at->format('M d, Y i:s A'),
                 ];
             });
         });
 
-        $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount']));
+        $totalAmount = $sales->sum(function ($sale) {
+            return $sale->products->sum('pivot.amount');
+        });
 
         $data->push([
             'ID'                => '',
@@ -81,11 +84,15 @@ class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, Sh
 
     public function headings(): array
     {
-        $fromDate = $this->startDate ? $this->startDate : 'N/A';
-        $toDate = $this->endDate ? $this->endDate : 'N/A';
+        $collection = $this->collection()->where('ID', '!=', '');
+        $sales =  $collection->map(function ($item) {
+            return $item;
+        });
+        $fromDate = $this->startDate !== "null" ? $this->startDate : $sales->min('Sale Date');
+        $toDate = $this->endDate !== "null" ? $this->endDate : $sales->max('Sale Date');
 
         return [
-            ['Lexerl Trading - Collectibles'],
+            ['Lexerl Trading - Collectibles Report'],
             ["From: {$fromDate}"],
             ["To: {$toDate}"],
             [

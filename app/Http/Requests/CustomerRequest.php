@@ -30,4 +30,20 @@ class CustomerRequest extends FormRequest
             'contact_number' => 'required',
         ];
     }
+
+    public function messages()
+    {
+        return [
+            'name.required' => 'Customer name is required.',
+            'name.string' => 'Customer name must be a string.',
+            'email.required' => 'Customer email is required.',
+            'email.email' => 'Customer email must be a valid email address.',
+            'email.unique' => 'Customer email must be unique.',
+            'address1.required' => 'Customer address is required.',
+            'address1.string' => 'Customer address must be a string.',
+            'contact_person.required' => 'Contact person is required.',
+            'contact_person.string' => 'Contact person must be a string.',
+            'contact_number.required' => 'Contact number is required.',
+        ];
+    }
 }

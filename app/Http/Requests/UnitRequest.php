@@ -26,4 +26,16 @@ class UnitRequest extends FormRequest
             'abbreviation' => 'required|string|max:255',
         ];
     }
+
+    public function messages()
+    {
+        return [
+            'name.required' => 'Unit name is required.',
+            'name.string' => 'Unit name must be a string.',
+            'name.max' => 'Unit name must not exceed 255 characters.',
+            'abbreviation.required' => 'Unit abbreviation is required.',
+            'abbreviation.string' => 'Unit abbreviation must be a string.',
+            'abbreviation.max' => 'Unit abbreviation must not exceed 255 characters.',
+        ];
+    }
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3'
 import { Edit, Loader2 } from 'lucide-vue-next';
 import { Input } from '@/Components/ui/input';
@@ -10,40 +10,54 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    categories: Object,
+    unit: Object,
 })
 
-const data = ref(props.categories)
+const emit = defineEmits(['update-unit']);
 
 const form = useForm({
-    name: data.value.name,
-    abbreviation: data.value.abbreviation
+    name: props.unit.name,
+    abbreviation: props.unit.abbreviation
 })
+
+watch(() => props.unit, (newUnits) => {
+    form.name = newUnits.name,
+        form.abbreviation = newUnits.abbreviation
+}, { immediate: true })
 
 const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
-    form.patch(route('units.update', data.value), {
+    form.patch(route('units.update', props.unit), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('update-unit', response.props.units);
             closeSheet();
-            form.get(route('units'))
-
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
+            }
         },
         onError: (error) => {
-            console.log(error);
+            // console.log(error);
         }
     })
 }
@@ -66,17 +80,17 @@ const submit = () => {
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label for="name">Name</Label>
+                    <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" type="text" />
                     <InputError :message="form.errors.name" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="abbreviation">Abbreviation</Label>
+                    <Label for="abbreviation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Abbreviation</Label>
                     <Input v-model="form.abbreviation" id="abbreviation" type="text" />
                     <InputError :message="form.errors.abbreviation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Save changes
                     </Button>

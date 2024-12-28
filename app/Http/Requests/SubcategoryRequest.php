@@ -30,11 +30,11 @@ class SubcategoryRequest extends FormRequest
     public function messages()
     {
         return [
-            'name.required' => 'The sub category name field is required.',
-            'name.string' => 'The sub category name field must be a string.',
-            'name.max' => 'The sub category name field must not exceed 255 characters.',
-            'category_id.required' => 'The category field is required.',
-            'category_id.exists' => 'The selected category is invalid.',
+            'name.required' => 'Subcategory name is required.',
+            'name.string' => 'Subcategory name must be a string.',
+            'name.max' => 'Subcategory name must not exceed 255 characters.',
+            'category_id.required' => 'Category is required.',
+            'category_id.exists' => 'Selected category does not exist.',
         ];
     }
 }

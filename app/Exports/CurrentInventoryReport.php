@@ -29,21 +29,18 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
                     'Category' => $inventory->categories->name,
                     'Subcategory' => $inventory->subcategories->name,
                     'Quantity' => $inventory->quantity . ($unit ? " {$unit->abbreviation}" : ''),
-                    'Created At' => $inventory->created_at->format('M d, Y'),
+                    'Created At' => $inventory->created_at->format('M d, Y i:s A'),
                 ];
             });
     }
 
     public function headings(): array
     {
-        $data = $this->collection();
-        $fromDate = $data->min('Created At');
-        $toDate = $data->max('Created At');
+        $currentDate = now()->format('M d, Y');
 
         return [
-            ['Lexerl Trading - Current Inventory'],
-            ["From: {$fromDate}"],
-            ["To: {$toDate}"],
+            ['Lexerl Trading - Current Inventory Report'],
+            ["As of {$currentDate}"],
             [
                 'ID',
                 'Category',
@@ -69,7 +66,6 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
         ]);
 
         $sheet->mergeCells('A2:E2');
-        $sheet->mergeCells('A3:E3');
         $sheet->getStyle('A2:E3')->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -81,7 +77,7 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
             ],
         ]);
 
-        $sheet->getStyle('A4:E4')->applyFromArray([
+        $sheet->getStyle('A3:E3')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -97,7 +93,7 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
         ]);
 
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle("A4:E{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A3:E{$lastRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN
@@ -106,7 +102,7 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
         ]);
 
         return [
-            4   => ['font' => ['bold' => true, 'size' => 12]],
+            3   => ['font' => ['bold' => true, 'size' => 12]],
             'A' => ['alignment' => ['horizontal' => 'center']],
         ];
     }

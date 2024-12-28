@@ -118,13 +118,13 @@ const submit = () => {
     form.patch(route('purchase-in.update', inventory), {
         preserveState: true,
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             form.reset();
             closeSheet();
             routeReload();
             Swal.fire({
                 title: "Updated!",
-                text: "Transaction successfully updated!",
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });
@@ -286,7 +286,7 @@ const isSubmitDisabled = computed(() => {
                                         </Label>
                                         <div class="relative items-center w-full col-span-2">
                                             <Input id="quantity" v-model="form.quantity" type="number" min="0"
-                                                oninput="validity.valid||(value='');"
+                                                step=".01" oninput="validity.valid||(value='');"
                                                 :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.quantity }]" />
                                             <span
                                                 class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
@@ -357,8 +357,7 @@ const isSubmitDisabled = computed(() => {
                                     Cancel
                                 </Button>
                             </DialogClose>
-                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
-                                :disabled="isSubmitDisabled">
+                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit" :disabled="form.processing">
                                 <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                 Submit
                             </Button>

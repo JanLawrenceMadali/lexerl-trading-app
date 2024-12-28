@@ -5,11 +5,24 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CategoryRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
+use App\Services\ActivityLoggerService;
+use App\Services\CategoryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
+    protected $categoryService;
+    protected $activityLog;
+
+    public function __construct(
+        CategoryService $categoryService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->categoryService = $categoryService;
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
         $categories = Category::latest()->get();
@@ -23,15 +36,18 @@ class CategoryController extends Controller
         $validated = $categoryRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
-                Category::create($validated);
+            $category = $this->categoryService->createCategory($validated);
 
-                $this->logs('created', $validated['name']);
-            });
-            return redirect()->route('categories')->with('success', 'Category created successfully');
+            $this->activityLog->logCategoryAction(
+                $category,
+                ActivityLog::ACTION_CREATED,
+                ['new' => $category->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Category created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('categories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
         }
     }
 
@@ -40,39 +56,38 @@ class CategoryController extends Controller
         $validated = $categoryRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated, $category) {
-                $category->update($validated);
+            $oldData = $category->toArray();
 
-                $this->logs('updated', $category->name);
-            });
-            return redirect()->route('categories')->with('success', 'Category updated successfully');
+            $this->categoryService->updateCategory($category, $validated);
+
+            $this->activityLog->logCategoryAction(
+                $category,
+                ActivityLog::ACTION_UPDATED,
+                ['old' => $oldData, 'new' => $category->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Category updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('categories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
         }
     }
 
     public function destroy(Category $category)
     {
         try {
-            DB::transaction(function () use ($category) {
-                $category->delete();
+            $this->categoryService->deleteCategory($category);
 
-                $this->logs('deleted', $category->name);
-            });
-            return redirect()->route('categories')->with('success', 'Category deleted successfully');
+            $this->activityLog->logCategoryAction(
+                $category,
+                ActivityLog::ACTION_DELETED,
+                ['old' => $category->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('categories')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
         }
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a category ' . $description
-        ]);
     }
 }

@@ -19,11 +19,11 @@ return new class extends Migration
     {
         Schema::create('inventories', function (Blueprint $table) {
             $table->id();
-            $table->integer('quantity');
+            $table->decimal('quantity', 10, 2)->default(0);
             $table->date('purchase_date');
-            $table->decimal('amount', 10, 2);
+            $table->decimal('amount', 10, 2)->default(0);
             $table->string('transaction_number');
-            $table->decimal('landed_cost', 10, 2);
+            $table->decimal('landed_cost', 10, 2)->default(0);
             $table->string('description')->nullable();
             $table->foreignIdFor(Unit::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Supplier::class)->constrained()->cascadeOnDelete();
@@ -35,11 +35,11 @@ return new class extends Migration
 
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
-            $table->integer('quantity');
+            $table->decimal('quantity', 10, 2)->default(0);
             $table->date('purchase_date');
-            $table->decimal('amount', 10, 2);
+            $table->decimal('amount', 10, 2)->default(0);
             $table->string('transaction_number');
-            $table->decimal('landed_cost', 10, 2);
+            $table->decimal('landed_cost', 10, 2)->default(0);
             $table->string('description')->nullable();
             $table->foreignIdFor(Unit::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Supplier::class)->constrained()->cascadeOnDelete();

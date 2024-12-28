@@ -5,39 +5,52 @@ namespace App\Http\Controllers;
 use App\Exports\CollectiblesExport;
 use App\Models\ActivityLog;
 use App\Models\Sale;
+use App\Services\ActivityLoggerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class CollectibleController extends Controller
 {
+    protected $activityLog;
+
+    public function __construct(ActivityLoggerService $activityLoggerService)
+    {
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
-        $sales = DB::table('product_sale')
-            ->join('sales', 'product_sale.sale_id', '=', 'sales.id')
-            ->join('statuses', 'sales.status_id', '=', 'statuses.id')
-            ->join('customers', 'sales.customer_id', '=', 'customers.id')
-            ->join('transactions', 'sales.transaction_id', '=', 'transactions.id')
-            ->join('due_dates', 'sales.due_date_id', '=', 'due_dates.id')
-            ->select(
-                'sales.id',
-                'sales.sale_date',
-                'sales.transaction_number',
-                'sales.total_amount',
-                'sales.description',
-                'statuses.name as payment_method',
-                'statuses.id as status_id',
-                'customers.name as customer_name',
-                'customers.email as customer_email',
-                'transactions.type as transaction_type',
-                'due_dates.days',
-            )
-            ->where('sales.status_id', 2)
-            ->orderBy('sales.id', 'desc')
-            ->get();
+        $sales = Sale::query()
+            ->whereHas('products')
+            ->with(['dues', 'statuses', 'customers', 'transactions'])
+            ->where('status_id', 2)
+            ->get()
+            ->map(function ($sale) {
+                $duesDays = (int) Str::beforeLast($sale->dues->days, ' days');
+                $dueDate = Carbon::parse($sale->sale_date)
+                    ->startOfDay()
+                    ->addDays($duesDays);
+                $daysLeft = now()->startOfDay()->diffInDays($dueDate, false);
+                return [
+                    'id' => $sale->id,
+                    'sale_date' => $sale->sale_date,
+                    'transaction_number' => $sale->transaction_number,
+                    'total_amount' => $sale->total_amount,
+                    'description' => $sale->description,
+                    'payment_method' => $sale->statuses->name,
+                    'customer_name' => $sale->customers->name,
+                    'customer_email' => $sale->customers->email,
+                    'transaction_type' => $sale->transactions->type,
+                    'due_date' => $sale->dues->days,
+                    'daysLeft' => $daysLeft,
+                ];
+            })
+            ->sortBy('daysLeft')
+            ->values();
 
-        // return $sales;
         return inertia('Transactions/Collectibles/Index', [
             'sales' => $sales
         ]);
@@ -57,18 +70,22 @@ class CollectibleController extends Controller
                     $sale->status_id = 1;
                     $sale->save();
 
-                    $this->logs('updated', $sale->transaction_number);
+                    $this->activityLog->logCollectibleAction(
+                        $sale,
+                        ActivityLog::ACTION_UPDATED,
+                        ['new' => $sale->toArray()]
+                    );
                 }
             });
+            return redirect()->back()->with('success', 'Collectibles updated successfully');
         } catch (\Exception $e) {
             report($e);
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update collectibles');
         }
     }
 
     public function export(Request $request)
     {
-        sleep(1);
-
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
@@ -77,17 +94,12 @@ class CollectibleController extends Controller
         $date = now()->format('Ymd');
         $fileName = "collectibles_{$date}.xlsx";
 
-        $this->logs('exported', $fileName);
+        $this->activityLog->logCollectibleExport(
+            $fileName,
+            ActivityLog::ACTION_EXPORTED,
+            ['old' => null, 'new' => null]
+        );
 
         return Excel::download($export, $fileName);
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a collectibles ' . $description
-        ]);
     }
 }

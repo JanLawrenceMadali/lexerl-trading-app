@@ -23,7 +23,6 @@ const props = defineProps({
     units: Object,
     products: Object,
     customers: Object,
-    purchases: Object,
     categories: Object,
     inventories: Object,
     transactions: Object,
@@ -43,7 +42,6 @@ const form = useForm({
     total_amount: sales.value.total_amount,
     products: sales.value.products.map((product) => ({
         amount: product.amount,
-        category: product.category,
         quantity: product.quantity,
         selling_price: product.selling_price,
         unit_id: String(product.unit_id),
@@ -101,15 +99,7 @@ watch(() => form.products, (newProducts) => {
 }, { deep: true });
 
 const state = reactive({
-    search: '',
-    customerId: null,
-    supplierId: null,
-    categoryId: null,
-    subCategoryId: null,
-    openCustomer: false,
-    openSupplier: false,
-    openCategory: {},
-    openSubcategory: {},
+    search: ''
 })
 
 const filteredCustomer = computed(() => {
@@ -196,11 +186,11 @@ const submit = () => {
     form.patch(route('sales.update', props.sales.id), {
         preserveState: true,
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             routeReload();
             Swal.fire({
                 title: "Updated!",
-                text: "Transaction successfully updated!",
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });
@@ -419,7 +409,7 @@ const isSubmitDisabled = computed(() => {
                                         </TableCell>
                                         <TableCell> <!-- Selling Price -->
                                             <div class="relative items-center">
-                                                <Input v-model="product.selling_price" type="number" step=".01" min="0"
+                                                <Input v-model="product.selling_price" type="number" min="0" step=".01"
                                                     oninput="validity.valid||(value='');"
                                                     :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.selling_price`] }]" />
                                                 <span
@@ -431,15 +421,17 @@ const isSubmitDisabled = computed(() => {
                                         </TableCell>
                                         <TableCell> <!-- Quantity -->
                                             <div class="relative items-center">
-                                                <Input v-model="product.quantity" type="number" min="0"
-                                                    oninput="validity.valid||(value='');"
-                                                    :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }]" />
+                                                <Input v-model.number="product.quantity" type="number" min="0"
+                                                    step="0.01" :class="[
+                                                        'pl-7',
+                                                        { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }
+                                                    ]" />
                                                 <span
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                     <Boxes class="size-4 text-muted-foreground" />
                                                 </span>
                                                 <small :class="['absolute text-green-600 font-medium top-2.5 right-3']">
-                                                    {{ totalQuantity[index] }} left
+                                                    {{ (totalQuantity[index]).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} left
                                                 </small>
                                             </div>
                                             <InputError :message="form.errors[`products.${index}.quantity`]" />
@@ -491,7 +483,6 @@ const isSubmitDisabled = computed(() => {
                                             <PhilippinePeso class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-5" :message="form.errors.total_amount" />
                                 </div>
                                 <div class="grid items-center grid-cols-10">
                                     <!-- Due Date -->
@@ -534,10 +525,11 @@ const isSubmitDisabled = computed(() => {
                         </div>
 
                         <DialogFooter class="flex items-center mt-4">
+                            <InputError :message="form.errors.duplicate" />
                             <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
                                 Cancel
                             </Button>
-                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
+                            <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit" :disabled="form.processing">
                                 <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                 Submit
                             </Button>

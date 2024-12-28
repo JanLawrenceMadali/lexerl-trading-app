@@ -3,6 +3,7 @@ import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
 import { Separator } from '@/Components/ui/separator'
+import { ScrollArea } from '@/Components/ui/scroll-area';
 
 const props = defineProps({ inventory: Object })
 
@@ -29,8 +30,8 @@ const landed_cost = formatCurrency(data.landed_cost);
                 <Eye :size="18" />
             </Button>
         </DialogTrigger>
-        <DialogContent>
-            <DialogHeader>
+        <DialogContent class="p-0">
+            <DialogHeader class="px-6 pt-6">
                 <DialogTitle>
                     {{ data.transaction_type }} - {{ data.transaction_number }}
                 </DialogTitle>
@@ -38,60 +39,62 @@ const landed_cost = formatCurrency(data.landed_cost);
                     Purchase Date: {{ data.purchase_date }}
                 </DialogDescription>
             </DialogHeader>
-            <div class="grid gap-3 text-sm">
-                <div class="font-semibold"> Supplier Details </div>
-                <ul class="grid gap-3">
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Name</span> <span>{{ data.supplier_name }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Email</span> <span>{{ data.supplier_email }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Address 1</span> <span class="w-1/2 text-right">{{
-                            data.supplier_address1 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Address 2</span> <span class="w-1/2 text-right">{{
-                            data.supplier_address2 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Contact Person</span> <span>{{
-                            data.supplier_contact_person }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground ">Contact Number</span> <span>{{
-                            data.supplier_contact_number }}</span>
-                    </li>
-                </ul>
+            <ScrollArea class="h-[600px] m-2">
+                <div class="grid gap-3 p-4 text-sm">
+                    <div class="font-semibold"> Supplier Details </div>
+                    <ul class="grid gap-3">
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Name</span> <span>{{ data.supplier_name }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Email</span> <span>{{ data.supplier_email }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground ">Address 1</span> <span class="w-1/2 text-right">{{
+                                data.supplier_address1 }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground ">Address 2</span> <span class="w-1/2 text-right">{{
+                                data.supplier_address2 }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground ">Contact Person</span> <span>{{
+                                data.supplier_contact_person }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground ">Contact Number</span> <span>{{
+                                data.supplier_contact_number }}</span>
+                        </li>
+                    </ul>
 
-                <div class="font-semibold"> Product Details </div>
-                <ul class="grid gap-3">
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Category</span> <span>{{ data.category_name }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Sub Category</span> <span>{{ data.subcategory_name
-                            }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Quantity</span> <span>{{ data.quantity }} {{
-                            data.abbreviation }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Landed Cost</span> <span>{{ landed_cost }}</span>
-                    </li>
-                    <Separator />
-                    <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Amount</span> <span>{{ amounts }}</span>
-                    </li>
-                    <li class="grid gap-1 py-2">
-                        <span class="text-muted-foreground">Notes:</span>
-                        <span>{{ data?.description || 'No notes found.' }}</span>
-                    </li>
-                </ul>
-            </div>
-            <DialogFooter>
+                    <div class="font-semibold"> Product Details </div>
+                    <ul class="grid gap-3">
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Category</span> <span>{{ data.category_name }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Sub Category</span> <span>{{ data.subcategory_name
+                                }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Quantity</span> <span>{{ data.quantity }} {{
+                                data.abbreviation }}</span>
+                        </li>
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Landed Cost</span> <span>{{ landed_cost }}</span>
+                        </li>
+                        <Separator />
+                        <li class="flex items-center justify-between">
+                            <span class="text-muted-foreground">Amount</span> <span>{{ amounts }}</span>
+                        </li>
+                        <li class="grid gap-1 py-2">
+                            <span class="text-muted-foreground">Notes:</span>
+                            <span>{{ data?.description || 'No notes found.' }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </ScrollArea>
+            <DialogFooter class="px-6 pb-6">
                 <DialogClose as-child>
                     <Button type="button" variant="secondary">
                         Close

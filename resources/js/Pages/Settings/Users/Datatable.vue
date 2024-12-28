@@ -20,10 +20,14 @@ const props = defineProps({
 
 const data = ref(props.users)
 
+const handleUser = (user) => {
+    data.value = user
+}
+
 const handleDeleted = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this user?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        html: '<p class="custom-text">Please note that this is irreversible and all related data to this user will be deleted.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
@@ -33,13 +37,22 @@ const handleDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('users.destroy', id), {
                 onSuccess: (response) => {
-                    router.get(route('users'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.success,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                    data.value = response.props.users
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire({
+                            title: "Oops! Something went wrong",
+                            text: response.props.flash.error,
+                            icon: "error",
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
                 }
             })
         }
@@ -101,8 +114,8 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Role', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const { roles } = row.original;
-            return h('div', { class: 'px-2' }, h('div', roles.name));
+            const { role } = row.original;
+            return h('div', { class: 'px-2' }, h('div', role));
         },
     },
     {
@@ -152,7 +165,8 @@ const columns = [
                 }),
                 h(Edit, {
                     users: users,
-                    roles: roles
+                    roles: roles,
+                    onUpdateUser: handleUser
                 }),
                 h(Button, {
                     size: 'xs',
@@ -221,7 +235,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create :roles="roles" />
+        <Create :roles="roles" @create-user="handleUser" />
     </div>
     <div class="border rounded-md">
         <Table>

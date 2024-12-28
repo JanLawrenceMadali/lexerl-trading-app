@@ -35,7 +35,7 @@ const data = ref(props.users)
                         <span class="text-muted-foreground">Email</span> <span>{{ data.email }}</span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-muted-foreground">Role</span> <span>{{ data.roles?.name }}</span>
+                        <span class="text-muted-foreground">Role</span> <span>{{ data.role }}</span>
                     </li>
                 </ul>
             </div>

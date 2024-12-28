@@ -1,3 +1,3 @@
 <template>
-    <img src="/assets/images/lexerl-logo.png" alt="">
+    <img src="/assets/images/logo.png" alt="">
 </template>

@@ -111,15 +111,25 @@ const routeReload = () => {
     closeSheet();
 }
 
+const emit = defineEmits(['create-subcategory', 'create-supplier'])
+
+const handleSupplierCreated = (supplier) => {
+    emit('create-supplier', supplier);
+};
+
+const handleSubcategoryCreated = (subcategory) => {
+    emit('create-subcategory', subcategory);
+};
+
 const submit = () => {
     form.post(route('purchase-in.store'), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             routeReload();
             Swal.fire({
                 title: "Success!",
-                text: "Transaction successfully created!",
+                text: response.props.flash.success,
                 iconHtml: '<img src="/assets/icons/Success.png">',
                 confirmButtonColor: "#1B1212",
             });
@@ -220,7 +230,7 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
                                         :has-error="form.errors.supplier_id" placeholder="Select a supplier"
                                         v-model="form.supplier_id">
-                                        <Create :routing="routing" />
+                                        <Create :routing="routing" @create-supplier="handleSupplierCreated" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.supplier_id" />
                                 </div>
@@ -271,7 +281,8 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
                                         :has-error="form.errors.subcategory_id" :disabled="!form.category_id"
                                         placeholder="Select a sub category" v-model="form.subcategory_id">
-                                        <CreateSubcategory :categories="categories" :routing="routing" />
+                                        <CreateSubcategory :categories="categories" :category_id="form.category_id"
+                                            @create-subcategory="handleSubcategoryCreated" :routing="routing" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.subcategory_id" />
                                 </div>
@@ -288,7 +299,7 @@ const routing = 'purchase-in';
                                             </Label>
                                             <div class="relative items-center w-full col-span-2">
                                                 <Input id="quantity" v-model="form.quantity" type="number" min="0"
-                                                    oninput="validity.valid||(value='');"
+                                                    step=".01" oninput="validity.valid||(value='');"
                                                     :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.quantity }]" />
                                                 <span
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
@@ -361,7 +372,7 @@ const routing = 'purchase-in';
                                         Cancel
                                     </Button>
                                 </DialogClose>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit">
+                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit" :disabled="form.processing">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

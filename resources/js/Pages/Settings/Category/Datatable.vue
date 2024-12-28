@@ -19,10 +19,14 @@ const props = defineProps({
 
 const data = ref(props.categories)
 
+const handleCategory = (category) => {
+    data.value = category
+}
+
 const handleDeleted = (id) => {
     Swal.fire({
-        title: '<h2 class="custom-title">Are you sure you want to delete this supplier?</h2>',
-        html: '<p class="custom-text">Please note that this is irreversible</p>',
+        title: '<h2 class="custom-title">Are you sure you want to delete this category?</h2>',
+        html: '<p class="custom-text">Please note that this is irreversible and all related data to this category will be deleted.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
@@ -31,15 +35,23 @@ const handleDeleted = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('categories.destroy', id), {
-
                 onSuccess: (response) => {
-                    router.get(route('categories'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.message,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                    data.value = response.props.categories
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire({
+                            title: "Oops! Something went wrong",
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
                 }
             })
         }
@@ -132,7 +144,8 @@ const columns = [
                     categories: categories,
                 }),
                 h(Edit, {
-                    categories: categories
+                    categories: categories,
+                    onUpdateCategory: handleCategory
                 }),
                 h(Button, {
                     size: 'xs',
@@ -199,7 +212,7 @@ function getNestedValue(obj, path) {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Create />
+        <Create @create-category="handleCategory" />
     </div>
     <div class="border rounded-md">
         <Table>

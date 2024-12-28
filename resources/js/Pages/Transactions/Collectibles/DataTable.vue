@@ -107,10 +107,15 @@ const columns = [
             return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Due Date', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
-            const { days } = row.original;
+            const { due_date } = row.original;
+            const { daysLeft } = row.original;
 
             return h('div', { class: 'px-2' }, [
-                h('div', { class: 'font-medium' }, days),
+                h('div', { class: 'font-medium' }, [
+                    h('div', due_date),
+                    h('div', { class: `${daysLeft < 0 ? 'text-xs text-red-500' : 'text-xs text-green-500'}` },
+                        `${Math.abs(daysLeft)} ${daysLeft < 0 ? 'Day(s) overdue' : 'Day(s) Left'}`),
+                ]),
             ]);
         },
     },
@@ -180,6 +185,7 @@ const table = useVueTable({
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
             'sale_date',
+            'due_date',
             'total_amount',
             'customer_name',
             'customer_email',
@@ -265,7 +271,8 @@ const exportData = () => {
             </span>
         </div>
         <div class="flex items-center gap-2">
-            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start" @click="resetDateRange">
+            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start"
+                @click="resetDateRange">
                 <RefreshCcw class="h-3.5 w-3.5" />
             </Button>
             <Popover>
@@ -290,8 +297,7 @@ const exportData = () => {
                         @update:start-value="(startDate) => range.start = startDate" />
                 </PopoverContent>
             </Popover>
-            <Button size="sm" variant="outline" class="gap-1 h-7"
-                :disabled="isExporting || data.length === 0 || range.start === null || range.end === null"
+            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
                 @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">

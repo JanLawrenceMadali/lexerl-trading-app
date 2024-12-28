@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Exports\ActivityLogReport;
 use App\Exports\CurrentInventoryReport;
+use App\Services\ActivityLoggerService;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -12,6 +13,13 @@ use function Symfony\Component\Clock\now;
 
 class ReportController extends Controller
 {
+    protected $activityLogs;
+
+    public function __construct(ActivityLoggerService $activityLoggerService)
+    {
+        $this->activityLogs = $activityLoggerService;
+    }
+
     public function activity_logs()
     {
         $activity_logs = ActivityLog::with('users')->latest()->get();
@@ -76,7 +84,13 @@ class ReportController extends Controller
     {
         sleep(1);
         $date = now()->format('Ymd');
-        $fileName = "logs_{$date}.xlsx";
+        $fileName = "activity_logs_{$date}.xlsx";
+
+        $this->activityLogs->logActivityLogsExport(
+            $fileName,
+            ActivityLog::MODULE_ACTIVITY_LOGS,
+            ['old' => null, 'new' => null,]
+        );
 
         return Excel::download(new ActivityLogReport, $fileName);
     }
@@ -86,6 +100,12 @@ class ReportController extends Controller
         sleep(1);
         $date = now()->format('Ymd');
         $fileName = "current_inventory_report_{$date}.xlsx";
+
+        $this->activityLogs->logCurrentInventoryExport(
+            $fileName,
+            ActivityLog::MODULE_CURRENT_INVENTORY,
+            ['old' => null, 'new' => null,]
+        );
 
         return Excel::download(new CurrentInventoryReport, $fileName);
     }

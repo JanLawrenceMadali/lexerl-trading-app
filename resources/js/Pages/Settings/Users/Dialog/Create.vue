@@ -14,6 +14,8 @@ const props = defineProps({
     roles: Object
 });
 
+const emit = defineEmits(['create-user']);
+
 const form = useForm({
     username: null,
     email: null,
@@ -26,6 +28,8 @@ const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
@@ -33,16 +37,23 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('create-user', response.props.users);
             closeSheet();
-            form.get(route('users'))
-
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
+            }
         },
         onError: (error) => {
             // console.log(error);
@@ -69,7 +80,7 @@ const submit = () => {
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label>Role</Label>
+                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500">Role</Label>
                     <Select v-model="form.role_id">
                         <SelectTrigger>
                             <SelectValue placeholder="Select a roles" />
@@ -85,28 +96,28 @@ const submit = () => {
                     <InputError :message="form.errors.role_id" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="username">Username</Label>
+                    <Label for="username" class="after:content-['*'] after:ml-0.5 after:text-red-500">Username</Label>
                     <Input id="username" type="text" v-model="form.username" autofocus autocomplete="username" />
                     <InputError :message="form.errors.username" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="email">Email</Label>
+                    <Label for="email" class="after:content-['*'] after:ml-0.5 after:text-red-500">Email</Label>
                     <Input id="email" type="email" v-model="form.email" autocomplete="email" />
                     <InputError :message="form.errors.email" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password">Password</Label>
+                    <Label for="password" class="after:content-['*'] after:ml-0.5 after:text-red-500">Password</Label>
                     <Input id="password" type="password" v-model="form.password" autocomplete="password" />
                     <InputError :message="form.errors.password" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password_confirmation">Confirm Password</Label>
+                    <Label for="password_confirmation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
                     <Input id="password_confirmation" type="password" v-model="form.password_confirmation"
                         autocomplete="password_confirmation" />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>

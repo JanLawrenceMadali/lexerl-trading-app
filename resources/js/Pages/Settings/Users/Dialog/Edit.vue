@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Edit, Loader2 } from 'lucide-vue-next';
 import { useForm } from '@inertiajs/vue3'
 import { Input } from '@/Components/ui/input';
@@ -15,37 +15,54 @@ const props = defineProps({
     roles: Object,
 });
 
-const users = ref(props.users);
+const emit = defineEmits(['update-user']);
 
 const form = useForm({
-    username: users.value.username,
-    email: users.value.email,
-    role_id: String(users.value.role_id),
+    username: props.users.username,
+    email: props.users.email,
+    role_id: String(props.users.role_id),
     password: null,
     password_confirmation: null
 })
+
+watch(() => props.users, (newUsers) => {
+    form.username = newUsers.username,
+        form.email = newUsers.email,
+        form.role_id = String(newUsers.role_id),
+        form.password = null,
+        form.password_confirmation = null
+}, { immediate: true })
 
 const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
-    form.patch(route('users.update', users.value), {
+    form.patch(route('users.update', props.users), {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('update-user', response.props.users);
             closeSheet();
-            form.get(route('users'))
-
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
+            }
         },
         onError: (error) => {
             // console.log(error);
@@ -71,7 +88,7 @@ const submit = () => {
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label>Role</Label>
+                    <Label class="after:content-['*'] after:ml-0.5 after:text-red-500">Role</Label>
                     <Select v-model="form.role_id">
                         <SelectTrigger>
                             <SelectValue placeholder="Select a roles" />
@@ -87,28 +104,28 @@ const submit = () => {
                     <InputError :message="form.errors.role_id" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="username">Username</Label>
+                    <Label for="username" class="after:content-['*'] after:ml-0.5 after:text-red-500">Username</Label>
                     <Input id="username" type="text" v-model="form.username" autofocus autocomplete="username" />
                     <InputError :message="form.errors.username" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="email">Email</Label>
+                    <Label for="email" class="after:content-['*'] after:ml-0.5 after:text-red-500">Email</Label>
                     <Input id="email" type="email" v-model="form.email" autocomplete="email" />
                     <InputError :message="form.errors.email" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password">Password</Label>
+                    <Label for="password" class="after:content-['*'] after:ml-0.5 after:text-red-500">Password</Label>
                     <Input id="password" type="password" v-model="form.password" autocomplete="password" />
                     <InputError :message="form.errors.password" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password_confirmation">Confirm Password</Label>
+                    <Label for="password_confirmation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
                     <Input id="password_confirmation" type="password" v-model="form.password_confirmation"
                         autocomplete="password_confirmation" />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Save changes
                     </Button>

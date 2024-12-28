@@ -67,11 +67,11 @@ const handlePurchaseDeleted = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('purchase-in.destroy', id), {
-                onSuccess: () => {
+                onSuccess: (response) => {
                     router.get(route('purchase-in'))
                     Swal.fire({
                         title: "Deleted!",
-                        text: "Transaction successfully removed!",
+                        text: response.props.flash.success,
                         iconHtml: '<img src="/assets/icons/Success.png">',
                         confirmButtonColor: "#1B1212",
                     });
@@ -302,6 +302,16 @@ const exportData = () => {
         isExporting.value = false;
     }, 1000);
 };
+
+const emit = defineEmits(['create-subcategory', 'create-supplier'])
+
+const handleSupplierCreated = (supplier) => {
+    emit('create-supplier', supplier);
+};
+
+const handleSubcategoryCreated = (subcategory) => {
+    emit('create-subcategory', subcategory)
+}
 </script>
 
 <template>
@@ -313,7 +323,8 @@ const exportData = () => {
             </span>
         </div>
         <div class="flex items-center gap-2">
-            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start" @click="resetDateRange">
+            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start"
+                @click="resetDateRange">
                 <RefreshCcw class="h-3.5 w-3.5" />
             </Button>
             <Popover>
@@ -339,14 +350,15 @@ const exportData = () => {
                 </PopoverContent>
             </Popover>
             <Button size="sm" variant="outline" class="gap-1 h-7"
-                :disabled="isExporting || range.start === null || range.end === null" @click="exportData">
+                :disabled="isExporting || data.length === 0" @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {{ isExporting ? 'Exporting...' : 'Export' }}
                 </span>
             </Button>
             <Create :inventories="inventories" :categories="categories" :subcategories="subcategories"
-                :suppliers="suppliers" :transactions="transactions" :units="units" />
+                :suppliers="suppliers" :transactions="transactions" :units="units"
+                @create-subcategory="handleSubcategoryCreated" @create-supplier="handleSupplierCreated" />
         </div>
     </div>
     <div class="border rounded-md">

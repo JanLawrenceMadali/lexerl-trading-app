@@ -13,6 +13,8 @@ const props = defineProps({
     route: String,
 });
 
+const emit = defineEmits(['create-unit']);
+
 const form = useForm({
     name: null,
     abbreviation: null
@@ -22,6 +24,8 @@ const isOpen = ref(false);
 
 const closeSheet = () => {
     isOpen.value = false;
+    form.reset();
+    form.clearErrors();
 };
 
 const submit = () => {
@@ -29,16 +33,23 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.reset();
+            emit('create-unit', response.props.units);
             closeSheet();
-            form.get(route('units'))
-
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    title: "Success!",
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire({
+                    title: "Oops! Something went wrong",
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
+            }
         },
         onError: (error) => {
             // console.log(error);
@@ -65,17 +76,17 @@ const submit = () => {
             </DialogHeader>
             <form @submit.prevent="submit">
                 <div class="grid gap-2 my-4">
-                    <Label for="name">Name</Label>
+                    <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" type="text" />
                     <InputError :message="form.errors.name" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="abbreviation">Abbreviation</Label>
+                    <Label for="abbreviation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Abbreviation</Label>
                     <Input v-model="form.abbreviation" id="abbreviation" type="text" />
                     <InputError :message="form.errors.abbreviation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit">
+                    <Button variant="secondary" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>

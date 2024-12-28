@@ -24,15 +24,14 @@ class SaleRequest extends FormRequest
     {
         return [
             'description' => '',
+            'total_amount' => 'required',
             'status_id' => 'required',
             'sale_date' => 'required',
             'customer_id' => 'required',
-            'total_amount' => 'required',
             'transaction_id' => 'required',
             'transaction_number' => 'required',
-            'products.*.amount' => '',
+            'products.*.amount' => 'required',
             'products.*.unit_id' => 'required',
-            'products.*.category' => '',
             'products.*.quantity' => 'required',
             'products.*.category_id' => 'required',
             'products.*.selling_price' => 'required',
@@ -44,16 +43,17 @@ class SaleRequest extends FormRequest
     public function messages()
     {
         return [
-            'status_id.required' => 'status is required.',
-            'due_date_id.required_if' => 'due date is required.',
-            'customer_id.required' => 'customer is required.',
-            'transaction_id.required' => 'transaction type is required.',
-            'transaction_number.required' => 'transaction number is required.',
-            'products.*.unit_id.required' => 'unit is required.',
-            'products.*.quantity.required' => 'quantity is required.',
-            'products.*.selling_price.required' => 'selling price is required.',
-            'products.*.category_id.required' => 'category is required.',
-            'products.*.subcategory_id.required' => 'subcategory is required.',
+            'status_id.required' => 'Status is required.',
+            'sale_date.required' => 'Sale date is required.',
+            'customer_id.required' => 'Customer is required.',
+            'due_date_id.required_if' => 'Due date is required.',
+            'transaction_id.required' => 'Transaction type is required.',
+            'transaction_number.required' => 'Transaction number is required.',
+            'products.*.unit_id.required' => 'Unit is required.',
+            'products.*.quantity.required' => 'Quantity is required.',
+            'products.*.selling_price.required' => 'Selling price is required.',
+            'products.*.category_id.required' => 'Category is required.',
+            'products.*.subcategory_id.required' => 'Subcategory is required.',
         ];
     }
 }

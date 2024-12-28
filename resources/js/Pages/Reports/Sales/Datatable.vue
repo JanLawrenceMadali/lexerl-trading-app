@@ -14,34 +14,6 @@ const props = defineProps({
 
 const data = ref(props.sales)
 
-const TIME_UNITS = [
-    { unit: 'year', seconds: 31536000 },
-    { unit: 'month', seconds: 2592000 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 }
-];
-
-const timeAgo = (date) => {
-    const secondsElapsed = Math.floor((new Date() - date) / 1000);
-
-    for (const { unit, seconds } of TIME_UNITS) {
-        const interval = Math.floor(secondsElapsed / seconds);
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-        }
-    }
-
-    return 'just now';
-};
-
-const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-}).format(value)
-
 const columns = [
     {
         accessorKey: 'category_name',

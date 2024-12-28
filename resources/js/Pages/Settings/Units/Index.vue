@@ -9,22 +9,21 @@ const props = defineProps({
 </script>
 
 <template>
+
     <Head title="Manage Units" />
     <Settings>
-        <div class="px-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Units</CardTitle>
-                    <CardDescription class="flex items-center justify-between">
-                        Manage units and view their information.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Datatable :units="units" />
-                </CardContent>
-                <CardFooter>
-                </CardFooter>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Units</CardTitle>
+                <CardDescription class="flex items-center justify-between">
+                    Manage units and view their information.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Datatable :units="units" />
+            </CardContent>
+            <CardFooter>
+            </CardFooter>
+        </Card>
     </Settings>
 </template>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,9 +15,25 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('action');
-            $table->string('description');
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Role::class)->constrained()->cascadeOnDelete();
+
+            $table->string('action');
+            $table->string('module');
+            $table->text('description');
+
+            $table->string('ip_address')->nullable();
+            $table->string('user_agent')->nullable();
+            $table->string('route')->nullable();
+
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
+
+            // Indexes
+            $table->index(['user_id', 'created_at']);
+            $table->index(['action', 'module']);
+            $table->index('role_id');
+
             $table->timestamps();
         });
     }

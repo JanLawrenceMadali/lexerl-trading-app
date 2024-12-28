@@ -25,9 +25,9 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function collection()
     {
-        $data = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
+        $purchases = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
             ->where('quantity', '>', 0)
-            ->when($this->startDate && $this->endDate, function ($query) {
+            ->when($this->startDate !== "null" && $this->endDate !== "null", function ($query) {
                 $query->whereBetween('purchase_date', [$this->startDate, $this->endDate]);
             })
             ->get()
@@ -44,13 +44,13 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
                     'Landed Cost' => '₱' . number_format($inventory->landed_cost, 2),
                     'Amount' => '₱' . number_format($inventory->amount, 2),
                     'Description' => $inventory->description,
-                    'Created At' => $inventory->created_at->format('M d, Y'),
+                    'Created At' => $inventory->created_at->format('M d, Y i:s A'),
                 ];
             });
 
-        $totalAmount = $data->sum(fn($row) => str_replace(['₱', ','], '', $row['Amount'])); // Remove formatting for sum
+        $totalAmount = $purchases->sum(fn($row) => (float) str_replace(['₱', ','], '', $row['Amount']));
 
-        $data->push([
+        $purchases->push([
             'ID' => '', // Empty cell
             'Transaction Type' => '',
             'Transaction Number' => '',
@@ -65,16 +65,20 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
             'Created At' => '', // Empty cell
         ]);
 
-        return $data;
+        return $purchases;
     }
 
     public function headings(): array
     {
-        $fromDate = $this->startDate ? $this->startDate : 'N/A';
-        $toDate = $this->endDate ? $this->endDate : 'N/A';
+        $collection = $this->collection()->where('ID', '!=', '');
+        $sales =  $collection->map(function ($item) {
+            return $item;
+        });
+        $fromDate = $this->startDate !== "null" ? $this->startDate : $sales->min('Purchase Date');
+        $toDate = $this->endDate !== "null" ? $this->endDate : $sales->max('Purchase Date');
 
         return [
-            ['Lexerl Trading - Purchases'],
+            ['Lexerl Trading - Purchase In Report'],
             ["From: {$fromDate}"],
             ["To: {$toDate}"],
             [

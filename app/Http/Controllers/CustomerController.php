@@ -6,11 +6,23 @@ use App\Models\Customer;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\CustomerRequest;
+use App\Services\ActivityLoggerService;
+use App\Services\CustomerService;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
+    protected $customerService;
+    protected $activityLog;
+
+    public function __construct(
+        CustomerService $customerService,
+        ActivityLoggerService $activityLoggerService
+    ) {
+        $this->customerService = $customerService;
+        $this->activityLog = $activityLoggerService;
+    }
+
     public function index()
     {
         $customers = Customer::latest()->get();
@@ -25,16 +37,18 @@ class CustomerController extends Controller
         $validated = $customerRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
-                Customer::create($validated);
+            $customer = $this->customerService->createCustomer($validated);
 
-                $this->logs('created', $validated['name']);
-            });
+            $this->activityLog->logCustomerAction(
+                $customer,
+                ActivityLog::ACTION_CREATED,
+                ['new' => $customer->toArray()]
+            );
 
-            return redirect()->route('customers')->with('success', 'Customer created successfully');
+            return redirect()->back()->with('success', 'Customer created successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
         }
     }
 
@@ -43,41 +57,38 @@ class CustomerController extends Controller
         $validated = $customerRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated, $customer) {
-                $customer->update($validated);
+            $oldData = $customer->toArray();
 
-                $this->logs('updated', $customer->name);
-            });
+            $this->customerService->updateCustomer($customer, $validated);
 
-            return redirect()->route('customers')->with('success', 'Customer updated successfully');
+            $this->activityLog->logCustomerAction(
+                $customer,
+                ActivityLog::ACTION_UPDATED,
+                ['old' => $oldData, 'new' => $customer->toArray()]
+            );
+
+            return redirect()->back()->with('success', 'Customer updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
         }
     }
 
     public function destroy(Customer $customer)
     {
         try {
-            DB::transaction(function () use ($customer) {
-                $customer->delete();
+            $this->customerService->deleteCustomer($customer);
 
-                $this->logs('deleted', $customer->name);
-            });
+            $this->activityLog->logCustomerAction(
+                $customer,
+                ActivityLog::ACTION_DELETED,
+                ['old' => $customer->toArray()]
+            );
 
-            return redirect()->route('customers')->with('success', 'Customer deleted successfully');
+            return redirect()->back()->with('success', 'Customer deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->route('customers')->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
         }
-    }
-
-    private function logs(string $action, string $description)
-    {
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => $action,
-            'description' => Auth::user()->username . ' ' . $action . ' a customer ' . $description
-        ]);
     }
 }

@@ -5,7 +5,7 @@ import { Input } from '@/Components/ui/input'
 import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, CalendarIcon, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, File, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, CalendarIcon, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleX, File, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
@@ -29,6 +29,7 @@ const props = defineProps({
 })
 
 const data = ref(props.sales)
+const customerData = ref(props.customers)
 
 const df = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'medium',
@@ -58,7 +59,11 @@ const resetDateRange = () => {
     };
 };
 
-const handleSalesDeleted = (id) => {
+const handleCustomerCreated = (customer) => {
+    customerData.value = customer
+};
+
+const handleSalesCanceled = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
         html: '<p class="custom-text">Please note that this is irreversible</p>',
@@ -70,14 +75,23 @@ const handleSalesDeleted = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('sales.destroy', id), {
-                onSuccess: () => {
+                onSuccess: (response) => {
                     router.get(route('sales'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: "Transaction successfully removed!",
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            title: "Canceled!",
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire({
+                            title: "Oops! Something went wrong",
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
                 }
             })
         }
@@ -192,9 +206,9 @@ const columns = [
                     size: 'xs',
                     variant: 'ghost',
                     class: 'text-red-600 hover:text-red-800',
-                    title: 'Delete',
-                    onClick: () => handleSalesDeleted(sales.id)
-                }, () => h(Trash2, { class: 'size-5' }))
+                    title: 'Cancel',
+                    onClick: () => handleSalesCanceled(sales.id)
+                }, () => h(CircleX, { class: 'size-5' }))
             ]);
         },
     },
@@ -279,7 +293,8 @@ const exportData = () => {
         </div>
 
         <div class="flex items-center gap-2">
-            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start" @click="resetDateRange">
+            <Button title="Reset date" size="sm" variant="outline" class="gap-1 h-7" :disabled="!range.start"
+                @click="resetDateRange">
                 <RefreshCcw class="h-3.5 w-3.5" />
             </Button>
             <Popover>
@@ -304,16 +319,16 @@ const exportData = () => {
                         @update:start-value="(startDate) => range.start = startDate" />
                 </PopoverContent>
             </Popover>
-            <Button size="sm" variant="outline" class="gap-1 h-7"
-                :disabled="isExporting || range.start === null || range.end === null" @click="exportData">
+            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
+                @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {{ isExporting ? 'Exporting...' : 'Export' }}
                 </span>
             </Button>
             <Create :sales="sales" :categories="categories" :subcategories="subcategories" :customers="customers"
-                :transactions="transactions" :units="units" :dues="dues" :inventories="inventories"
-                :products="products" />
+                :transactions="transactions" :units="units" :dues="dues" :inventories="inventories" :products="products"
+                @create-customer="handleCustomerCreated" />
         </div>
     </div>
     <div class="border rounded-md">
