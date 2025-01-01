@@ -146,7 +146,7 @@ class ActivityLoggerService
         $this->log(
             $action,
             ActivityLog::MODULE_COLLECTIBLES,
-            "{$actor} {$action} collectible #{$collectible->transaction_number} for customer {$collectible->customer->name} with total amount of {$total_amount}",
+            "{$actor} {$action} collectible #{$collectible->transaction_number} for customer {$collectible->customers->name} with total amount of {$total_amount}",
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
