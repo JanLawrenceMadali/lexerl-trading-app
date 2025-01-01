@@ -4,6 +4,7 @@ import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
 import { ref } from "vue";
 import { ScrollArea } from '@/Components/ui/scroll-area';
+import { watch } from 'vue';
 
 const props = defineProps({ sales: Object })
 
@@ -38,6 +39,9 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
+watch(() => props.sales, (newSales) => {
+    data.value = newSales
+}, { immediate: true })
 </script>
 
 <template>

@@ -98,6 +98,36 @@ watch(() => form.products, (newProducts) => {
     form.total_amount = Number(total.toFixed(2));
 }, { deep: true });
 
+watch(() => form.products, (newProducts) => {
+    newProducts.forEach((product, index) => {
+        const { quantity, selling_price } = product;
+        form.products[index].amount = quantity && selling_price ? quantity * selling_price : null;
+    });
+},
+    { deep: true }
+);
+
+watch(() => props.sales, (newSale) => {
+    form.status_id = String(newSale.status_id);
+    form.sale_date = newSale.sale_date;
+    form.due_date_id = newSale.due_date_id === null ? newSale.due_date_id : String(newSale.due_date_id);
+    form.description = newSale.description;
+    form.customer_id = newSale.customer_id;
+    form.transaction_id = String(newSale.transaction_id);
+    form.transaction_number = newSale.transaction_number;
+    form.total_amount = newSale.total_amount;
+    form.products = newSale.products.map((product) => ({
+        amount: product.amount,
+        quantity: product.quantity,
+        selling_price: product.selling_price,
+        unit_id: String(product.unit_id),
+        category_id: String(product.category_id),
+        subcategory_id: String(product.subcategory_id),
+    }));
+},
+    { deep: true }
+);
+
 const state = reactive({
     search: ''
 })
@@ -129,15 +159,6 @@ const filteredUnit = (products) => {
         )
     )
 };
-
-watch(() => form.products, (newProducts) => {
-    newProducts.forEach((product, index) => {
-        const { quantity, selling_price } = product;
-        form.products[index].amount = quantity && selling_price ? quantity * selling_price : null;
-    });
-},
-    { deep: true }
-);
 
 const totalQuantity = computed(() => {
     if (!form.products || form.products.length === 0) return 0;
@@ -177,17 +198,15 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const routeReload = () => {
-    form.get(route('sales'))
-    closeModal();
-};
+const emit = defineEmits(['update-sale']);
 
 const submit = () => {
     form.patch(route('sales.update', props.sales.id), {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (response) => {
-            routeReload();
+            emit('update-sale', response.props.sales);
+            closeModal();
             if (response.props.flash.success) {
                 Swal.fire({
                     text: response.props.flash.success,

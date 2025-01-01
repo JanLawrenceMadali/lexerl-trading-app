@@ -106,12 +106,7 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const routeReload = () => {
-    form.get(route('purchase-in'));
-    closeModal();
-}
-
-const emit = defineEmits(['create-subcategory', 'create-supplier'])
+const emit = defineEmits(['create-subcategory', 'create-supplier', 'create-purchase-in']);
 
 const handleSupplierCreated = (supplier) => {
     emit('create-supplier', supplier);
@@ -126,7 +121,8 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            routeReload();
+            emit('create-purchase-in', response.props.inventories);
+            closeModal();
             if (response.props.flash.success) {
                 Swal.fire({
                     text: response.props.flash.success,

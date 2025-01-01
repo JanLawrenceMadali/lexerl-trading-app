@@ -4,10 +4,11 @@ import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
 import { Separator } from '@/Components/ui/separator'
 import { ScrollArea } from '@/Components/ui/scroll-area';
+import { watch, ref } from 'vue';
 
 const props = defineProps({ inventory: Object })
 
-const data = props.inventory
+const data = ref(props.inventory)
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
@@ -18,9 +19,9 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
-const amounts = formatCurrency(data.amount);
-const landed_cost = formatCurrency(data.landed_cost);
-
+watch(() => props.inventory, (newInventory) => {
+    data.value = newInventory
+}, { immediate: true })
 </script>
 
 <template>
@@ -81,11 +82,11 @@ const landed_cost = formatCurrency(data.landed_cost);
                                 data.abbreviation }}</span>
                         </li>
                         <li class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Landed Cost</span> <span>{{ landed_cost }}</span>
+                            <span class="text-muted-foreground">Landed Cost</span> <span>{{ formatCurrency(data.landed_cost) }}</span>
                         </li>
                         <Separator />
                         <li class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Amount</span> <span>{{ amounts }}</span>
+                            <span class="text-muted-foreground">Amount</span> <span>{{ formatCurrency(data.amount) }}</span>
                         </li>
                         <li class="grid gap-1 py-2">
                             <span class="text-muted-foreground">Notes:</span>

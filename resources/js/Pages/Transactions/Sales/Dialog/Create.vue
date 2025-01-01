@@ -95,6 +95,15 @@ watch(() => form.products, (newProducts) => {
     form.total_amount = Number(total.toFixed(2));
 }, { deep: true });
 
+watch(() => form.products, (newProducts) => {
+    newProducts.forEach((product, index) => {
+        const { quantity, selling_price } = product;
+        form.products[index].amount = quantity && selling_price ? quantity * selling_price : null;
+    });
+},
+    { deep: true }
+);
+
 const state = reactive({
     search: ''
 })
@@ -126,15 +135,6 @@ const filteredUnit = (products) => {
         )
     )
 };
-
-watch(() => form.products, (newProducts) => {
-    newProducts.forEach((product, index) => {
-        const { quantity, selling_price } = product;
-        form.products[index].amount = quantity && selling_price ? quantity * selling_price : null;
-    });
-},
-    { deep: true }
-);
 
 const totalQuantity = computed(() => {
     if (!form.products || form.products.length === 0) return 0;
@@ -174,12 +174,7 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const routeReload = () => {
-    form.get(route('sales'))
-    closeModal();
-};
-
-const emit = defineEmits(['create-customer']);
+const emit = defineEmits(['create-customer', 'create-sale']);
 
 const handleCustomerCreated = (customer) => {
     emit('create-customer', customer);
@@ -190,7 +185,8 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            routeReload();
+            emit('create-sale', response.props.sales);
+            closeModal();
             if (response.props.flash.success) {
                 Swal.fire({
                     text: response.props.flash.success,

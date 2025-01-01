@@ -21,13 +21,6 @@ const inventories = ref(props.inventories)
 const transactions = ref(props.transactions)
 const subcategories = ref(props.subcategories)
 
-const handleSubcategoryCreated = (subcategory) => {
-    subcategories.value = subcategory
-};
-
-const handleSupplierCreated = (supplier) => {
-    suppliers.value = supplier
-};
 </script>
 
 <template>
@@ -44,8 +37,7 @@ const handleSupplierCreated = (supplier) => {
                 </CardHeader>
                 <CardContent>
                     <DataTable :inventories="inventories" :categories="categories" :subcategories="subcategories"
-                        :suppliers="suppliers" :transactions="transactions" :units="units"
-                        @create-subcategory="handleSubcategoryCreated" @create-supplier="handleSupplierCreated" />
+                        :suppliers="suppliers" :transactions="transactions" :units="units" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>

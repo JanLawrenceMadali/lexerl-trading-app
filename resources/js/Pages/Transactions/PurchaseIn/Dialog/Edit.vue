@@ -74,10 +74,24 @@ watch(
     }
 )
 
+watch(() => props.inventory, (newInventory) => {
+    form.amount = newInventory.amount
+    form.quantity = newInventory.quantity
+    form.description = newInventory.description
+    form.landed_cost = newInventory.landed_cost
+    form.purchase_date = newInventory.purchase_date
+    form.supplier_id = newInventory.supplier_id
+    form.category_id = newInventory.category_id
+    form.subcategory_id = newInventory.subcategory_id
+    form.unit_id = String(newInventory.unit_id)
+    form.transaction_id = String(newInventory.transaction_id)
+    form.transaction_number = newInventory.transaction_number
+    formatAndSetDate(newInventory.purchase_date)
+}, { immediate: true })
+
 const state = reactive({
     search: ''
 })
-
 
 const filteredCategory = computed(() => {
     const lowerSearch = state.search.toLowerCase()
@@ -110,10 +124,7 @@ const closeModal = () => {
     form.clearErrors();
 };
 
-const routeReload = () => {
-    form.get(route('purchase-in'))
-    closeModal();
-}
+const emit = defineEmits(['update-purchase-in']);
 
 const inventory = data.value;
 
@@ -122,7 +133,8 @@ const submit = () => {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (response) => {
-            routeReload();
+            emit('update-purchase-in', response.props.inventories);
+            closeModal();
             if (response.props.flash.success) {
                 Swal.fire({
                     text: response.props.flash.success,

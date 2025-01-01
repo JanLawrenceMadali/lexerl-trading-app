@@ -5,7 +5,7 @@ import { Input } from '@/Components/ui/input'
 import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2, File, CalendarIcon, RefreshCcw, CalendarRange } from 'lucide-vue-next'
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Trash2, File, RefreshCcw, CalendarRange } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
@@ -26,6 +26,8 @@ const props = defineProps({
 })
 
 const data = ref(props.inventories)
+const subcategories = ref(props.subcategories);
+const suppliers = ref(props.suppliers);
 
 const df = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'medium',
@@ -55,6 +57,18 @@ const resetDateRange = () => {
     };
 };
 
+const handleSupplierCreated = (supplier) => {
+    suppliers.value = supplier;
+};
+
+const handleSubcategoryCreated = (subcategory) => {
+    subcategories.value = subcategory;
+};
+
+const handleInventory = (inventory) => {
+    data.value = inventory;
+};
+
 const handlePurchaseDeleted = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
@@ -68,7 +82,7 @@ const handlePurchaseDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('purchase-in.destroy', id), {
                 onSuccess: (response) => {
-                    router.get(route('purchase-in'))
+                    data.value = response.props.inventories
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,
@@ -217,7 +231,8 @@ const columns = [
                     categories,
                     transactions,
                     subcategories,
-                    inventory: inventory,
+                    inventory,
+                    onUpdatePurchaseIn: handleInventory,
                 }),
                 h(Button, {
                     size: 'xs',
@@ -305,16 +320,6 @@ const exportData = () => {
         isExporting.value = false;
     }, 1000);
 };
-
-const emit = defineEmits(['create-subcategory', 'create-supplier'])
-
-const handleSupplierCreated = (supplier) => {
-    emit('create-supplier', supplier);
-};
-
-const handleSubcategoryCreated = (subcategory) => {
-    emit('create-subcategory', subcategory)
-}
 </script>
 
 <template>
@@ -360,7 +365,7 @@ const handleSubcategoryCreated = (subcategory) => {
                 </span>
             </Button>
             <Create :inventories="inventories" :categories="categories" :subcategories="subcategories"
-                :suppliers="suppliers" :transactions="transactions" :units="units"
+                :suppliers="suppliers" :transactions="transactions" :units="units" @create-purchase-in="handleInventory"
                 @create-subcategory="handleSubcategoryCreated" @create-supplier="handleSupplierCreated" />
         </div>
     </div>

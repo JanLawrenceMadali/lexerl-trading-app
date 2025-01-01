@@ -5,8 +5,8 @@ import { Input } from '@/Components/ui/input'
 import { router } from "@inertiajs/vue3";
 import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
-import { ArrowUpDown, CalendarIcon, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleX, File, RefreshCcw, Search, Trash2 } from 'lucide-vue-next'
-import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
+import { ArrowUpDown, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleX, File, RefreshCcw, Search } from 'lucide-vue-next'
+import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
 import Edit from './Dialog/Edit.vue';
@@ -63,6 +63,10 @@ const handleCustomerCreated = (customer) => {
     customerData.value = customer
 };
 
+const handleSale = (sale) => {
+    data.value = sale
+};
+
 const handleSalesCanceled = (id) => {
     Swal.fire({
         title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
@@ -76,7 +80,7 @@ const handleSalesCanceled = (id) => {
         if (result.isConfirmed) {
             router.delete(route('sales.destroy', id), {
                 onSuccess: (response) => {
-                    router.get(route('sales'))
+                    data.value = response.props.sales
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,
@@ -187,14 +191,15 @@ const columns = [
                 }),
                 h(Edit, {
                     dues,
+                    sales,
                     units,
                     customers,
                     products,
                     categories,
                     inventories,
                     transactions,
-                    sales: sales,
                     subcategories,
+                    onUpdateSale: handleSale
                 }),
                 h(Button, {
                     size: 'xs',
@@ -245,6 +250,8 @@ const table = useVueTable({
         });
     },
 })
+
+console.log(data.value);
 
 function getNestedValue(obj, path) {
     const keys = path.split('.');
@@ -322,7 +329,7 @@ const exportData = () => {
             </Button>
             <Create :sales="sales" :categories="categories" :subcategories="subcategories" :customers="customers"
                 :transactions="transactions" :units="units" :dues="dues" :inventories="inventories" :products="products"
-                @create-customer="handleCustomerCreated" />
+                @create-customer="handleCustomerCreated" @create-sale="handleSale" />
         </div>
     </div>
     <div class="border rounded-md">
