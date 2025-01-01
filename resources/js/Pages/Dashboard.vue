@@ -1,14 +1,13 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import { ScrollArea } from '@/Components/ui/scroll-area'
-import { ArrowRightFromLine, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, PhilippinePeso, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
+import { ArrowRightFromLine, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { BarChart } from '@/Components/ui/chart-bar'
 
 const props = defineProps({
     total_sale: { type: Number },
-    total_gross: { type: Number },
     total_purchase: { type: Number },
     activity_logs: { type: Object },
     total_collectible: { type: Number },
@@ -17,8 +16,8 @@ const props = defineProps({
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: 'PHP',
+        // style: 'currency',
+        // currency: 'PHP',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(value);
@@ -46,15 +45,11 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         <CardTitle class="text-sm font-medium">
                             Total Purchases
                         </CardTitle>
-                        <PhilippinePeso class="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatCurrency(total_purchase) }}
+                    <CardContent class="mt-4">
+                        <div class="text-4xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_purchase) }}</span>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            sample description
-                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -62,15 +57,11 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         <CardTitle class="text-sm font-medium">
                             Total Sales
                         </CardTitle>
-                        <PhilippinePeso class="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatCurrency(total_sale) }}
+                    <CardContent class="mt-4">
+                        <div class="text-4xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale) }}</span>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            sample description
-                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -78,15 +69,11 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         <CardTitle class="text-sm font-medium">
                             Total Collectibles
                         </CardTitle>
-                        <PhilippinePeso class="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatCurrency(total_collectible) }}
+                    <CardContent class="mt-4">
+                        <div class="text-4xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_collectible) }}</span>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            sample description
-                        </p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -94,15 +81,11 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         <CardTitle class="text-sm font-medium">
                             Total Gross Profit
                         </CardTitle>
-                        <PhilippinePeso class="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div class="text-2xl font-bold">
-                            {{ formatCurrency(total_sale - total_purchase) }}
+                    <CardContent class="mt-4">
+                        <div class="text-4xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale - total_purchase) }}</span>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            sample description
-                        </p>
                     </CardContent>
                 </Card>
             </div>
