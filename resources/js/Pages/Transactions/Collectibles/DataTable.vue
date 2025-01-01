@@ -222,18 +222,21 @@ const bulkUpdate = () => {
     form.post(route('collectibles.update'), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             form.get(route('collectibles'))
             table.resetRowSelection();
-            Swal.fire({
-                text: "Collectible(s) successfully marked as paid!",
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire('Error', "Oops! Something went wrong", 'error');
+            }
         },
-        onError: (error) => {
-            console.error('Bulk update failed:', error);
-            // Handle error, maybe display an error message
+        onError: (errors) => {
+            // console.log(errors);
         }
     });
 };

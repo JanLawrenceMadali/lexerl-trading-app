@@ -22,15 +22,18 @@ const createBackup = () => {
     isLoading.value = true;
     form.post(route('backup.manual'), {
         onSuccess: (response) => {
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire('Error', "Oops! Something went wrong", 'error');
+            }
         },
         onError: (errors) => {
-            Swal.fire('Error', 'Failed to create backup.', 'error');
+            // console.log(errors);
         },
         onFinish: () => {
             isLoading.value = false;

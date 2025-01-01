@@ -144,7 +144,7 @@ class SalesController extends Controller
                 return $sale;
             });
 
-            return redirect()->back()->with('success', 'Sale created successfully');
+            return redirect()->back()->with('success', 'Transaction successfully added!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
@@ -174,7 +174,7 @@ class SalesController extends Controller
                 );
             });
 
-            return redirect()->back()->with('success', 'Sale updated successfully');
+            return redirect()->back()->with('success', 'Transaction successfully updated!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
@@ -338,7 +338,7 @@ class SalesController extends Controller
                     ['old' => $sale->toArray()]
                 );
             });
-            return redirect()->back()->with('success', 'Sale deleted successfully');
+            return redirect()->back()->with('success', 'Transaction successfully removed!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'An error occurred while deleting the sale.');

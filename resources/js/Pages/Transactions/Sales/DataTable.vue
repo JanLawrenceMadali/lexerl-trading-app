@@ -71,7 +71,7 @@ const handleSalesCanceled = (id) => {
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
         cancelButtonColor: "#1B1212",
-        confirmButtonText: "Yes",
+        confirmButtonText: "Yes, cancel it!",
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('sales.destroy', id), {
@@ -79,18 +79,12 @@ const handleSalesCanceled = (id) => {
                     router.get(route('sales'))
                     if (response.props.flash.success) {
                         Swal.fire({
-                            title: "Canceled!",
                             text: response.props.flash.success,
                             iconHtml: '<img src="/assets/icons/Success.png">',
                             confirmButtonColor: "#1B1212",
                         });
                     } else if (response.props.flash.error) {
-                        Swal.fire({
-                            title: "Oops! Something went wrong",
-                            text: response.props.flash.error,
-                            icon: 'error',
-                            confirmButtonColor: "#1B1212",
-                        });
+                        Swal.fire('Error', "Oops! Something went wrong", 'error');
                     }
                 }
             })

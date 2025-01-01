@@ -37,13 +37,16 @@ const handleDeleted = (id) => {
             router.delete(route('customers.destroy', id), {
                 onSuccess: (response) => {
                     data.value = response.props.customers
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.success,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
-                }
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire('Error', "Oops! Something went wrong", 'error');
+                    }
+                },
             })
         }
     });

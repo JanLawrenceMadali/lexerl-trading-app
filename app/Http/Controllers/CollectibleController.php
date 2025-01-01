@@ -77,7 +77,7 @@ class CollectibleController extends Controller
                     );
                 }
             });
-            return redirect()->back()->with('success', 'Collectibles updated successfully');
+            return redirect()->back()->with('success', 'Collectible(s) successfully marked as paid!');
         } catch (\Exception $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update collectibles');

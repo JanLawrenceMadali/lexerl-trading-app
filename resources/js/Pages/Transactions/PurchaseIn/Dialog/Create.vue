@@ -100,7 +100,7 @@ const filteredSupplier = computed(() => {
 
 const isOpen = ref(false);
 
-const closeSheet = () => {
+const closeModal = () => {
     isOpen.value = false;
     form.reset();
     form.clearErrors();
@@ -108,7 +108,7 @@ const closeSheet = () => {
 
 const routeReload = () => {
     form.get(route('purchase-in'));
-    closeSheet();
+    closeModal();
 }
 
 const emit = defineEmits(['create-subcategory', 'create-supplier'])
@@ -127,12 +127,15 @@ const submit = () => {
         preserveState: true,
         onSuccess: (response) => {
             routeReload();
-            Swal.fire({
-                title: "Success!",
-                text: response.props.flash.success,
-                iconHtml: '<img src="/assets/icons/Success.png">',
-                confirmButtonColor: "#1B1212",
-            });
+            if (response.props.flash.success) {
+                Swal.fire({
+                    text: response.props.flash.success,
+                    iconHtml: '<img src="/assets/icons/Success.png">',
+                    confirmButtonColor: "#1B1212",
+                });
+            } else if (response.props.flash.error) {
+                Swal.fire('Error', "Oops! Something went wrong", 'error');
+            }
         },
         onError: (errors) => {
             // console.log(errors);
@@ -367,12 +370,11 @@ const routing = 'purchase-in';
                             </div>
 
                             <DialogFooter>
-                                <DialogClose as-child>
-                                    <Button type="button" class="bg-[#C00F0C] hover:bg-red-500">
-                                        Cancel
-                                    </Button>
-                                </DialogClose>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit" :disabled="form.processing">
+                                <Button type="button" @click="closeModal()" class="bg-[#C00F0C] hover:bg-red-500 h-7">
+                                    Cancel
+                                </Button>
+                                <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
+                                    :disabled="form.processing">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

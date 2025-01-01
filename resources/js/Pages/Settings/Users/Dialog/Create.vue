@@ -41,22 +41,16 @@ const submit = () => {
             closeSheet();
             if (response.props.flash.success) {
                 Swal.fire({
-                    title: "Success!",
                     text: response.props.flash.success,
                     iconHtml: '<img src="/assets/icons/Success.png">',
                     confirmButtonColor: "#1B1212",
                 });
             } else if (response.props.flash.error) {
-                Swal.fire({
-                    title: "Oops! Something went wrong",
-                    text: response.props.flash.error,
-                    icon: 'error',
-                    confirmButtonColor: "#1B1212",
-                });
+                Swal.fire('Error', "Oops! Something went wrong", 'error');
             }
         },
-        onError: (error) => {
-            // console.log(error);
+        onError: (errors) => {
+            // console.log(errors);
         }
     })
 }
@@ -111,7 +105,8 @@ const submit = () => {
                     <InputError :message="form.errors.password" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password_confirmation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
+                    <Label for="password_confirmation"
+                        class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
                     <Input id="password_confirmation" type="password" v-model="form.password_confirmation"
                         autocomplete="password_confirmation" />
                     <InputError :message="form.errors.password_confirmation" />

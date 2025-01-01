@@ -63,19 +63,22 @@ const handlePurchaseDeleted = (id) => {
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
         cancelButtonColor: "#1B1212",
-        confirmButtonText: "Yes",
+        confirmButtonText: "Yes, delete it!",
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('purchase-in.destroy', id), {
                 onSuccess: (response) => {
                     router.get(route('purchase-in'))
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: response.props.flash.success,
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
-                }
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else if (response.props.flash.error) {
+                        Swal.fire('Error', "Oops! Something went wrong", 'error');
+                    }
+                },
             })
         }
     });
@@ -349,8 +352,8 @@ const handleSubcategoryCreated = (subcategory) => {
                         @update:start-value="(startDate) => range.start = startDate" />
                 </PopoverContent>
             </Popover>
-            <Button size="sm" variant="outline" class="gap-1 h-7"
-                :disabled="isExporting || data.length === 0" @click="exportData">
+            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
+                @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {{ isExporting ? 'Exporting...' : 'Export' }}

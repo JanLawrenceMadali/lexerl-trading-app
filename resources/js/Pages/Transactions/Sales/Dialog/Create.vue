@@ -190,23 +190,15 @@ const submit = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            console.log(response);
-
             routeReload();
             if (response.props.flash.success) {
                 Swal.fire({
-                    title: "Success!",
                     text: response.props.flash.success,
                     iconHtml: '<img src="/assets/icons/Success.png">',
                     confirmButtonColor: "#1B1212",
                 });
             } else if (response.props.flash.error) {
-                Swal.fire({
-                    title: "Oops! Something went wrong.",
-                    text: response.props.flash.error,
-                    icon: 'error',
-                    confirmButtonColor: "#1B1212",
-                });
+                Swal.fire('Error', "Oops! Something went wrong", 'error');
             }
         },
         onError: (errors) => {
@@ -565,10 +557,10 @@ const isOverQuantity = computed(() => {
 
                             <DialogFooter class="flex items-center mt-4">
                                 <InputError :message="form.errors.duplicate" />
-                                <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500">
+                                <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500 h-7">
                                     Cancel
                                 </Button>
-                                <Button variant="secondary" class="disabled:cursor-not-allowed" type="submit"
+                                <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
                                     :disabled="form.processing || isOverQuantity">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
