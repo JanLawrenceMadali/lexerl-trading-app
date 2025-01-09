@@ -32,6 +32,7 @@ class ActivityLog extends Model
     const ACTION_UPDATED = 'update';
     const ACTION_DELETED = 'delete';
     const ACTION_CANCELLED = 'cancel';
+    const ACTION_PAID = 'paid';
     const ACTION_BACKUP = 'backup';
     const ACTION_DOWNLOAD = 'download';
     const ACTION_RESTORE = 'restore';
