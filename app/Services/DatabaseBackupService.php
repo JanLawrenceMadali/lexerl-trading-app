@@ -89,6 +89,24 @@ class DatabaseBackupService
         }
     }
 
+    public function uploadRestoreBackup($file): bool
+    {
+        $databasePath = database_path('database.sqlite');
+        $backupPath = storage_path('app/backups/' . $file->getClientOriginalName());
+
+        if (!file_exists($backupPath)) {
+            throw new \Exception('Backup file not found.');
+        }
+
+        try {
+            // Replace the current database with the backup
+            File::copy($backupPath, $databasePath);
+            return true;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
     public function deleteBackup($backupFileName): bool
     {
         $backupPath = storage_path('app/backups/' . $backupFileName);

@@ -38,7 +38,7 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_BACKUP,
-                "{$filename} was backup manually",
+                "{$filename} was backed up manually",
             );
 
             return redirect()->back()->with('success', 'Database backup manually created successfully.');
@@ -82,7 +82,7 @@ class BackupController extends Controller
 
             return redirect()->back()->with('success', 'All backups successfully deleted.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete backups');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to clean all backups');
         }
     }
 
@@ -98,9 +98,33 @@ class BackupController extends Controller
                 "{$backupFile} was restored",
             );
 
+            return redirect()->back()->with('success', 'Database successfully restored backup.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore backups');
+        }
+    }
+
+    public function upload_restore(Request $request)
+    {
+        try {
+            $request->validate([
+                'backup' => 'required|file',
+            ]);
+
+            $backupFile = $request->file('backup');
+
+            $filename = $backupFile->getClientOriginalName();
+            
+            $this->backupService->uploadRestoreBackup($backupFile);
+
+            $this->activityLog->logDatabaseBackup(
+                ActivityLog::ACTION_RESTORE,
+                "{$filename} was restored from the uploaded backup",
+            );
+
             return redirect()->back()->with('success', 'Database successfully restored from the uploaded backup.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to restore database: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore from the uploaded backups');
         }
     }
 
