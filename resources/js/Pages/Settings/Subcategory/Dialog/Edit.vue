@@ -59,6 +59,18 @@ const submit = () => {
     })
 }
 
+// clear errors when input/select value is not empty
+watch(
+    () => form.data(),
+    (newValue, oldValue) => {
+        Object.keys(newValue).forEach(key => {
+            if (newValue[key] !== oldValue[key] && form.errors[key]) {
+                form.errors[key] = null;
+            }
+        });
+    },
+    { deep: true }
+);
 </script>
 
 <template>
@@ -98,7 +110,10 @@ const submit = () => {
                     <InputError :message="form.errors.category_id" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit" :disabled="form.processing">
+                    <Button variant="outline" type="button" class="gap-1 h-7" @click="closeSheet">
+                        Cancel
+                    </Button>
+                    <Button size="sm" class="gap-1 h-7" type="submit" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Save changes
                     </Button>

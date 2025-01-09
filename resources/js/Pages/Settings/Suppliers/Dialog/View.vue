@@ -57,7 +57,7 @@ watch(() => props.suppliers, (newSuppliers) => {
             </div>
             <DialogFooter>
                 <DialogClose as-child>
-                    <Button type="button" variant="secondary">
+                    <Button type="button" class="gap-1 h-7" variant="outline">
                         Close
                     </Button>
                 </DialogClose>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Plus, Loader2 } from 'lucide-vue-next';
 import { useForm } from '@inertiajs/vue3'
 import { Input } from '@/Components/ui/input';
@@ -23,9 +23,9 @@ const form = useForm({
 const isOpen = ref(false);
 
 const closeSheet = () => {
-    isOpen.value = false;
     form.reset();
     form.clearErrors();
+    isOpen.value = false;
 };
 
 const submit = () => {
@@ -51,12 +51,24 @@ const submit = () => {
     })
 }
 
+// clear errors when input/select value is not empty
+watch(
+    () => form.data(),
+    (newValue, oldValue) => {
+        Object.keys(newValue).forEach(key => {
+            if (newValue[key] !== oldValue[key] && form.errors[key]) {
+                form.errors[key] = null;
+            }
+        });
+    },
+    { deep: true }
+);
 </script>
 
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button variant="outline" size="sm" class="m-2">
+            <Button variant="outline" size="sm" class="gap-1 h-7">
                 <Plus class="mr-1 size-4" />
                 Add new units
             </Button>
@@ -80,7 +92,10 @@ const submit = () => {
                     <InputError :message="form.errors.abbreviation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit" :disabled="form.processing">
+                    <Button variant="outline" type="button" class="gap-1 h-7" @click="closeSheet">
+                        Cancel
+                    </Button>
+                    <Button type="submit" class="gap-1 h-7" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>
