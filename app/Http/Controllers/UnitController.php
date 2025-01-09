@@ -7,11 +7,13 @@ use App\Models\ActivityLog;
 use App\Http\Requests\UnitRequest;
 use App\Services\UnitService;
 use App\Services\ActivityLoggerService;
+use Illuminate\Support\Facades\Auth;
 
 class UnitController extends Controller
 {
     protected $unitService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         UnitService $unitService,
@@ -19,6 +21,7 @@ class UnitController extends Controller
     ) {
         $this->unitService = $unitService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -37,8 +40,8 @@ class UnitController extends Controller
             $unit = $this->unitService->createUnit($validated);
 
             $this->activityLog->logUnitAction(
-                $unit,
                 ActivityLog::ACTION_CREATED,
+                "{$this->actor} created a new unit: {$unit->name}",
                 ['new' => $unit->toArray()]
             );
 
@@ -57,8 +60,8 @@ class UnitController extends Controller
             $this->unitService->updateUnit($unit, $unitRequest->validated());
 
             $this->activityLog->logUnitAction(
-                $unit,
                 ActivityLog::ACTION_UPDATED,
+                "{$this->actor} updated a unit: {$unit->name}",
                 ['old' => $oldData, 'new' => $unit->toArray()]
             );
 
@@ -75,8 +78,8 @@ class UnitController extends Controller
             $this->unitService->deleteUnit($unit);
 
             $this->activityLog->logUnitAction(
-                $unit,
                 ActivityLog::ACTION_DELETED,
+                "{$this->actor} deleted a unit: {$unit->name}",
                 ['old' => $unit->toArray()]
             );
 

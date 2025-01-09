@@ -14,6 +14,7 @@ class CustomerController extends Controller
 {
     protected $customerService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         CustomerService $customerService,
@@ -21,6 +22,7 @@ class CustomerController extends Controller
     ) {
         $this->customerService = $customerService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -40,8 +42,8 @@ class CustomerController extends Controller
             $customer = $this->customerService->createCustomer($validated);
 
             $this->activityLog->logCustomerAction(
-                $customer,
                 ActivityLog::ACTION_CREATED,
+                "{$this->actor} created a new customer: {$customer->name}",
                 ['new' => $customer->toArray()]
             );
 
@@ -62,8 +64,8 @@ class CustomerController extends Controller
             $this->customerService->updateCustomer($customer, $validated);
 
             $this->activityLog->logCustomerAction(
-                $customer,
                 ActivityLog::ACTION_UPDATED,
+                "{$this->actor} updated a customer: {$customer->name}",
                 ['old' => $oldData, 'new' => $customer->toArray()]
             );
 
@@ -80,8 +82,8 @@ class CustomerController extends Controller
             $this->customerService->deleteCustomer($customer);
 
             $this->activityLog->logCustomerAction(
-                $customer,
                 ActivityLog::ACTION_DELETED,
+                "{$this->actor} deleted a customer: {$customer->name}",
                 ['old' => $customer->toArray()]
             );
 

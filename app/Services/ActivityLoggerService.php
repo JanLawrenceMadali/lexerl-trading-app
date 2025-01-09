@@ -42,111 +42,100 @@ class ActivityLoggerService
         }
     }
 
-    public function logUserAction(User $user, string $action, array $changes = []): void
+    public function logUserAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_USERS,
-            "{$actor} {$action} user {$user->username}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logUnitAction(Unit $unit, string $action, array $changes = []): void
+    public function logUnitAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_UNITS,
-            "{$actor} {$action} unit {$unit->name}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logSupplierAction(Supplier $supplier, string $action, array $changes = []): void
+    public function logSupplierAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_SUPPLIERS,
-            "{$actor} {$action} supplier {$supplier->name}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logCustomerAction(Customer $customer, string $action, array $changes = []): void
+    public function logCustomerAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_CUSTOMERS,
-            "{$actor} {$action} customer {$customer->name}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logCategoryAction(Category $category, string $action, array $changes = []): void
+    public function logCategoryAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_CATEGORIES,
-            "{$actor} {$action} category {$category->name}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logSubCategoryAction(Subcategory $subcategory, string $action, array $changes = []): void
+    public function logSubCategoryAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_SUB_CATEGORIES,
-            "{$actor} {$action} subcategory {$subcategory->name}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logInventoryAction(Inventory $inventory, string $action, array $changes = []): void
+    public function logInventoryAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_PURCHASES,
-            "{$actor} {$action} sale #{$inventory->transaction_number}" . ($inventory->supplier ? " from supplier {$inventory->supplier->name}" : ""),
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logSaleAction(Sale $sale, string $action, array $changes = []): void
+    public function logSaleAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_SALES,
-            "{$actor} {$action} sale #{$sale->transaction_number}" . ($sale->customer ? " for customer {$sale->customer->name}" : ""),
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logCollectibleAction(Sale $collectible, string $action, array $changes = []): void
+    public function logCollectibleAction(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
-        $total_amount = number_format($collectible->total_amount, 2);
-
         $this->log(
             $action,
             ActivityLog::MODULE_COLLECTIBLES,
-            "{$actor} {$action} collectible #{$collectible->transaction_number} for customer {$collectible->customers->name} with total amount of {$total_amount}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
@@ -161,81 +150,76 @@ class ActivityLoggerService
         );
     }
 
-    public function logPurchaseExport(string $filename, string $action, array $changes = []): void
+    public function logPurchaseExport(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_PURCHASES,
-            "{$actor} exported sales data to {$filename}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logSaleExport(string $filename, string $action, array $changes = []): void
+    public function logSaleExport(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_SALES,
-            "{$actor} exported sales data to {$filename}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logCollectibleExport(string $filename, string $action, array $changes = []): void
+    public function logCollectibleExport(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_COLLECTIBLES,
-            "{$actor} exported collectibles data to {$filename}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logActivityLogsExport(string $filename, string $action, array $changes = []): void
+    public function logActivityLogsExport(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_ACTIVITY_LOGS,
-            "{$actor} exported activity logs data to {$filename}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function logCurrentInventoryExport(string $filename, string $action, array $changes = []): void
+    public function logCurrentInventoryExport(string $action, string $description, array $changes = []): void
     {
-        $actor = Auth::user()->username;
         $this->log(
             $action,
             ActivityLog::MODULE_CURRENT_INVENTORY,
-            "{$actor} exported current inventory data to {$filename}",
+            $description,
             $changes['old'] ?? null,
             $changes['new'] ?? null
         );
     }
 
-    public function userLogin(User $user, string $action): void
+    public function userLogin(string $action, string $description): void
     {
         $this->log(
             $action,
             ActivityLog::MODULE_AUTHENTICATION,
-            "User {$user->username} logged in"
+            $description
         );
     }
 
-    public function userLogout(User $user, string $action): void
+    public function userLogout(string $action, string $description): void
     {
         $this->log(
             $action,
             ActivityLog::MODULE_AUTHENTICATION,
-            "User {$user->username} logged out"
+            $description
         );
     }
 }

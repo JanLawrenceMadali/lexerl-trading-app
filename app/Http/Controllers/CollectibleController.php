@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Services\ActivityLoggerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
@@ -15,10 +16,12 @@ use Illuminate\Support\Str;
 class CollectibleController extends Controller
 {
     protected $activityLog;
+    private $actor;
 
     public function __construct(ActivityLoggerService $activityLoggerService)
     {
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -71,8 +74,8 @@ class CollectibleController extends Controller
                     $sale->save();
 
                     $this->activityLog->logCollectibleAction(
-                        $sale,
-                        ActivityLog::ACTION_UPDATED,
+                        ActivityLog::ACTION_PAID,
+                        "{$this->actor} marked #{$sale->transaction_number} as paid",
                         ['new' => $sale->toArray()]
                     );
                 }
@@ -95,8 +98,8 @@ class CollectibleController extends Controller
         $fileName = "collectibles_{$date}.xlsx";
 
         $this->activityLog->logCollectibleExport(
-            $fileName,
             ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported a collectibles report",
             ['old' => null, 'new' => null]
         );
 

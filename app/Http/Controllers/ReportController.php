@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Exports\ActivityLogReport;
 use App\Exports\CurrentInventoryReport;
 use App\Services\ActivityLoggerService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -14,10 +15,12 @@ use function Symfony\Component\Clock\now;
 class ReportController extends Controller
 {
     protected $activityLogs;
+    private $actor;
 
     public function __construct(ActivityLoggerService $activityLoggerService)
     {
         $this->activityLogs = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function activity_logs()
@@ -87,8 +90,8 @@ class ReportController extends Controller
         $fileName = "activity_logs_{$date}.xlsx";
 
         $this->activityLogs->logActivityLogsExport(
-            $fileName,
-            ActivityLog::MODULE_ACTIVITY_LOGS,
+            ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported a activity logs report",
             ['old' => null, 'new' => null,]
         );
 
@@ -102,8 +105,8 @@ class ReportController extends Controller
         $fileName = "current_inventory_report_{$date}.xlsx";
 
         $this->activityLogs->logCurrentInventoryExport(
-            $fileName,
-            ActivityLog::MODULE_CURRENT_INVENTORY,
+            ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported a current inventory report",
             ['old' => null, 'new' => null,]
         );
 

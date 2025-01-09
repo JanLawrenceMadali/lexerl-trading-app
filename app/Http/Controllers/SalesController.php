@@ -17,6 +17,7 @@ use App\Models\Unit;
 use App\Services\ActivityLoggerService;
 use App\Services\SaleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,6 +26,7 @@ class SalesController extends Controller
 {
     protected $activityLog;
     protected $saleService;
+    private $actor;
 
     public function __construct(
         SaleService $saleService,
@@ -32,6 +34,7 @@ class SalesController extends Controller
     ) {
         $this->saleService = $saleService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -136,8 +139,8 @@ class SalesController extends Controller
                 $sale->products()->attach($productAttachments);
 
                 $this->activityLog->logSaleAction(
-                    $sale,
                     ActivityLog::ACTION_CREATED,
+                    "{$this->actor} created a new sale: #{$sale->transaction_number}",
                     ['new' => $sale->toArray()]
                 );
 
@@ -168,8 +171,8 @@ class SalesController extends Controller
                 $sale->products()->sync($productAttachments);
 
                 $this->activityLog->logSaleAction(
-                    $sale,
                     ActivityLog::ACTION_UPDATED,
+                    "{$this->actor} updated a sale: #{$sale->transaction_number}",
                     ['old' => $oldData, 'new' => $sale->toArray()]
                 );
             });
@@ -333,8 +336,8 @@ class SalesController extends Controller
                 $sale->delete();
 
                 $this->activityLog->logSaleAction(
-                    $sale,
                     ActivityLog::ACTION_CANCELLED,
+                    "{$this->actor} cancelled a sale: #{$sale->transaction_number}",
                     ['old' => $sale->toArray()]
                 );
             });
@@ -358,8 +361,8 @@ class SalesController extends Controller
         $fileName = "sales_report_{$date}.xlsx";
 
         $this->activityLog->logSaleExport(
-            $fileName,
             ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported a sales report",
             ['old' => null, 'new' => null,]
         );
 

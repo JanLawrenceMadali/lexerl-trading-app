@@ -14,6 +14,7 @@ class CategoryController extends Controller
 {
     protected $categoryService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         CategoryService $categoryService,
@@ -21,6 +22,7 @@ class CategoryController extends Controller
     ) {
         $this->categoryService = $categoryService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -39,8 +41,8 @@ class CategoryController extends Controller
             $category = $this->categoryService->createCategory($validated);
 
             $this->activityLog->logCategoryAction(
-                $category,
                 ActivityLog::ACTION_CREATED,
+                "{$this->actor} created a new category: {$category->name}",
                 ['new' => $category->toArray()]
             );
 
@@ -61,8 +63,8 @@ class CategoryController extends Controller
             $this->categoryService->updateCategory($category, $validated);
 
             $this->activityLog->logCategoryAction(
-                $category,
                 ActivityLog::ACTION_UPDATED,
+                "{$this->actor} updated a category: {$category->name}",
                 ['old' => $oldData, 'new' => $category->toArray()]
             );
 
@@ -79,8 +81,8 @@ class CategoryController extends Controller
             $this->categoryService->deleteCategory($category);
 
             $this->activityLog->logCategoryAction(
-                $category,
                 ActivityLog::ACTION_DELETED,
+                "{$this->actor} deleted a category: {$category->name}",
                 ['old' => $category->toArray()]
             );
 

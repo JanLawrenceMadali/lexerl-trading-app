@@ -14,6 +14,7 @@ class SupplierController extends Controller
 {
     protected $supplierService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         SupplierService $supplierService,
@@ -21,6 +22,7 @@ class SupplierController extends Controller
     ) {
         $this->supplierService = $supplierService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -40,8 +42,8 @@ class SupplierController extends Controller
             $supplier = $this->supplierService->createSupplier($validated);
 
             $this->activityLog->logSupplierAction(
-                $supplier,
                 ActivityLog::ACTION_CREATED,
+                "{$this->actor} created a new supplier: {$supplier->name}",
                 ['new' => $supplier->toArray()]
             );
 
@@ -62,8 +64,8 @@ class SupplierController extends Controller
             $this->supplierService->updateSupplier($supplier, $validated);
 
             $this->activityLog->logSupplierAction(
-                $supplier,
                 ActivityLog::ACTION_UPDATED,
+                "{$this->actor} updated a supplier: {$supplier->name}",
                 ['old' => $oldData, 'new' => $supplier->toArray()]
             );
 
@@ -80,8 +82,8 @@ class SupplierController extends Controller
             $this->supplierService->deleteSupplier($supplier);
 
             $this->activityLog->logSupplierAction(
-                $supplier,
                 ActivityLog::ACTION_DELETED,
+                "{$this->actor} deleted a supplier: {$supplier->name}",
                 ['old' => $supplier->toArray()]
             );
 

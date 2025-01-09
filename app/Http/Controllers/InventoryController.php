@@ -14,6 +14,7 @@ use App\Models\Transaction;
 use App\Models\Unit;
 use App\Services\ActivityLoggerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,10 +22,12 @@ use Maatwebsite\Excel\Facades\Excel;
 class InventoryController extends Controller
 {
     protected $activityLog;
+    private $actor;
 
     public function __construct(ActivityLoggerService $activityLoggerService)
     {
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -101,8 +104,8 @@ class InventoryController extends Controller
                 Purchases::create($data);
 
                 $this->activityLog->logInventoryAction(
-                    $inventory,
                     ActivityLog::ACTION_CREATED,
+                    "{$this->actor} created a new purchase: #{$inventory->transaction_number}",
                     ['new' => $inventory->toArray()]
                 );
             });
@@ -126,8 +129,8 @@ class InventoryController extends Controller
 
 
                 $this->activityLog->logInventoryAction(
-                    $inventory,
                     ActivityLog::ACTION_UPDATED,
+                    "{$this->actor} updated a purchase: #{$inventory->transaction_number}",
                     ['old' => $oldData, 'new' => $inventory->toArray()]
                 );
             });
@@ -146,8 +149,8 @@ class InventoryController extends Controller
                 Purchases::where('id', $inventory->id)->delete();
 
                 $this->activityLog->logInventoryAction(
-                    $inventory,
                     ActivityLog::ACTION_DELETED,
+                    "{$this->actor} deleted a purchase: #{$inventory->transaction_number}",
                     ['old' => $inventory->toArray()]
                 );
             });
@@ -172,8 +175,8 @@ class InventoryController extends Controller
         $fileName = "purchase_in_report_{$date}.xlsx";
 
         $this->activityLog->logPurchaseExport(
-            $fileName,
             ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported a purchase in report",
             ['old' => null, 'new' => null,]
         );
 
