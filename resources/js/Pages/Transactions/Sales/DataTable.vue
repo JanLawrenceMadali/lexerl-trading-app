@@ -251,8 +251,6 @@ const table = useVueTable({
     },
 })
 
-console.log(data.value);
-
 function getNestedValue(obj, path) {
     const keys = path.split('.');
     return keys.reduce((acc, key) => {

@@ -227,6 +227,57 @@ const isOverQuantity = computed(() => {
         return quantity > total;
     });
 });
+
+const formatRemainingQuantity = (quantity) => {
+    return Math.max(0, quantity).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+const validateQuantity = (event, index) => {
+    const value = parseFloat(event.target.value);
+    const max = totalQuantity.value[index];
+
+    // If input is empty or not a number, reset to 0
+    if (isNaN(value) || value === '') {
+        form.products[index].quantity = 0;
+        return;
+    }
+
+    // Ensure quantity doesn't exceed total quantity
+    if (value > max) {
+        form.products[index].quantity = max;
+    }
+
+    // Ensure quantity is not negative
+    if (value < 0) {
+        form.products[index].quantity = 0;
+    }
+}
+
+// clear errors when input/select value is not empty
+watch(
+    () => form,
+    (newForm) => {
+        // Handle top-level fields
+        Object.keys(newForm).forEach(key => {
+            if (key !== 'products' && newForm[key] && form.errors[key]) {
+                form.errors[key] = null;
+            }
+        });
+
+        // Handle products array
+        newForm.products.forEach((product, index) => {
+            Object.keys(product).forEach(field => {
+                if (product[field] && form.errors[`products.${index}.${field}`]) {
+                    form.errors[`products.${index}.${field}`] = null;
+                }
+            });
+        });
+    },
+    { deep: true }
+);
 </script>
 
 <template>
@@ -261,7 +312,7 @@ const isOverQuantity = computed(() => {
                                         :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
                                         :has-error="form.errors.customer_id" placeholder="Select a customer"
                                         v-model="form.customer_id">
-                                        <Create :routing="routing" @create-customer="handleCustomerCreated" />
+                                        <Create class="m-2" :routing="routing" @create-customer="handleCustomerCreated" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.customer_id" />
                                 </div>
@@ -440,22 +491,21 @@ const isOverQuantity = computed(() => {
                                             <TableCell> <!-- Quantity -->
                                                 <div class="relative items-center">
                                                     <Input v-model.number="product.quantity" type="number" min="0"
-                                                        step="0.01" :class="[
+                                                        max="totalQuantity[index]" step="0.01"
+                                                        :disabled="!totalQuantity[index]"
+                                                        @input="validateQuantity($event, index)" :class="[
                                                             'pl-7',
-                                                            { 'border-red-600 focus-visible:ring-red-500': form.errors[`products.${index}.quantity`] }
+                                                            form.errors[`products.${index}.quantity`] && 'border-red-600 focus-visible:ring-red-500',
+                                                            !totalQuantity[index] && 'bg-slate-100 cursor-not-allowed'
                                                         ]" />
                                                     <span
                                                         class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                         <Boxes class="size-4 text-muted-foreground" />
                                                     </span>
-                                                    <small :class="['absolute font-medium top-2.5 right-3',
-                                                        totalQuantity[index] > product.quantity
-                                                            ? 'text-green-600'
-                                                            : 'text-red-600']">
-                                                        {{ (totalQuantity[index] -
-                                                            product.quantity).toLocaleString('en-US', {
-                                                                minimumFractionDigits: 2, maximumFractionDigits: 2
-                                                            }) }} left
+                                                    <small class="absolute font-medium top-2.5 right-3"
+                                                        :class="totalQuantity[index] > product.quantity ? 'text-green-600' : 'text-red-600'">
+                                                        {{ formatRemainingQuantity(totalQuantity[index] -
+                                                            product.quantity) }} left
                                                     </small>
                                                 </div>
                                                 <InputError :message="form.errors[`products.${index}.quantity`]" />
