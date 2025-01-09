@@ -1,17 +1,18 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import { ScrollArea } from '@/Components/ui/scroll-area'
-import { ArrowRightFromLine, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
+import { ArrowRightFromLine, CircleCheck, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { BarChart } from '@/Components/ui/chart-bar'
+import Chart from '@/Components/Chart.vue'
 
 const props = defineProps({
     total_sale: { type: Number },
     total_purchase: { type: Number },
     activity_logs: { type: Object },
     total_collectible: { type: Number },
-    monthly_sales: { type: Object }
+    monthly_sales: { type: Object },
+    chartData: { type: Object }
 })
 
 const formatCurrency = (value) => {
@@ -84,7 +85,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                     </CardHeader>
                     <CardContent class="mt-4">
                         <div class="text-4xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale - total_purchase) }}</span>
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale - total_purchase)
+                                }}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -115,6 +117,9 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                                     </span>
                                     <span v-else-if="log.action === 'cancel'">
                                         <CircleX class="text-rose-600 size-6" />
+                                    </span>
+                                     <span v-else-if="log.action === 'paid'">
+                                        <CircleCheck class="text-green-600 size-6" />
                                     </span>
                                     <span v-else-if="log.action === 'export'">
                                         <ArrowRightFromLine class="text-blue-500 size-6" />
@@ -163,11 +168,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <BarChart index="month" :data="monthly_sales" :categories="['total']" :y-formatter="(tick, i) => {
-                            return typeof tick === 'number'
-                                ? formatCurrency(tick)
-                                : ''
-                        }" :rounded-corners="10" :colors="['#191970']" />
+                        <Chart :chart-data="chartData" />
                     </CardContent>
                 </Card>
             </div>
