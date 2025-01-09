@@ -9,8 +9,8 @@ import BellNotification from '@/Components/BellNotification.vue';
 </script>
 
 <template>
-    <div class="flex flex-col w-full min-h-screen bg-muted/40">
-        <header class="z-10 bg-white border">
+    <div class="flex flex-col w-full min-h-screen">
+        <header class="fixed inset-x-0 z-10 bg-white border">
             <nav class="flex items-center justify-between gap-4 px-4">
                 <div class="flex items-center gap-4">
                     <div class="text-lg font-semibold group text-primary-foreground">
@@ -52,7 +52,7 @@ import BellNotification from '@/Components/BellNotification.vue';
                                                     : 'text-muted-foreground'" />
                 </nav>
             </aside>
-            <main class="flex flex-col w-full sm:pl-36 sm:gap-4 sm:py-6">
+            <main class="flex flex-col w-full gap-4 py-6 pt-32 pl-36">
                 <slot />
             </main>
         </div>

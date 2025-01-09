@@ -39,8 +39,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
 
     <Head title="Dashboard" />
     <AuthenticatedLayout>
-        <div class="flex flex-col flex-1 gap-4 px-4 md:gap-8 md:px-6">
-            <div class="grid grid-cols-4 gap-8">
+        <div class="flex flex-col flex-1 gap-6 px-6">
+            <div class="grid grid-cols-4 gap-6">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle class="text-sm font-medium">
@@ -91,7 +91,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                     </CardContent>
                 </Card>
             </div>
-            <div class="grid grid-cols-3 gap-8">
+            <div class="grid grid-cols-3 gap-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>
