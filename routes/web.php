@@ -4,6 +4,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CollectibleController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\ProfileController;
@@ -21,67 +22,12 @@ Route::get('/', function () {
     return redirect(route('login'));
 });
 
-Route::get('/dashboard', function () {
-    $sale = Sale::all();
-    $total_sale = $sale->sum('total_amount');
-    $total_purchase = Inventory::sum('amount');
-    $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
-    $activity_logs = ActivityLog::with('users')->latest()->get();
-    $monthly_sales = Sale::selectRaw("strftime('%m', created_at) as month, SUM(total_amount) as total")
-        ->whereRaw("strftime('%Y', created_at) = ?", [date('Y')])
-        ->whereYear('created_at', now()->year)
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get()
-        ->map(function ($sale) {
-            return [
-                'month' => date('F', mktime(0, 0, 0, $sale->month, 1)),
-                'total' => intval($sale->total)
-            ];
-        });
-
-    // Fill in missing months with zero
-    $all_months = collect([
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December'
-    ])->map(function ($month) {
-        return [
-            'month' => $month,
-            'total' => 0
-        ];
-    });
-
-    // Convert to collection and merge with actual sales
-    $monthly_sales = $all_months->keyBy('month')
-        ->merge($monthly_sales->keyBy('month'))
-        ->values();
-
-    return inertia('Dashboard', [
-        'total_sale' => intval($total_sale),
-        'total_purchase' => intval($total_purchase),
-        'total_collectible' => intval($total_collectible),
-        'activity_logs' => $activity_logs,
-        'monthly_sales' => $monthly_sales,
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Search
-    Route::inertia('/search', 'Search')->name('search');
 
     // Purchase In x Inventory
     Route::prefix('purchase-in')->group(function () {
@@ -170,6 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/clean-all', [BackupController::class, 'cleanAll'])->name('backup.clean-all');
         Route::delete('/destroy', [BackupController::class, 'destroy'])->name('backup.destroy');
         Route::post('/restore', [BackupController::class, 'restore'])->name('backup.restore');
+        Route::post('/upload',[BackupController::class, 'upload_restore'])->name('backup.upload-restore');
     });
 });
 
