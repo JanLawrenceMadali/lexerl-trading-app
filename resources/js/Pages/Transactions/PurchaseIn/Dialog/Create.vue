@@ -156,6 +156,18 @@ const isSubmitDisabled = computed(() => {
 
 const routing = 'purchase-in';
 
+// clear errors when input/select value is not empty
+watch(
+    () => form,
+    (newForm) => {
+        Object.keys(newForm).forEach(key => {
+            if (newForm[key] && form.errors[key]) {
+                form.errors[key] = null;
+            }
+        });
+    },
+    { deep: true }
+);
 </script>
 
 <template>
@@ -209,7 +221,6 @@ const routing = 'purchase-in';
                                     </Label>
                                     <div class="relative items-center w-full col-span-3">
                                         <Input id="transaction_number" v-model="form.transaction_number" type="text"
-                                            min="0" oninput="validity.valid||(value='');"
                                             :class="['pl-7', { 'border-red-600 focus-visible:ring-red-500': form.errors.transaction_number }]" />
                                         <span class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                             <Hash class="size-4 text-muted-foreground" />
@@ -229,7 +240,7 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
                                         :has-error="form.errors.supplier_id" placeholder="Select a supplier"
                                         v-model="form.supplier_id">
-                                        <Create :routing="routing" @create-supplier="handleSupplierCreated" />
+                                        <Create class="m-2" :routing="routing" @create-supplier="handleSupplierCreated" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.supplier_id" />
                                 </div>
@@ -280,7 +291,7 @@ const routing = 'purchase-in';
                                         :class="['col-span-3 justify-between font-normal', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
                                         :has-error="form.errors.subcategory_id" :disabled="!form.category_id"
                                         placeholder="Select a sub category" v-model="form.subcategory_id">
-                                        <CreateSubcategory :categories="categories" :category_id="form.category_id"
+                                        <CreateSubcategory class="m-2" :categories="categories" :category_id="form.category_id"
                                             @create-subcategory="handleSubcategoryCreated" :routing="routing" />
                                     </DropdownSearch>
                                     <InputError class="col-span-5" :message="form.errors.subcategory_id" />
