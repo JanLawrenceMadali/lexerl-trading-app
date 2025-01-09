@@ -2,12 +2,15 @@
 import { Eye } from 'lucide-vue-next'
 import { Button } from '@/Components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from '@/Components/ui/dialog'
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({ users: Object })
 
 const data = ref(props.users)
 
+watch(() => props.users, (newUsers) => {
+    data.value = newUsers
+}, { immediate: true })
 </script>
 
 <template>
@@ -41,7 +44,7 @@ const data = ref(props.users)
             </div>
             <DialogFooter>
                 <DialogClose as-child>
-                    <Button type="button" variant="secondary">
+                    <Button type="button" class="gap-1 h-7" variant="outline">
                         Close
                     </Button>
                 </DialogClose>

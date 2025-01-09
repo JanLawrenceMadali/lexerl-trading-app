@@ -14,6 +14,7 @@ class UserController extends Controller
 {
     protected $userService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         UserService $userService,
@@ -21,6 +22,7 @@ class UserController extends Controller
     ) {
         $this->userService = $userService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -50,8 +52,8 @@ class UserController extends Controller
             $user = $this->userService->createUser($validated);
 
             $this->activityLog->logUserAction(
-                $user,
                 ActivityLog::ACTION_CREATED,
+                "{$this->actor} created a new user: {$user->username}",
                 ['new' => $user->toArray()]
             );
 
@@ -72,8 +74,8 @@ class UserController extends Controller
             $this->userService->updateUser($user, $validated);
 
             $this->activityLog->logUserAction(
-                $user,
                 ActivityLog::ACTION_UPDATED,
+                "{$this->actor} updated a user: {$user->username}",
                 ['old' => $oldData, 'new' => $user->toArray()]
             );
 
@@ -95,8 +97,8 @@ class UserController extends Controller
             $this->userService->deleteUser($user);
 
             $this->activityLog->logUserAction(
-                $user,
                 ActivityLog::ACTION_DELETED,
+                "{$this->actor} deleted a user: {$user->username}",
                 ['old' => $user->toArray()]
             );
 

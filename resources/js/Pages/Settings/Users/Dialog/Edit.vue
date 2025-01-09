@@ -59,11 +59,23 @@ const submit = () => {
             }
         },
         onError: (errors) => {
-            // console.log(errors);
+            console.log(errors);
         }
     })
 }
 
+// clear errors when input/select value is not empty
+watch(
+    () => form.data(),
+    (newValue, oldValue) => {
+        Object.keys(newValue).forEach(key => {
+            if (newValue[key] !== oldValue[key] && form.errors[key]) {
+                form.errors[key] = null;
+            }
+        });
+    },
+    { deep: true }
+);
 </script>
 
 <template>
@@ -113,13 +125,17 @@ const submit = () => {
                     <InputError :message="form.errors.password" />
                 </div>
                 <div class="grid gap-2 mb-4">
-                    <Label for="password_confirmation" class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
+                    <Label for="password_confirmation"
+                        class="after:content-['*'] after:ml-0.5 after:text-red-500">Confirm Password</Label>
                     <Input id="password_confirmation" type="password" v-model="form.password_confirmation"
                         autocomplete="password_confirmation" />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
                 <DialogFooter>
-                    <Button variant="secondary" type="submit" :disabled="form.processing">
+                    <Button variant="outline" type="button" class="gap-1 h-7" @click="closeSheet">
+                        Cancel
+                    </Button>
+                    <Button type="submit" class="gap-1 h-7" :disabled="form.processing">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Save changes
                     </Button>
