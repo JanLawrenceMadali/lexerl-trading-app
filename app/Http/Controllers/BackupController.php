@@ -38,7 +38,7 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_BACKUP,
-                "{$filename} was backed up manually",
+                "{$filename} was backed up manually ({$filename})",
             );
 
             return redirect()->back()->with('success', 'Database backup manually created successfully.');
