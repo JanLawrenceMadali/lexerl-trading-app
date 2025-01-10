@@ -149,7 +149,7 @@ const columns = [
             const subcategories = row.original;
             const categories = props.categories
 
-            return h('div', { class: 'flex items-center gap-1' }, [
+            return h('div', { class: 'flex items-center gap-1 justify-end' }, [
                 h(View, {
                     subcategories: subcategories,
                     categories: categories

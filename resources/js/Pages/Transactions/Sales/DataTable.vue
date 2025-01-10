@@ -185,7 +185,7 @@ const columns = [
             const transactions = props.transactions
             const subcategories = props.subcategories
 
-            return h('div', { class: 'flex items-center gap-1' }, [
+            return h('div', { class: 'flex items-center gap-1 justify-end' }, [
                 h(View, {
                     sales
                 }),

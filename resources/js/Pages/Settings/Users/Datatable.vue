@@ -153,7 +153,7 @@ const columns = [
             const users = row.original;
             const roles = props.roles;
 
-            return h('div', { class: 'flex items-center gap-1' }, [
+            return h('div', { class: 'flex items-center gap-1 justify-end' }, [
                 h(View, {
                     users: users,
                 }),
