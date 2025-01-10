@@ -106,7 +106,7 @@ class ReportController extends Controller
 
         $this->activityLogs->logCurrentInventoryExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported a current inventory report",
+            "{$this->actor} exported current inventory report",
             ['old' => null, 'new' => null,]
         );
 
