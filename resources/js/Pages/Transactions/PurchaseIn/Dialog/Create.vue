@@ -211,7 +211,7 @@ watch(
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.transaction_id" />
                                 </div>
                                 <!-- Transaction Number -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -226,7 +226,7 @@ watch(
                                             <Hash class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_number" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.transaction_number" />
                                 </div>
                             </div>
 
@@ -242,7 +242,7 @@ watch(
                                         v-model="form.supplier_id">
                                         <Create class="m-2" :routing="routing" @create-supplier="handleSupplierCreated" />
                                     </DropdownSearch>
-                                    <InputError class="col-span-5" :message="form.errors.supplier_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.supplier_id" />
                                 </div>
                                 <!-- Purchase Date -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -264,7 +264,7 @@ watch(
                                                 @update:model-value="handleDateSelect" />
                                         </PopoverContent>
                                     </Popover>
-                                    <InputError class="col-span-5" :message="form.errors.purchase_date" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.purchase_date" />
                                 </div>
                             </div>
 
@@ -278,7 +278,7 @@ watch(
                                         :class="['col-span-3 justify-between font-normal', !form.category_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.category_id }]"
                                         :has-error="form.errors.category_id" placeholder="Select a category"
                                         v-model="form.category_id" />
-                                    <InputError class="col-span-5" :message="form.errors.category_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.category_id" />
                                 </div>
                                 <!-- SubCategory -->
                                 <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
@@ -294,7 +294,7 @@ watch(
                                         <CreateSubcategory class="m-2" :categories="categories" :category_id="form.category_id"
                                             @create-subcategory="handleSubcategoryCreated" :routing="routing" />
                                     </DropdownSearch>
-                                    <InputError class="col-span-5" :message="form.errors.subcategory_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.subcategory_id" />
                                 </div>
                             </div>
 
@@ -333,9 +333,11 @@ watch(
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div v-if="form.errors.quantity || form.errors.unit_id" class="col-span-5">
-                                            <InputError :message="form.errors.quantity" />
-                                            <InputError :message="form.errors.unit_id" />
+                                        <div v-if="form.errors.quantity || form.errors.unit_id" class="col-span-3 col-start-3 text-start">
+                                            <div class="flex justify-between">
+                                                <InputError :message="form.errors.quantity" />
+                                                <InputError :message="form.errors.unit_id" />
+                                            </div>
                                         </div>
                                     </div>
                                     <!-- Landed Cost -->
@@ -353,7 +355,7 @@ watch(
                                                 <PhilippinePeso class="size-4 text-muted-foreground" />
                                             </span>
                                         </div>
-                                        <InputError class="col-span-5" :message="form.errors.landed_cost" />
+                                        <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.landed_cost" />
                                     </div>
                                     <!-- Amount -->
                                     <div class="grid items-center grid-cols-5 gap-3 text-right">

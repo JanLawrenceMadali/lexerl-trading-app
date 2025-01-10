@@ -205,7 +205,8 @@ const isSubmitDisabled = computed(() => {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                <InputError class="col-span-5" :message="form.errors.transaction_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.transaction_id" />
                             </div>
                             <!-- Transaction Number -->
                             <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -221,7 +222,8 @@ const isSubmitDisabled = computed(() => {
                                         <Hash class="size-4 text-muted-foreground" />
                                     </span>
                                 </div>
-                                <InputError class="col-span-5" :message="form.errors.transaction_number" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.transaction_number" />
                             </div>
                         </div>
 
@@ -237,7 +239,8 @@ const isSubmitDisabled = computed(() => {
                                     v-model="form.supplier_id">
                                     <Create />
                                 </DropdownSearch>
-                                <InputError class="col-span-5" :message="form.errors.supplier_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.supplier_id" />
                             </div>
                             <!-- Purchase Date -->
                             <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -257,7 +260,8 @@ const isSubmitDisabled = computed(() => {
                                             @update:model-value="handleDateSelect" />
                                     </PopoverContent>
                                 </Popover>
-                                <InputError class="col-span-5" :message="form.errors.purchase_date" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.purchase_date" />
                             </div>
                         </div>
 
@@ -272,7 +276,8 @@ const isSubmitDisabled = computed(() => {
                                     :has-error="form.errors.category_id" placeholder="Select a category"
                                     v-model="form.category_id">
                                 </DropdownSearch>
-                                <InputError class="col-span-5" :message="form.errors.category_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.category_id" />
                             </div>
                             <!-- SubCategory -->
                             <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
@@ -287,7 +292,8 @@ const isSubmitDisabled = computed(() => {
                                     placeholder="Select a sub category" v-model="form.subcategory_id">
                                     <CreateSubcategory />
                                 </DropdownSearch>
-                                <InputError class="col-span-5" :message="form.errors.subcategory_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.subcategory_id" />
                             </div>
                         </div>
 
@@ -326,9 +332,12 @@ const isSubmitDisabled = computed(() => {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div class="col-span-5">
-                                        <InputError :message="form.errors.quantity" />
-                                        <InputError :message="form.errors.unit_id" />
+                                    <div v-if="form.errors.quantity || form.errors.unit_id"
+                                        class="col-span-3 col-start-3 text-start">
+                                        <div class="flex justify-between">
+                                            <InputError :message="form.errors.quantity" />
+                                            <InputError :message="form.errors.unit_id" />
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- Landed Cost -->
@@ -345,7 +354,8 @@ const isSubmitDisabled = computed(() => {
                                             <PhilippinePeso class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-5" :message="form.errors.landed_cost" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.landed_cost" />
                                 </div>
                                 <!-- Amount -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">

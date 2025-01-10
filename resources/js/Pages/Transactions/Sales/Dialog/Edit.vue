@@ -270,7 +270,8 @@ const isSubmitDisabled = computed(() => {
                                     v-model="form.customer_id">
                                     <Create />
                                 </DropdownSearch>
-                                <InputError class="col-span-5" :message="form.errors.customer_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.customer_id" />
                             </div>
                             <!-- Sale Date -->
                             <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -292,7 +293,8 @@ const isSubmitDisabled = computed(() => {
                                             @update:model-value="handleDateSelect" />
                                     </PopoverContent>
                                 </Popover>
-                                <InputError class="col-span-5" :message="form.errors.sale_date" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.sale_date" />
                             </div>
                         </div>
 
@@ -316,7 +318,8 @@ const isSubmitDisabled = computed(() => {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                <InputError class="col-span-5" :message="form.errors.transaction_id" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.transaction_id" />
                             </div>
                             <!-- Transaction Number -->
                             <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -332,7 +335,8 @@ const isSubmitDisabled = computed(() => {
                                         <Hash class="size-4 text-muted-foreground" />
                                     </span>
                                 </div>
-                                <InputError class="col-span-5" :message="form.errors.transaction_number" />
+                                <InputError class="col-span-2 col-start-3 text-start"
+                                    :message="form.errors.transaction_number" />
                             </div>
                         </div>
 
@@ -389,10 +393,15 @@ const isSubmitDisabled = computed(() => {
                                                             :key="category.id" :value="String(category.id)">
                                                             {{ category.name }}
                                                         </SelectItem>
+                                                        <SelectItem class="w-[150px]" disabled
+                                                            v-if="filteredCategory.length === 0" :value="String(0)">
+                                                            No category available
+                                                        </SelectItem>
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            <InputError :message="form.errors[`products.${index}.category_id`]" />
+                                            <InputError class="mt-3"
+                                                :message="form.errors[`products.${index}.category_id`]" />
                                         </TableCell>
                                         <TableCell> <!-- SubCategory -->
                                             <Select v-model="product.subcategory_id" :disabled="!product.category_id">
@@ -410,7 +419,8 @@ const isSubmitDisabled = computed(() => {
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            <InputError :message="form.errors[`products.${index}.subcategory_id`]" />
+                                            <InputError class="mt-3"
+                                                :message="form.errors[`products.${index}.subcategory_id`]" />
                                         </TableCell>
                                         <TableCell> <!-- Unit -->
                                             <Select v-model="product.unit_id" :disabled="!product.subcategory_id">
@@ -427,7 +437,8 @@ const isSubmitDisabled = computed(() => {
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            <InputError :message="form.errors[`products.${index}.unit_id`]" />
+                                            <InputError class="mt-3"
+                                                :message="form.errors[`products.${index}.unit_id`]" />
                                         </TableCell>
                                         <TableCell> <!-- Selling Price -->
                                             <div class="relative items-center">
@@ -439,7 +450,8 @@ const isSubmitDisabled = computed(() => {
                                                     <PhilippinePeso class="size-4 text-muted-foreground" />
                                                 </span>
                                             </div>
-                                            <InputError :message="form.errors[`products.${index}.selling_price`]" />
+                                            <InputError class="mt-3"
+                                                :message="form.errors[`products.${index}.selling_price`]" />
                                         </TableCell>
                                         <TableCell> <!-- Quantity -->
                                             <div class="relative items-center">
@@ -452,13 +464,16 @@ const isSubmitDisabled = computed(() => {
                                                     class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                     <Boxes class="size-4 text-muted-foreground" />
                                                 </span>
-                                                <small :class="['absolute text-green-600 font-medium top-2.5 right-3']">
+                                                <small :class="['absolute text-green-600 font-medium top-2.5 right-3', {
+                                                    'text-red-500': (totalQuantity[index] <= 0)
+                                                }]">
                                                     {{ (totalQuantity[index]).toLocaleString('en-US', {
                                                         minimumFractionDigits: 2, maximumFractionDigits: 2
                                                     }) }} left
                                                 </small>
                                             </div>
-                                            <InputError :message="form.errors[`products.${index}.quantity`]" />
+                                            <InputError class="mt-3"
+                                                :message="form.errors[`products.${index}.quantity`]" />
                                         </TableCell>
                                         <TableCell> <!-- Amount -->
                                             <div class="relative items-center">
@@ -511,7 +526,7 @@ const isSubmitDisabled = computed(() => {
                                 <div class="grid items-center grid-cols-10">
                                     <!-- Due Date -->
                                     <div v-if="form.status_id == 2"
-                                        class="grid items-center grid-cols-7 col-span-7 gap-2 text-right">
+                                        class="grid items-center grid-cols-7 col-span-7 gap-3 text-right">
                                         <Label class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-4">
                                             Due Date
                                         </Label>
@@ -529,7 +544,8 @@ const isSubmitDisabled = computed(() => {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <InputError class="col-span-7" :message="form.errors.due_date_id" />
+                                        <InputError class="col-span-3 col-start-5 text-start"
+                                            :message="form.errors.due_date_id" />
                                     </div>
                                     <!-- Status -->
                                     <div :class="form.status_id == 2 ? 'col-span-3' : 'col-span-10'">

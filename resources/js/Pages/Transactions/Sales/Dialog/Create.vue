@@ -117,7 +117,10 @@ const filteredCustomer = computed(() => {
 
 const filteredCategory = computed(() => {
     return props.categories.filter(category =>
-        props.inventories.some(inventory => inventory.category_id === category.id)
+        props.inventories.some(
+            inventory => inventory.category_id === category.id &&
+                inventory.quantity > 0
+        )
     )
 });
 
@@ -312,9 +315,11 @@ watch(
                                         :class="['col-span-3 justify-between font-normal', !form.customer_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.customer_id }]"
                                         :has-error="form.errors.customer_id" placeholder="Select a customer"
                                         v-model="form.customer_id">
-                                        <Create class="m-2" :routing="routing" @create-customer="handleCustomerCreated" />
+                                        <Create class="m-2" :routing="routing"
+                                            @create-customer="handleCustomerCreated" />
                                     </DropdownSearch>
-                                    <InputError class="col-span-5" :message="form.errors.customer_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.customer_id" />
                                 </div>
                                 <!-- Sale Date -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -336,7 +341,8 @@ watch(
                                                 @update:model-value="handleDateSelect" />
                                         </PopoverContent>
                                     </Popover>
-                                    <InputError class="col-span-5" :message="form.errors.sale_date" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.sale_date" />
                                 </div>
                             </div>
 
@@ -360,7 +366,8 @@ watch(
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.transaction_id" />
                                 </div>
                                 <!-- Transaction Number -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -376,7 +383,8 @@ watch(
                                             <Hash class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-5" :message="form.errors.transaction_number" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.transaction_number" />
                                 </div>
                             </div>
 
@@ -434,10 +442,15 @@ watch(
                                                                 :key="category.id" :value="String(category.id)">
                                                                 {{ category.name }}
                                                             </SelectItem>
+                                                            <SelectItem class="w-[150px]" disabled
+                                                                v-if="filteredCategory.length === 0" :value="String(0)">
+                                                                No category available
+                                                            </SelectItem>
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                <InputError :message="form.errors[`products.${index}.category_id`]" />
+                                                <InputError class="mt-3"
+                                                    :message="form.errors[`products.${index}.category_id`]" />
                                             </TableCell>
                                             <TableCell> <!-- SubCategory -->
                                                 <Select v-model="product.subcategory_id"
@@ -456,7 +469,7 @@ watch(
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                <InputError
+                                                <InputError class="mt-3"
                                                     :message="form.errors[`products.${index}.subcategory_id`]" />
                                             </TableCell>
                                             <TableCell> <!-- Unit -->
@@ -474,7 +487,8 @@ watch(
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                <InputError :message="form.errors[`products.${index}.unit_id`]" />
+                                                <InputError class="mt-3"
+                                                    :message="form.errors[`products.${index}.unit_id`]" />
                                             </TableCell>
                                             <TableCell> <!-- Selling Price -->
                                                 <div class="relative items-center">
@@ -486,7 +500,8 @@ watch(
                                                         <PhilippinePeso class="size-4 text-muted-foreground" />
                                                     </span>
                                                 </div>
-                                                <InputError :message="form.errors[`products.${index}.selling_price`]" />
+                                                <InputError class="mt-3"
+                                                    :message="form.errors[`products.${index}.selling_price`]" />
                                             </TableCell>
                                             <TableCell> <!-- Quantity -->
                                                 <div class="relative items-center">
@@ -508,7 +523,8 @@ watch(
                                                             product.quantity) }} left
                                                     </small>
                                                 </div>
-                                                <InputError :message="form.errors[`products.${index}.quantity`]" />
+                                                <InputError class="mt-3"
+                                                    :message="form.errors[`products.${index}.quantity`]" />
                                             </TableCell>
                                             <TableCell> <!-- Amount -->
                                                 <div class="relative items-center">
@@ -562,7 +578,7 @@ watch(
                                     <div class="grid items-center grid-cols-10">
                                         <!-- Due Date -->
                                         <div v-if="form.status_id == 2"
-                                            class="grid items-center grid-cols-7 col-span-7 gap-2 text-right">
+                                            class="grid items-center grid-cols-7 col-span-7 gap-3 text-right">
                                             <Label
                                                 class="after:content-['*'] after:ml-0.5 after:text-red-500 col-span-4">
                                                 Due Date
@@ -581,7 +597,8 @@ watch(
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
-                                            <InputError class="col-span-7" :message="form.errors.due_date_id" />
+                                            <InputError class="col-span-3 col-start-5 text-start"
+                                                :message="form.errors.due_date_id" />
                                         </div>
                                         <!-- Status -->
                                         <div :class="form.status_id == 2 ? 'col-span-3' : 'col-span-10'">
