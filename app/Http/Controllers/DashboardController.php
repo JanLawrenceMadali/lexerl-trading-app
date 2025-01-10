@@ -19,7 +19,7 @@ class DashboardController extends Controller
 
         $monthlySales = $sale
             ->groupBy(function ($sale) {
-                return Carbon::parse($sale->sale_date)->format('F');
+                return Carbon::parse($sale->sale_date)->format('F Y');
             })
             ->map(function ($sales) {
                 return $sales->sum('total_amount');
