@@ -27,7 +27,7 @@ class CustomerRequest extends FormRequest
             'address1' => 'required|string|max:255',
             'address2' => '',
             'contact_person' => 'required|string|max:255',
-            'contact_number' => 'required',
+            'contact_number' => 'required|min:8',
         ];
     }
 
@@ -44,6 +44,7 @@ class CustomerRequest extends FormRequest
             'contact_person.required' => 'Contact person is required.',
             'contact_person.string' => 'Contact person must be a string.',
             'contact_number.required' => 'Contact number is required.',
+            'contact_number.min' => 'Contact number must be at least 8 characters.',
         ];
     }
 }
