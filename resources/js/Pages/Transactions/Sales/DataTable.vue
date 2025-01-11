@@ -224,11 +224,6 @@ const table = useVueTable({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
-    initialState: {
-        pagination: {
-            pageSize: 5,
-        }
-    },
     state: {
         get sorting() { return sorting.value },
         get globalFilter() { return filter.value }
@@ -373,7 +368,7 @@ const exportData = () => {
                     <SelectValue :placeholder="`${table.getState().pagination.pageSize}`" />
                 </SelectTrigger>
                 <SelectContent side="top">
-                    <SelectItem v-for="pageSize in [5, 10, 20, 30, 40, 50]" :key="pageSize" :value="`${pageSize}`">
+                    <SelectItem v-for="pageSize in [10, 20, 30, 40, 50]" :key="pageSize" :value="`${pageSize}`">
                         {{ pageSize }}
                     </SelectItem>
                 </SelectContent>
