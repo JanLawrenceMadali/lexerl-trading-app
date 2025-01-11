@@ -6,11 +6,13 @@ use App\Models\ActivityLog;
 use App\Services\ActivityLoggerService;
 use App\Services\DatabaseBackupService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BackupController extends Controller
 {
     protected $backupService;
     protected $activityLog;
+    private $actor;
 
     public function __construct(
         DatabaseBackupService $databaseBackupService,
@@ -18,6 +20,7 @@ class BackupController extends Controller
     ) {
         $this->backupService = $databaseBackupService;
         $this->activityLog = $activityLoggerService;
+        $this->actor = Auth::user()->username;
     }
 
     public function index()
@@ -38,7 +41,7 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_BACKUP,
-                "{$filename} was backed up manually ({$filename})",
+                "database was backed up manually ({$filename})",
             );
 
             return redirect()->back()->with('success', 'Database backup manually created successfully.');
@@ -77,7 +80,7 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_DELETED,
-                "All backups were deleted",
+                "{$this->actor} deleted all backups",
             );
 
             return redirect()->back()->with('success', 'All backups successfully deleted.');
@@ -95,7 +98,7 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_RESTORE,
-                "{$backupFile} was restored",
+                "{$this->actor} restored {$backupFile}",
             );
 
             return redirect()->back()->with('success', 'Database successfully restored backup.');
