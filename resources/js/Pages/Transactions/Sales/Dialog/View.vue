@@ -10,26 +10,6 @@ const props = defineProps({ sales: Object })
 
 const data = ref(props.sales)
 
-const sales = {
-    sale_date: data.value.sale_date,
-    customer_name: data.value.customer_name,
-    customer_email: data.value.customer_email,
-    customer_address1: data.value.customer_address1,
-    customer_address2: data.value.customer_address2,
-    customer_contact_person: data.value.customer_contact_person,
-    customer_contact_number: data.value.customer_contact_number,
-    description: data.value.description,
-    total_amount: data.value.total_amount,
-    products: data.value.products.map((product) => ({
-        category_name: product.category_name,
-        subcategory_name: product.subcategory_name,
-        quantity: product.quantity,
-        selling_price: product.selling_price,
-        amount: product.amount,
-        abbreviation: product.abbreviation,
-    })),
-}
-
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
         style: 'currency',
