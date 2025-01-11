@@ -1,5 +1,5 @@
 <script setup>
-import { h, ref } from 'vue'
+import { computed, h, ref } from 'vue'
 import { valueUpdater } from '@/lib/utils'
 import { Input } from '@/Components/ui/input'
 import { Button } from '@/Components/ui/button'
@@ -18,6 +18,53 @@ const props = defineProps({
 })
 
 const data = ref(props.categories)
+const sorting = ref([])
+const filter = ref('')
+// Pagination state
+const pagination = ref({
+    pageIndex: 0,
+    pageSize: data.value.length, // Default to "All"
+    isAllSelected: true, // Tracks if "All" is explicitly selected
+});
+
+// Fixed page sizes
+const fixedSizes = [10, 20, 30, 40, 50];
+const sizes = computed(() => [...fixedSizes, 'All']);
+
+// Helper to determine the selected value in the dropdown
+const getSelectedValue = () => {
+    if (pagination.value.isAllSelected) {
+        return 'All';
+    }
+    return String(pagination.value.pageSize);
+};
+
+const handleSelection = (value) => {
+    const newPageSize = value === 'All' ? data.value.length : Number(value);
+
+    // Update pagination state
+    pagination.value = {
+        ...pagination.value,
+        pageSize: newPageSize,
+        pageIndex: 0, // Reset to first page when changing page size
+        isAllSelected: value === 'All'
+    };
+
+    // Update table page size
+    table.setPageSize(newPageSize);
+};
+
+// Updated display range function
+const getDisplayRange = () => {
+    const totalItems = data.value.length;
+    const pageIndex = table.getState().pagination.pageIndex;
+    const pageSize = table.getState().pagination.pageSize;
+
+    const start = pageIndex * pageSize + 1;
+    const end = Math.min((pageIndex + 1) * pageSize, totalItems);
+
+    return `${start} - ${end} of ${totalItems}`;
+}
 
 const handleCategory = (category) => {
     data.value = category
@@ -156,10 +203,6 @@ const columns = [
     },
 ]
 
-const sorting = ref([])
-const filter = ref('')
-const rowSelection = ref({})
-
 const table = useVueTable({
     data,
     columns,
@@ -169,16 +212,13 @@ const table = useVueTable({
     getFilteredRowModel: getFilteredRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
-    onRowSelectionChange: updaterOrValue => valueUpdater(updaterOrValue, rowSelection),
-    initialState: {
-        pagination: {
-            pageSize: 5,
-        }
-    },
     state: {
         get sorting() { return sorting.value },
-        get rowSelection() { return rowSelection.value },
-        get globalFilter() { return filter.value }
+        get globalFilter() { return filter.value },
+        get pagination() { return pagination.value }
+    },
+    onPaginationChange: (updater) => {
+        pagination.value = typeof updater === 'function' ? updater(pagination.value) : updater
     },
     globalFilterFn: (row, columnId, filterValue) => {
         const searchableFields = [
@@ -247,36 +287,41 @@ function getNestedValue(obj, path) {
     <div class="flex items-center justify-end py-4 space-x-2">
         <div class="flex items-center space-x-2">
             <p class="text-sm font-medium">
-                Rows per page
+                Items per page:
             </p>
-            <Select :model-value="`${table.getState().pagination.pageSize}`" @update:model-value="table.setPageSize">
+            <Select :model-value="getSelectedValue()" @update:model-value="(value) => handleSelection(value)">
                 <SelectTrigger class="h-8 w-[70px]">
-                    <SelectValue :placeholder="`${table.getState().pagination.pageSize}`" />
+                    <SelectValue :placeholder="getSelectedValue()" />
                 </SelectTrigger>
                 <SelectContent side="top">
-                    <SelectItem v-for="pageSize in [5, 10, 20, 30, 40, 50]" :key="pageSize" :value="`${pageSize}`">
-                        {{ pageSize }}
+                    <SelectItem v-for="size in sizes" :key="size" :value="size === 'All' ? size : String(size)">
+                        {{ size }}
                     </SelectItem>
                 </SelectContent>
             </Select>
         </div>
-        <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {{ table.getState().pagination.pageIndex + 1 }} of
-            {{ table.getPageCount() }}
-        </div>
-        <div class="space-x-2">
-            <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.firstPage()">
-                <ChevronsLeft class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">
-                <ChevronLeft class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
-                <ChevronRight class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.lastPage()">
-                <ChevronsRight class="size-5" />
-            </Button>
+        
+        <div class="flex items-center space-x-6">
+            <span class="text-sm">
+                {{ getDisplayRange() }}
+            </span>
+
+            <div class="flex items-center space-x-2">
+                <Button variant="outline" size="icon" :disabled="!table.getCanPreviousPage()"
+                    @click="table.firstPage()">
+                    <ChevronsLeft class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanPreviousPage()"
+                    @click="table.previousPage()">
+                    <ChevronLeft class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
+                    <ChevronRight class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanNextPage()" @click="table.lastPage()">
+                    <ChevronsRight class="size-4" />
+                </Button>
+            </div>
         </div>
     </div>
 </template>
