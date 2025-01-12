@@ -18,6 +18,7 @@ class DashboardController extends Controller
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
 
         $monthlySales = $sale
+            ->sortBy('sale_date',  SORT_REGULAR, false)
             ->groupBy(function ($sale) {
                 return Carbon::parse($sale->sale_date)->format('F Y');
             })
