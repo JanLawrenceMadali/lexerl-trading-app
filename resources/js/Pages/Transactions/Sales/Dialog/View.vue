@@ -36,8 +36,9 @@ watch(() => props.sales, (newSales) => {
                 <DialogTitle>
                     {{ data.transaction_type }} - {{ data.transaction_number }}
                 </DialogTitle>
-                <DialogDescription>
-                    Sale Date: {{ data.sale_date }}
+                <DialogDescription class="space-y-1">
+                        <div>Sale Date: {{ data.sale_date }}</div>
+                        <div>Payment Method: {{ data.status }}</div>
                 </DialogDescription>
             </DialogHeader>
             <ScrollArea class="h-[600px] m-2">
@@ -46,32 +47,32 @@ watch(() => props.sales, (newSales) => {
                     <ul class="grid gap-3">
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Name</span>
-                            <span>{{ sales.customer_name }}</span>
+                            <span>{{ data.customer_name }}</span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Email</span>
-                            <span>{{ sales.customer_email }}</span>
+                            <span>{{ data.customer_email }}</span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground ">Address 1</span>
-                            <span class="w-1/2 text-right">{{ sales.customer_address1 }}</span>
+                            <span class="w-1/2 text-right">{{ data.customer_address1 }}</span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground ">Address 2</span>
-                            <span class="w-1/2 text-right">{{ sales.customer_address2 }}</span>
+                            <span class="w-1/2 text-right">{{ data.customer_address2 }}</span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground ">Contact Person</span>
-                            <span>{{ sales.customer_contact_person }}</span>
+                            <span>{{ data.customer_contact_person }}</span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground ">Contact Number</span>
-                            <span>{{ sales.customer_contact_number }}</span>
+                            <span>{{ data.customer_contact_number }}</span>
                         </li>
                     </ul>
 
                     <div class="font-semibold"> Product Details </div>
-                    <ul v-for="product in sales.products" class="grid gap-3 p-4 border rounded-lg">
+                    <ul v-for="product in data.products" class="grid gap-3 p-4 border rounded-lg">
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Category</span> <span>{{ product.category_name }}</span>
                         </li>
@@ -96,17 +97,17 @@ watch(() => props.sales, (newSales) => {
 
                     <span class="flex items-center justify-between">
                         <span class="text-muted-foreground">Total Amount:</span>
-                        <span>{{ formatCurrency(sales.total_amount) }}</span>
+                        <span>{{ formatCurrency(data.total_amount) }}</span>
                     </span>
                     <span class="grid gap-1 py-2">
                         <span class="text-muted-foreground">Notes:</span>
-                        <span>{{ sales?.description || 'No notes found.' }}</span>
+                        <span>{{ data?.description || 'No notes found.' }}</span>
                     </span>
                 </div>
             </ScrollArea>
             <DialogFooter class="p-6 pt-0">
                 <DialogClose as-child>
-                    <Button type="button" variant="secondary">
+                    <Button type="button" class="h-7" variant="secondary">
                         Close
                     </Button>
                 </DialogClose>
