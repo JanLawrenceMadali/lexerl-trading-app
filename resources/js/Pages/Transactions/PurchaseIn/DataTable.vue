@@ -29,6 +29,21 @@ const data = ref(props.inventories)
 const subcategories = ref(props.subcategories);
 const suppliers = ref(props.suppliers);
 
+const sorting = ref([])
+const filter = ref('')
+
+// Updated display range function
+const getDisplayRange = () => {
+    const totalItems = data.value.length;
+    const pageIndex = table.getState().pagination.pageIndex;
+    const pageSize = table.getState().pagination.pageSize;
+
+    const start = pageIndex * pageSize + 1;
+    const end = Math.min((pageIndex + 1) * pageSize, totalItems);
+
+    return `${start} - ${end} of ${totalItems}`;
+}
+
 const df = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'medium',
 });
@@ -246,9 +261,6 @@ const columns = [
     },
 ]
 
-const sorting = ref([])
-const filter = ref('')
-
 const table = useVueTable({
     data: filteredData,
     columns,
@@ -400,7 +412,7 @@ const exportData = () => {
     <div class="flex items-center justify-end py-4 space-x-2">
         <div class="flex items-center space-x-2">
             <p class="text-sm font-medium">
-                Rows per page
+                Items per page:
             </p>
             <Select :model-value="`${table.getState().pagination.pageSize}`" @update:model-value="table.setPageSize">
                 <SelectTrigger class="h-8 w-[70px]">
@@ -413,23 +425,28 @@ const exportData = () => {
                 </SelectContent>
             </Select>
         </div>
-        <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {{ table.getState().pagination.pageIndex + 1 }} of
-            {{ table.getPageCount() }}
-        </div>
-        <div class="space-x-2">
-            <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.firstPage()">
-                <ChevronsLeft class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">
-                <ChevronLeft class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
-                <ChevronRight class="size-5" />
-            </Button>
-            <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.lastPage()">
-                <ChevronsRight class="size-5" />
-            </Button>
+
+        <div class="flex items-center space-x-6">
+            <span class="text-sm">
+                {{ getDisplayRange() }}
+            </span>
+
+            <div class="flex items-center space-x-2">
+                <Button variant="outline" size="icon" :disabled="!table.getCanPreviousPage()"
+                    @click="table.firstPage()">
+                    <ChevronsLeft class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanPreviousPage()"
+                    @click="table.previousPage()">
+                    <ChevronLeft class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanNextPage()" @click="table.nextPage()">
+                    <ChevronRight class="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" :disabled="!table.getCanNextPage()" @click="table.lastPage()">
+                    <ChevronsRight class="size-4" />
+                </Button>
+            </div>
         </div>
     </div>
 </template>
