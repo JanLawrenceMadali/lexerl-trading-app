@@ -126,7 +126,7 @@ watch(
                 <div class="grid gap-2 my-4">
                     <Label for="contact_number" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact
                         Number</Label>
-                    <Input v-model="form.contact_number" id="contact_number" type="text" />
+                    <Input v-model="form.contact_number" id="contact_number" type="number" />
                     <InputError :message="form.errors.contact_number" />
                 </div>
                 <div class="grid gap-2 my-4">
