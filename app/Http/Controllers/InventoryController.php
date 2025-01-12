@@ -176,7 +176,7 @@ class InventoryController extends Controller
 
         $this->activityLog->logPurchaseExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported a purchase in report",
+            "{$this->actor} exported purchase in report",
             ['old' => null, 'new' => null,]
         );
 

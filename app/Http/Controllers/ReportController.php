@@ -91,7 +91,7 @@ class ReportController extends Controller
 
         $this->activityLogs->logActivityLogsExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported a activity logs report",
+            "{$this->actor} exported activity logs report",
             ['old' => null, 'new' => null,]
         );
 

@@ -362,7 +362,7 @@ class SalesController extends Controller
 
         $this->activityLog->logSaleExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported a sales report",
+            "{$this->actor} exported sales report",
             ['old' => null, 'new' => null,]
         );
 
