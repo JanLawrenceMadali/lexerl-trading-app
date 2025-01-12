@@ -120,7 +120,7 @@ const exportData = () => {
                 <Search class="size-4 text-muted-foreground" />
             </span>
         </div>
-        <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting" @click="exportData">
+        <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0" @click="exportData">
             <File class="h-3.5 w-3.5" />
             <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 {{ isExporting ? 'Exporting...' : 'Export' }}
