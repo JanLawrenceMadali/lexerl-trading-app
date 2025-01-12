@@ -59,7 +59,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/activity_logs/export', [ReportController::class, 'activity_logs_export'])->name('activity_logs.export');
     Route::get('/current_inventory', [ReportController::class, 'current_inventory'])->name('current_inventory');
     Route::get('/current_inventory/export', [ReportController::class, 'current_inventory_export'])->name('current_inventory.export');
-    Route::get('/sale_logs', [ReportController::class, 'sale_logs'])->name('sale_logs');
 
     // Settings
     Route::get('/settings', function () {
