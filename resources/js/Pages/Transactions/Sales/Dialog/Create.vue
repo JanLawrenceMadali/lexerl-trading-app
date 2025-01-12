@@ -126,7 +126,10 @@ const filteredCategory = computed(() => {
 
 const filteredSubcategory = (categoryId) => {
     return props.subcategories.filter(subcategory =>
-        props.inventories.some(inventory => inventory.subcategory_id === subcategory.id && inventory.category_id == categoryId)
+        props.inventories.some(inventory => inventory.subcategory_id === subcategory.id &&
+            inventory.category_id == categoryId &&
+            inventory.quantity > 0
+        )
     );
 };
 
@@ -207,18 +210,30 @@ const submit = () => {
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm =
-        !form.sale_date ||
-            form.status_id == 2 ? !form.due_date_id : '' ||
-            !form.customer_id ||
-        !form.products.some(product =>
-            product.unit_id &&
-            product.category_id &&
-            product.subcategory_id &&
-            product.quantity &&
-            product.selling_price
-        )
-    return isForm || form.processing;
+    // Check if any product has all required fields filled
+    const hasValidProducts = form.products.some(product =>
+        product.unit_id &&
+        product.category_id &&
+        product.subcategory_id &&
+        product.quantity &&
+        product.selling_price
+    );
+
+    // Common required fields for all statuses
+    const commonFieldsValid =
+        form.status_id &&
+        form.sale_date &&
+        form.customer_id &&
+        form.transaction_id &&
+        form.transaction_number &&
+        hasValidProducts;
+
+    // Additional validation when status_id is 2
+    if (form.status_id === '2') {
+        return !commonFieldsValid || !form.due_date_id || form.processing;
+    }
+
+    return !commonFieldsValid || form.processing;
 });
 
 const routing = 'sales';
@@ -624,7 +639,7 @@ watch(
                                     Cancel
                                 </Button>
                                 <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
-                                    :disabled="form.processing || isOverQuantity">
+                                    :disabled="isOverQuantity || isSubmitDisabled">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>
