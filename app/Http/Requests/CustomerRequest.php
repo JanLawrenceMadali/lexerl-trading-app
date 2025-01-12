@@ -27,7 +27,7 @@ class CustomerRequest extends FormRequest
             'address1' => 'required|string|max:255',
             'address2' => '',
             'contact_person' => 'required|string|max:255',
-            'contact_number' => 'required|min:8',
+            'contact_number' => 'required|numeric|min:8',
         ];
     }
 
@@ -41,10 +41,11 @@ class CustomerRequest extends FormRequest
             'email.unique' => 'Customer email must be unique.',
             'address1.required' => 'Customer address is required.',
             'address1.string' => 'Customer address must be a string.',
-            'contact_person.required' => 'Contact person is required.',
-            'contact_person.string' => 'Contact person must be a string.',
-            'contact_number.required' => 'Contact number is required.',
-            'contact_number.min' => 'Contact number must be at least 8 characters.',
+            'contact_person.required' => 'Customer contact person is required.',
+            'contact_person.string' => 'Customer contact person must be a string.',
+            'contact_number.required' => 'Customer contact number is required.',
+            'contact_number.numeric' => 'Customer contact number must be a number.',
+            'contact_number.min' => 'Customer contact number must be at least 8 characters.',
         ];
     }
 }

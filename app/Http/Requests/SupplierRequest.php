@@ -27,7 +27,7 @@ class SupplierRequest extends FormRequest
             'address1' => 'required|string|max:255',
             'address2' => '',
             'contact_person' => 'required|string|max:255',
-            'contact_number' => 'required|min:8',
+            'contact_number' => 'required|numeric|min:8',
         ];
     }
 
@@ -47,6 +47,7 @@ class SupplierRequest extends FormRequest
             'contact_person.string' => 'Supplier contact person must be a string.',
             'contact_person.max' => 'Supplier contact person must not exceed 255 characters.',
             'contact_number.required' => 'Supplier contact number is required.',
+            'contact_number.numeric' => 'Supplier contact number must be a number.',
             'contact_number.min' => 'Supplier contact number must be at least 8 characters.',
         ];
     }
