@@ -140,18 +140,19 @@ const submit = () => {
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm =
-        !form.amount ||
-        !form.unit_id ||
-        !form.quantity ||
-        !form.supplier_id ||
-        !form.category_id ||
-        !form.landed_cost ||
-        !form.purchase_date ||
-        !form.subcategory_id ||
-        !form.transaction_id ||
-        !form.transaction_number;
-    return isForm || form.processing;
+    const commonFieldsValid =
+        form.amount &&
+        form.unit_id &&
+        form.quantity &&
+        form.landed_cost &&
+        form.supplier_id &&
+        form.category_id &&
+        form.purchase_date &&
+        form.subcategory_id &&
+        form.transaction_id &&
+        form.transaction_number;
+
+    return !commonFieldsValid || form.processing;
 });
 
 const routing = 'purchase-in';
@@ -211,7 +212,8 @@ watch(
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.transaction_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.transaction_id" />
                                 </div>
                                 <!-- Transaction Number -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -226,7 +228,8 @@ watch(
                                             <Hash class="size-4 text-muted-foreground" />
                                         </span>
                                     </div>
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.transaction_number" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.transaction_number" />
                                 </div>
                             </div>
 
@@ -240,9 +243,11 @@ watch(
                                         :class="['col-span-3 justify-between font-normal', !form.supplier_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.supplier_id }]"
                                         :has-error="form.errors.supplier_id" placeholder="Select a supplier"
                                         v-model="form.supplier_id">
-                                        <Create class="m-2" :routing="routing" @create-supplier="handleSupplierCreated" />
+                                        <Create class="m-2" :routing="routing"
+                                            @create-supplier="handleSupplierCreated" />
                                     </DropdownSearch>
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.supplier_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.supplier_id" />
                                 </div>
                                 <!-- Purchase Date -->
                                 <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -264,7 +269,8 @@ watch(
                                                 @update:model-value="handleDateSelect" />
                                         </PopoverContent>
                                     </Popover>
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.purchase_date" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.purchase_date" />
                                 </div>
                             </div>
 
@@ -278,7 +284,8 @@ watch(
                                         :class="['col-span-3 justify-between font-normal', !form.category_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.category_id }]"
                                         :has-error="form.errors.category_id" placeholder="Select a category"
                                         v-model="form.category_id" />
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.category_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.category_id" />
                                 </div>
                                 <!-- SubCategory -->
                                 <div class="grid items-center gap-3 md:text-right md:grid-cols-5">
@@ -291,10 +298,12 @@ watch(
                                         :class="['col-span-3 justify-between font-normal', !form.subcategory_id && 'text-muted-foreground', { 'border-red-600 focus:ring-red-500': form.errors.subcategory_id }]"
                                         :has-error="form.errors.subcategory_id" :disabled="!form.category_id"
                                         placeholder="Select a sub category" v-model="form.subcategory_id">
-                                        <CreateSubcategory class="m-2" :categories="categories" :category_id="form.category_id"
+                                        <CreateSubcategory class="m-2" :categories="categories"
+                                            :category_id="form.category_id"
                                             @create-subcategory="handleSubcategoryCreated" :routing="routing" />
                                     </DropdownSearch>
-                                    <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.subcategory_id" />
+                                    <InputError class="col-span-2 col-start-3 text-start"
+                                        :message="form.errors.subcategory_id" />
                                 </div>
                             </div>
 
@@ -333,7 +342,8 @@ watch(
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div v-if="form.errors.quantity || form.errors.unit_id" class="col-span-3 col-start-3 text-start">
+                                        <div v-if="form.errors.quantity || form.errors.unit_id"
+                                            class="col-span-3 col-start-3 text-start">
                                             <div class="flex justify-between">
                                                 <InputError :message="form.errors.quantity" />
                                                 <InputError :message="form.errors.unit_id" />
@@ -355,7 +365,8 @@ watch(
                                                 <PhilippinePeso class="size-4 text-muted-foreground" />
                                             </span>
                                         </div>
-                                        <InputError class="col-span-2 col-start-3 text-start" :message="form.errors.landed_cost" />
+                                        <InputError class="col-span-2 col-start-3 text-start"
+                                            :message="form.errors.landed_cost" />
                                     </div>
                                     <!-- Amount -->
                                     <div class="grid items-center grid-cols-5 gap-3 text-right">
@@ -383,7 +394,7 @@ watch(
                                     Cancel
                                 </Button>
                                 <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
-                                    :disabled="form.processing">
+                                    :disabled="isSubmitDisabled">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>

@@ -152,18 +152,19 @@ const submit = () => {
 };
 
 const isSubmitDisabled = computed(() => {
-    const isForm =
-        !form.amount ||
-        !form.unit_id ||
-        !form.quantity ||
-        !form.supplier_id ||
-        !form.category_id ||
-        !form.landed_cost ||
-        !form.purchase_date ||
-        !form.subcategory_id ||
-        !form.transaction_id ||
-        !form.transaction_number;
-    return isForm || form.processing;
+    const commonFieldsValid =
+        form.amount &&
+        form.unit_id &&
+        form.quantity &&
+        form.landed_cost &&
+        form.supplier_id &&
+        form.category_id &&
+        form.purchase_date &&
+        form.subcategory_id &&
+        form.transaction_id &&
+        form.transaction_number;
+
+    return !commonFieldsValid || form.processing;
 });
 
 </script>
@@ -382,7 +383,7 @@ const isSubmitDisabled = computed(() => {
                                 Cancel
                             </Button>
                             <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
-                                :disabled="form.processing">
+                                :disabled="isSubmitDisabled">
                                 <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                 Submit
                             </Button>
