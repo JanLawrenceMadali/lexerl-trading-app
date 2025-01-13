@@ -255,7 +255,7 @@ class SalesController extends Controller
                 $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                 $existingItem['unit_id'] === $product['unit_id']
             ) {
-                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please pick another item.";
+                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please select another item.";
                 return false;
             }
         }
@@ -392,10 +392,10 @@ class SalesController extends Controller
                     ['old' => $sale->toArray()]
                 );
             });
-            return redirect()->back()->with('success', 'Transaction removed successfully!');
+            return redirect()->back()->with('success', 'Transaction deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to remove transaction');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete transaction');
         }
     }
 

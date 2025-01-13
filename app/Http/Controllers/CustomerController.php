@@ -47,10 +47,10 @@ class CustomerController extends Controller
                 ['new' => $customer->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Customer created successfully');
+            return redirect()->back()->with('success', 'Customer created successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a customer');
         }
     }
 
@@ -69,7 +69,7 @@ class CustomerController extends Controller
                 ['old' => $oldData, 'new' => $customer->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Customer updated successfully');
+            return redirect()->back()->with('success', 'Customer updated successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update customer');
@@ -87,7 +87,7 @@ class CustomerController extends Controller
                 ['old' => $customer->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Customer deleted successfully');
+            return redirect()->back()->with('success', 'Customer deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete customer');

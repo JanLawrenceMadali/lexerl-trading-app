@@ -45,10 +45,10 @@ class UnitController extends Controller
                 ['new' => $unit->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Unit created successfully');
+            return redirect()->back()->with('success', 'Unit created successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create unit');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a unit');
         }
     }
 
@@ -65,7 +65,7 @@ class UnitController extends Controller
                 ['old' => $oldData, 'new' => $unit->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Unit updated successfully');
+            return redirect()->back()->with('success', 'Unit updated successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update unit');
@@ -83,7 +83,7 @@ class UnitController extends Controller
                 ['old' => $unit->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Unit deleted successfully');
+            return redirect()->back()->with('success', 'Unit deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete unit');

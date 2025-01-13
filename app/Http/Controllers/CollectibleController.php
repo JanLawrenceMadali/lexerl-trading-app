@@ -80,10 +80,10 @@ class CollectibleController extends Controller
                     );
                 }
             });
-            return redirect()->back()->with('success', 'Collectible(s) successfully marked as paid!');
+            return redirect()->back()->with('success', 'Collectible(s) marked as paid successfully!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update collectibles');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to mark as paid a collectible');
         }
     }
 

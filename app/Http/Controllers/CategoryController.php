@@ -46,10 +46,10 @@ class CategoryController extends Controller
                 ['new' => $category->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Category created successfully');
+            return redirect()->back()->with('success', 'Category created successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a category');
         }
     }
 
@@ -68,7 +68,7 @@ class CategoryController extends Controller
                 ['old' => $oldData, 'new' => $category->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Category updated successfully');
+            return redirect()->back()->with('success', 'Category updated successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update category');
@@ -86,7 +86,7 @@ class CategoryController extends Controller
                 ['old' => $category->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Category deleted successfully');
+            return redirect()->back()->with('success', 'Category deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete category');

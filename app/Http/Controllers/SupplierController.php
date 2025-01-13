@@ -47,10 +47,10 @@ class SupplierController extends Controller
                 ['new' => $supplier->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Supplier created successfully');
+            return redirect()->back()->with('success', 'Supplier created successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create supplier');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a supplier');
         }
     }
 
@@ -69,7 +69,7 @@ class SupplierController extends Controller
                 ['old' => $oldData, 'new' => $supplier->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Supplier updated successfully');
+            return redirect()->back()->with('success', 'Supplier updated successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update supplier');
@@ -87,7 +87,7 @@ class SupplierController extends Controller
                 ['old' => $supplier->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Supplier deleted successfully');
+            return redirect()->back()->with('success', 'Supplier deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete supplier');

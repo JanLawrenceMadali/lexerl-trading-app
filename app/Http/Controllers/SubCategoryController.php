@@ -47,10 +47,10 @@ class SubCategoryController extends Controller
                 ['new' => $subcategory->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Sub Category created successfully');
+            return redirect()->back()->with('success', 'Sub Category created successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create sub category');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a sub category');
         }
     }
 
@@ -69,7 +69,7 @@ class SubCategoryController extends Controller
                 ['old' => $oldData, 'new' => $subcategory->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Sub Category updated successfully');
+            return redirect()->back()->with('success', 'Sub Category updated successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update sub category');
@@ -87,7 +87,7 @@ class SubCategoryController extends Controller
                 ['old' => $subcategory->toArray()]
             );
 
-            return redirect()->back()->with('success', 'Sub Category deleted successfully');
+            return redirect()->back()->with('success', 'Sub Category deleted successfully!');
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete sub category');

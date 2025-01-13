@@ -57,10 +57,10 @@ class UserController extends Controller
                 ['new' => $user->toArray()]
             );
 
-            return redirect()->back()->with('success', 'User created successfully');
+            return redirect()->back()->with('success', 'User created successfully!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create user');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a user');
         }
     }
 
@@ -79,7 +79,7 @@ class UserController extends Controller
                 ['old' => $oldData, 'new' => $user->toArray()]
             );
 
-            return redirect()->back()->with('success', 'User updated successfully');
+            return redirect()->back()->with('success', 'User updated successfully!');
         } catch (\Exception $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update user');
@@ -102,7 +102,7 @@ class UserController extends Controller
                 ['old' => $user->toArray()]
             );
 
-            return redirect()->back()->with('success', 'User deleted successfully');
+            return redirect()->back()->with('success', 'User deleted successfully!');
         } catch (\Exception $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete user');
