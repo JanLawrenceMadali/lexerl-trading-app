@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class BackupController extends Controller
 {
@@ -185,9 +186,20 @@ class BackupController extends Controller
 
     public function purge_transaction(Request $request)
     {
-        if (Auth::id() != 1) {
+        $request->validate([
+            'password' => 'required'
+        ]);
+
+        if (Auth::user()->role_id !== 1) {
             return redirect()->back()->with('error', 'You are not authorized to perform this action.');
         }
+
+        if (!Hash::check($request->password, auth()->user()->password)) {
+            return back()->withErrors([
+                'password' => 'The provided password is incorrect.'
+            ]);
+        }
+
 
         try {
             $this->backupService->purgeTransaction();
@@ -197,7 +209,7 @@ class BackupController extends Controller
                 "{$this->actor} purged transaction",
             );
 
-            return redirect()->back()->with('success', 'Transaction purged successfully!');
+            return redirect()->back()->with('success', 'Transactions purged successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to purge a transaction');
         }
