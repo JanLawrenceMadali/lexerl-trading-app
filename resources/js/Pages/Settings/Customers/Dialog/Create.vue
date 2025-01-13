@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Plus, Loader2 } from 'lucide-vue-next';
 import { useForm } from '@inertiajs/vue3'
 import { Input } from '@/Components/ui/input';
@@ -89,6 +89,17 @@ watch(
     },
     { deep: true }
 );
+
+const isSubmitDisabled = computed(() => {
+    const commonFieldsValid =
+        form.name &&
+        form.email &&
+        form.address1 &&
+        form.contact_person &&
+        form.contact_number;
+
+    return !commonFieldsValid || form.processing;
+});
 </script>
 
 <template>
@@ -141,10 +152,11 @@ watch(
                     <InputError :message="form.errors.address2" />
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" type="button" class="gap-1 h-7" @click="closeSheet">
+                    <Button variant="outline" type="button"
+                        class="gap-1 h-7 text-white bg-[#C00F0C] hover:bg-red-600 hover:text-white" @click="closeSheet">
                         Cancel
                     </Button>
-                    <Button type="submit" class="gap-1 h-7" :disabled="form.processing">
+                    <Button type="submit" class="gap-1 h-7" :disabled="isSubmitDisabled">
                         <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                         Submit
                     </Button>
