@@ -7,7 +7,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
-import { Hash, Loader2, PhilippinePeso, Plus, PlusCircle, Boxes, CalendarIcon, Trash2 } from 'lucide-vue-next'
+import { Hash, Loader2, PhilippinePeso, Plus, Boxes, CalendarIcon, Trash2 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import Label from '@/Components/ui/label/Label.vue'
 import InputError from '@/Components/InputError.vue'
@@ -303,7 +303,7 @@ watch(
         <Dialog v-model:open="isOpen">
             <DialogTrigger as-child>
                 <Button size="sm" class="gap-1 h-7">
-                    <PlusCircle class="h-3.5 w-3.5" />
+                    <Plus class="h-3.5 w-3.5" />
                     <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         Add New
                     </span>
@@ -417,22 +417,22 @@ watch(
                                     <TableHeader class="bg-slate-100">
                                         <TableRow>
                                             <TableHead><span class="sr-only">Index</span></TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Category
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Sub Category
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Unit
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Selling Price
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Quantity
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Amount
                                             </TableHead>
                                             <TableHead>

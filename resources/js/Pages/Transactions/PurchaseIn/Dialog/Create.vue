@@ -5,11 +5,11 @@ import { Button } from '@/Components/ui/button'
 import { useForm } from '@inertiajs/vue3'
 import { computed, reactive, ref, watch } from 'vue'
 import { Textarea } from '@/Components/ui/textarea'
-import { CalendarIcon, Hash, Loader2, PhilippinePeso, PlusCircle, Boxes } from 'lucide-vue-next'
+import { CalendarIcon, Hash, Loader2, PhilippinePeso, Boxes, Plus } from 'lucide-vue-next'
 import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select'
 import Label from '@/Components/ui/label/Label.vue'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog'
 import { Calendar } from '@/Components/ui/calendar'
 import InputError from '@/Components/InputError.vue'
 import CreateSubcategory from '../../../Settings/Subcategory/Dialog/Create.vue'
@@ -176,7 +176,7 @@ watch(
         <Dialog v-model:open="isOpen">
             <DialogTrigger as-child>
                 <Button size="sm" class="gap-1 h-7">
-                    <PlusCircle class="h-3.5 w-3.5" />
+                    <Plus class="h-3.5 w-3.5" />
                     <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         Add New
                     </span>
