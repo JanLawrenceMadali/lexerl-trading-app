@@ -106,7 +106,7 @@ watch(
                     Fill in the details of the new supplier. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submit">
+            <form @submit.prevent="submit" novalidate>
                 <div class="grid gap-2 my-4">
                     <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" type="text" />
@@ -126,7 +126,8 @@ watch(
                 <div class="grid gap-2 my-4">
                     <Label for="contact_number" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact
                         Number</Label>
-                    <Input v-model="form.contact_number" id="contact_number" type="number" />
+                    <Input v-model="form.contact_number" id="contact_number" type="text"
+                        @input="form.contact_number = form.contact_number.replace(/[^0-9]/g, '')" />
                     <InputError :message="form.errors.contact_number" />
                 </div>
                 <div class="grid gap-2 my-4">

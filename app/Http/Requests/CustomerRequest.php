@@ -27,7 +27,7 @@ class CustomerRequest extends FormRequest
             'address1' => 'required|string|max:255',
             'address2' => '',
             'contact_person' => 'required|string|max:255',
-            'contact_number' => 'required|numeric|min:8',
+            'contact_number' => 'required|string|min:8|max:15|regex:/^\d+$/',
         ];
     }
 

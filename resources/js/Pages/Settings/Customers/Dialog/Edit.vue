@@ -92,7 +92,7 @@ watch(
                     Make changes to the customer here. Click save changes when you're done.
                 </DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submit">
+            <form @submit.prevent="submit" novalidate>
                 <div class="grid gap-2 my-4">
                     <Label for="name" class="after:content-['*'] after:ml-0.5 after:text-red-500">Name</Label>
                     <Input v-model="form.name" id="name" type="text" />
@@ -104,13 +104,16 @@ watch(
                     <InputError :message="form.errors.email" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="contact_person" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact Person</Label>
+                    <Label for="contact_person" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact
+                        Person</Label>
                     <Input v-model="form.contact_person" id="contact_person" type="text" />
                     <InputError :message="form.errors.contact_person" />
                 </div>
                 <div class="grid gap-2 my-4">
-                    <Label for="contact_number" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact Number</Label>
-                    <Input v-model="form.contact_number" id="contact_number" type="text" />
+                    <Label for="contact_number" class="after:content-['*'] after:ml-0.5 after:text-red-500">Contact
+                        Number</Label>
+                    <Input v-model="form.contact_number" id="contact_number" type="text"
+                        @input="form.contact_number = form.contact_number.replace(/[^0-9]/g, '')" />
                     <InputError :message="form.errors.contact_number" />
                 </div>
                 <div class="grid gap-2 my-4">

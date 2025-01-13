@@ -84,7 +84,7 @@ watch(
                     Fill in the form below to add a new user. Click submit when you're done.
                 </DialogDescription>
             </DialogHeader>
-            <form @submit.prevent="submit">
+            <form @submit.prevent="submit" novalidate>
                 <div class="grid gap-2 my-4">
                     <Label class="after:content-['*'] after:ml-0.5 after:text-red-500">Role</Label>
                     <Select v-model="form.role_id">
