@@ -20,6 +20,11 @@ const options = ref({
                 }
             }
         },
+    },
+    plugins: {
+        legend: {
+            display: false
+        }
     }
 });
 
