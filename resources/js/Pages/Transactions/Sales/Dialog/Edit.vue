@@ -141,8 +141,7 @@ const filteredCustomer = computed(() => {
 
 const filteredCategory = computed(() => {
     return props.categories.filter(category =>
-        props.inventories.some(inventory => inventory.category_id === category.id &&
-            inventory.quantity > 0
+        props.inventories.some(inventory => inventory.category_id === category.id
         )
     )
 });
@@ -150,8 +149,7 @@ const filteredCategory = computed(() => {
 const filteredSubcategory = (categoryId) => {
     return props.subcategories.filter(subcategory =>
         props.inventories.some(inventory => inventory.subcategory_id === subcategory.id &&
-            inventory.category_id == categoryId &&
-            inventory.quantity > 0
+            inventory.category_id == categoryId
         )
     );
 };
