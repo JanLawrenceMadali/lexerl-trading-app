@@ -15,8 +15,8 @@ const isCleaning = ref(false);
 
 const deleteBackup = (backup) => {
     Swal.fire({
-        title: 'Are you sure?',
-        text: 'This will permanently delete the backup!',
+        title: '<h2 class="custom-title">Are you sure you want to delete this database backup?</h2>',
+        html: '<p class="custom-text">Please note that this is irreversible and will permanently delete the database backup.</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
