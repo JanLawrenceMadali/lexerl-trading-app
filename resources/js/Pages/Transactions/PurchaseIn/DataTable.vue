@@ -126,7 +126,7 @@ const columns = [
     {
         accessorKey: 'transaction_number',
         header: ({ column }) => {
-            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction #', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Transaction No.', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
         },
         cell: ({ row }) => {
             const { transaction_type } = row.original;
