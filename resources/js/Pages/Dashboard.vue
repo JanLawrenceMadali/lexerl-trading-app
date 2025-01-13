@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import { ScrollArea } from '@/Components/ui/scroll-area'
-import { ArrowRightFromLine, CircleCheck, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
+import { ArrowRightFromLine, CircleCheck, CirclePlus, CircleX, Delete, Download, LogIn, LogOut, PackageX, Redo, RefreshCcw, SquareArrowOutUpRight, Wrench } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Chart from '@/Components/Chart.vue'
@@ -117,6 +117,9 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                                     </span>
                                     <span v-else-if="log.action === 'cancel'">
                                         <CircleX class="text-rose-600 size-6" />
+                                    </span>
+                                     <span v-else-if="log.action === 'purge'">
+                                        <PackageX class="text-orange-600 size-6" />
                                     </span>
                                      <span v-else-if="log.action === 'paid'">
                                         <CircleCheck class="text-green-600 size-6" />

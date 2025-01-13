@@ -6,6 +6,7 @@ import CleanAllBackup from './Partial/CleanAllBackup.vue';
 import DownloadDatabase from './Partial/DownloadDatabase.vue';
 import DeleteDatabase from './Partial/DeleteDatabase.vue';
 import RestoreDatabase from './Partial/RestoreDatabase.vue';
+import PurgeTransaction from './Partial/PurgeTransaction.vue';
 
 const props = defineProps({
     backups: { type: Array, required: true },
@@ -21,6 +22,8 @@ const props = defineProps({
         <ManualBackup />
         <!-- Clear All Backups Button -->
         <CleanAllBackup />
+        <!-- Purge Transactions -->
+        <PurgeTransaction />
     </div>
 
     <div class="mt-4 border rounded-md">

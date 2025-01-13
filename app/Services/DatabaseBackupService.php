@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -84,8 +82,15 @@ class DatabaseBackupService
         }
 
         try {
+            // Close existing database connections
+            DB::disconnect();
+
             // Replace the current database with the backup
             File::copy($backupPath, $databasePath);
+
+            // Set proper permissions
+            chmod($databasePath, 0644);
+
             return true;
         } catch (\Exception $e) {
             throw $e;
@@ -95,10 +100,6 @@ class DatabaseBackupService
     public function uploadRestoreBackup($file): bool
     {
         try {
-            // Get current user ID and remember token for session preservation
-            $userId = Auth::id();
-            $rememberToken = Auth::user()->getRememberToken();
-
             $databasePath = database_path('database.sqlite');
             $timestamp = now()->format('Y-m-d-H-i-s');
 
@@ -122,20 +123,6 @@ class DatabaseBackupService
 
             // Set proper permissions
             chmod($databasePath, 0644);
-
-            // Clear application cache
-            Artisan::call('cache:clear');
-
-            // Reconnect to the restored database
-            DB::reconnect();
-
-            // Update the remember token to match the current session
-            DB::table('users')
-                ->where('id', $userId)
-                ->update(['remember_token' => $rememberToken]);
-
-            // Regenerate session to ensure it's fresh
-            session()->regenerate();
 
             return true;
         } catch (\Exception $e) {
@@ -178,5 +165,12 @@ class DatabaseBackupService
         }
 
         return $deletedCount;
+    }
+
+    public function purgeTransaction()
+    {
+        DB::table('sales')->truncate();
+        DB::table('inventories')->truncate();
+        DB::table('purchases')->truncate();
     }
 }

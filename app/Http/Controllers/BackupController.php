@@ -6,7 +6,9 @@ use App\Models\ActivityLog;
 use App\Services\ActivityLoggerService;
 use App\Services\DatabaseBackupService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BackupController extends Controller
 {
@@ -44,10 +46,10 @@ class BackupController extends Controller
                 "database was backed up ({$filename})",
             );
 
-            return redirect()->back()->with('success', 'Database backup created successfully.');
+            return redirect()->back()->with('success', 'Database backup completed successfully!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a backup');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a data backup');
         }
     }
 
@@ -65,7 +67,7 @@ class BackupController extends Controller
 
             return response()->download($zipPath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to download backup');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to download database backup');
         }
     }
 
@@ -83,9 +85,9 @@ class BackupController extends Controller
                 "{$this->actor} deleted all backups",
             );
 
-            return redirect()->back()->with('success', 'All backups deleted successfully.');
+            return redirect()->back()->with('success', 'All database backups deleted successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete all backups');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete all database backups');
         }
     }
 
@@ -94,16 +96,32 @@ class BackupController extends Controller
         try {
             $backupFile = $request->input('backup_file');
 
+            // Store current session data
+            $userId = Auth::id();
+            $rememberToken = Auth::user()->getRememberToken();
+
             $this->backupService->restoreBackup($backupFile);
+
+            // Reconnect and restore session
+            DB::reconnect();
+
+            // Update remember token in the restored database
+            DB::table('users')
+                ->where('id', $userId)
+                ->update(['remember_token' => $rememberToken]);
+
+            // Clear cache and regenerate session
+            Artisan::call('cache:clear');
+            $request->session()->regenerate();
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_RESTORE,
                 "{$this->actor} restored {$backupFile}",
             );
 
-            return redirect()->back()->with('success', 'Database restored backup successfully.');
+            return redirect()->back()->with('success', 'Database restored successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore backups');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore database');
         }
     }
 
@@ -117,17 +135,33 @@ class BackupController extends Controller
             $backupFile = $request->file('backup');
 
             $filename = $backupFile->getClientOriginalName();
-            
+
+            // Store current session data
+            $userId = Auth::id();
+            $rememberToken = Auth::user()->getRememberToken();
+
             $this->backupService->uploadRestoreBackup($backupFile);
+
+            // Reconnect and restore session
+            DB::reconnect();
+
+            // Update remember token in the restored database
+            DB::table('users')
+                ->where('id', $userId)
+                ->update(['remember_token' => $rememberToken]);
+
+            // Clear cache and regenerate session
+            Artisan::call('cache:clear');
+            $request->session()->regenerate();
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_RESTORE,
                 "{$filename} was restored from the uploaded backup",
             );
 
-            return redirect()->back()->with('success', 'Database restored from the uploaded backup successfully.');
+            return redirect()->back()->with('success', 'Database uploaded and restored successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore from the uploaded backups');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to upload and restore database');
         }
     }
 
@@ -143,9 +177,29 @@ class BackupController extends Controller
                 "{$filename} was deleted",
             );
 
-            return redirect()->back()->with('success', 'Backup deleted successfully.');
+            return redirect()->back()->with('success', 'Database backup deleted successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete backup');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete database backup');
+        }
+    }
+
+    public function purge_transaction(Request $request)
+    {
+        if (Auth::id() != 1) {
+            return redirect()->back()->with('error', 'You are not authorized to perform this action.');
+        }
+
+        try {
+            $this->backupService->purgeTransaction();
+
+            $this->activityLog->logDatabaseBackup(
+                ActivityLog::ACTION_PURGE,
+                "{$this->actor} purged transaction",
+            );
+
+            return redirect()->back()->with('success', 'Transaction purged successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to purge a transaction');
         }
     }
 }

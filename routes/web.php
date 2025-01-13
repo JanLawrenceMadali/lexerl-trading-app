@@ -114,6 +114,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/download', [BackupController::class, 'download'])->name('backup.download');
         Route::delete('/clean-all', [BackupController::class, 'cleanAll'])->name('backup.clean-all');
         Route::delete('/destroy', [BackupController::class, 'destroy'])->name('backup.destroy');
+        Route::delete('/purge', [BackupController::class, 'purge_transaction'])->name('backup.purge');
         Route::post('/restore', [BackupController::class, 'restore'])->name('backup.restore');
         Route::post('/upload',[BackupController::class, 'upload_restore'])->name('backup.upload-restore');
     });
