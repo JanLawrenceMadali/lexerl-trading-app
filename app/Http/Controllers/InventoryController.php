@@ -112,7 +112,7 @@ class InventoryController extends Controller
             return redirect()->back()->with('success', 'Transaction successfully added!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create purchase');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to add transaction');
         }
     }
 
@@ -134,10 +134,10 @@ class InventoryController extends Controller
                     ['old' => $oldData, 'new' => $inventory->toArray()]
                 );
             });
-            return redirect()->back()->with('success', 'Transaction successfully updated!');
+            return redirect()->back()->with('success', 'Transaction updated successfully!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update transaction');
         }
     }
 
@@ -155,10 +155,10 @@ class InventoryController extends Controller
                 );
             });
 
-            return redirect()->back()->with('success', 'Transaction successfully removed!');
+            return redirect()->back()->with('success', 'Transaction removed successfully!');
         } catch (\Exception $e) {
             report($e);
-            return redirect()->back()->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to remove transaction');
         }
     }
 

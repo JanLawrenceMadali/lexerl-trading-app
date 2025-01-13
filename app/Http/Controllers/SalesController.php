@@ -147,12 +147,12 @@ class SalesController extends Controller
                 return $sale;
             });
 
-            return redirect()->back()->with('success', 'Transaction successfully added!');
+            return redirect()->back()->with('success', 'Transaction added successfully!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'An unexpected error occurred. Please try again.');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to add transaction');
         }
     }
 
@@ -177,12 +177,12 @@ class SalesController extends Controller
                 );
             });
 
-            return redirect()->back()->with('success', 'Transaction successfully updated!');
+            return redirect()->back()->with('success', 'Transaction updated successfully!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'An error occurred while updating the sale.');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update transaction');
         }
     }
 
@@ -341,10 +341,10 @@ class SalesController extends Controller
                     ['old' => $sale->toArray()]
                 );
             });
-            return redirect()->back()->with('success', 'Transaction successfully removed!');
+            return redirect()->back()->with('success', 'Transaction removed successfully!');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'An error occurred while deleting the sale.');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to remove transaction');
         }
     }
 

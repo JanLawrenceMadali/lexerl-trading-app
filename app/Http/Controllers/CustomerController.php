@@ -72,7 +72,7 @@ class CustomerController extends Controller
             return redirect()->back()->with('success', 'Customer updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update customer');
         }
     }
 
@@ -90,7 +90,7 @@ class CustomerController extends Controller
             return redirect()->back()->with('success', 'Customer deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create customer');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete customer');
         }
     }
 }

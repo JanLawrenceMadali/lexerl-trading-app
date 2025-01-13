@@ -90,7 +90,7 @@ class SupplierController extends Controller
             return redirect()->back()->with('success', 'Supplier deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', 'Something went wrong');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete supplier');
         }
     }
 }

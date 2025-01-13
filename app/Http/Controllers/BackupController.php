@@ -83,9 +83,9 @@ class BackupController extends Controller
                 "{$this->actor} deleted all backups",
             );
 
-            return redirect()->back()->with('success', 'All backups successfully deleted.');
+            return redirect()->back()->with('success', 'All backups deleted successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to clean all backups');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete all backups');
         }
     }
 
@@ -101,7 +101,7 @@ class BackupController extends Controller
                 "{$this->actor} restored {$backupFile}",
             );
 
-            return redirect()->back()->with('success', 'Database successfully restored backup.');
+            return redirect()->back()->with('success', 'Database restored backup successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore backups');
         }
@@ -125,7 +125,7 @@ class BackupController extends Controller
                 "{$filename} was restored from the uploaded backup",
             );
 
-            return redirect()->back()->with('success', 'Database successfully restored from the uploaded backup.');
+            return redirect()->back()->with('success', 'Database restored from the uploaded backup successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to restore from the uploaded backups');
         }
@@ -143,7 +143,7 @@ class BackupController extends Controller
                 "{$filename} was deleted",
             );
 
-            return redirect()->back()->with('success', 'Backup successfully deleted.');
+            return redirect()->back()->with('success', 'Backup deleted successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete backup');
         }

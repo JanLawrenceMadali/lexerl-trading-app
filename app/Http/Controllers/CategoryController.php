@@ -71,7 +71,7 @@ class CategoryController extends Controller
             return redirect()->back()->with('success', 'Category updated successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to update category');
         }
     }
 
@@ -89,7 +89,7 @@ class CategoryController extends Controller
             return redirect()->back()->with('success', 'Category deleted successfully');
         } catch (\Throwable $e) {
             report($e);
-            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create category');
+            return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete category');
         }
     }
 }
