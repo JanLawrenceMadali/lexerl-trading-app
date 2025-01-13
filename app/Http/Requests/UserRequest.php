@@ -39,7 +39,7 @@ class UserRequest extends FormRequest
             'username.max' => 'Username must not exceed 255 characters.',
             'username.unique' => 'Username is already taken.',
             'email.required' => 'Email is required.',
-            'email.email' => 'Invalid email format.',
+            'email.email' => 'Email must be a valid email address.',
             'email.unique' => 'Email is already taken.',
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
