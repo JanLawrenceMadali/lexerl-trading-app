@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/Components/ui/input'
 import { Label } from '@/Components/ui/label'
 import { Loader2, Upload } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import Swal from 'sweetalert2';
 import { useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
@@ -73,9 +73,9 @@ const uploadAndRestoreBackup = () => {
                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload class="w-10 h-10 mb-3 text-gray-400" />
                         <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                            <span class="font-semibold">Click to upload</span> or drag and drop
+                            <span class="font-semibold">Click to upload</span>
                         </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">File must have .sqlite extension (MAX. 10 MB)</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">File must have .sqlite extension</p>
                     </div>
                     <Input id="dropzone-file" type="file" accept=".sqlite"
                         @change="(e) => selectedFile = e.target.files[0]" class="hidden" />
@@ -87,10 +87,12 @@ const uploadAndRestoreBackup = () => {
                 </Label>
             </div>
             <DialogFooter>
-                <Button variant="outline" size="sm" class="gap-1 h-7" @click="closeSheet">
+                <Button variant="outline" type="button"
+                    class="gap-1 h-7 text-white bg-[#C00F0C] hover:bg-red-600 hover:text-white" @click="closeSheet">
                     Cancel
                 </Button>
-                <Button size="sm" class="gap-1 h-7" type="submit" :disabled="isUploading || !selectedFile" @click="uploadAndRestoreBackup">
+                <Button size="sm" class="gap-1 h-7" type="submit" :disabled="isUploading || !selectedFile"
+                    @click="uploadAndRestoreBackup">
                     <Loader2 v-if="isUploading" class="w-4 h-4 mr-2 animate-spin" />
                     Restore
                 </Button>

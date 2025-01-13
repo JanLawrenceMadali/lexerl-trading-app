@@ -16,23 +16,30 @@ const cleanAllBackups = () => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete them!',
+        cancelButtonColor: '#1B1212',
+        confirmButtonText: 'Yes',
     }).then((result) => {
         if (result.isConfirmed) {
             isCleaning.value = true;
 
             form.delete(route('backup.clean-all'), {
-                onSuccess: () => {
-                    Swal.fire({
-                        title: "Success!",
-                        text: "All backups have been deleted!",
-                        iconHtml: '<img src="/assets/icons/Success.png">',
-                        confirmButtonColor: "#1B1212",
-                    });
+                onSuccess: (response) => {
+                    if (response.props.flash.success) {
+                        Swal.fire({
+                            text: response.props.flash.success,
+                            iconHtml: '<img src="/assets/icons/Success.png">',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    } else {
+                        Swal.fire({
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
+                    }
                 },
                 onError: (errors) => {
-                    Swal.fire('Error', 'Failed to delete backups.', 'error');
+                    // console.log(errors);
                 },
                 onFinish: () => {
                     isCleaning.value = false;
@@ -44,7 +51,8 @@ const cleanAllBackups = () => {
 </script>
 
 <template>
-    <Button size="sm" variant="outline" class="gap-1 bg-red-500 h-7 !text-white hover:bg-red-600" @click="cleanAllBackups" :disabled="isCleaning">
+    <Button size="sm" variant="outline" class="gap-1 bg-red-500 h-7 !text-white hover:bg-red-600"
+        @click="cleanAllBackups" :disabled="isCleaning">
         <Trash2 class="h-3.5 w-3.5" />
         <span class="whitespace-nowrap">
             {{ isCleaning ? 'Deleting...' : 'Delete All Backups' }}

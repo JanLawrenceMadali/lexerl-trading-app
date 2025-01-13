@@ -78,7 +78,7 @@ const handleDeleted = (id) => {
         showCancelButton: true,
         confirmButtonColor: "#C00F0C",
         cancelButtonColor: "#1B1212",
-        confirmButtonText: "Yes, delete it",
+        confirmButtonText: "Yes",
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route('categories.destroy', id), {
@@ -90,8 +90,12 @@ const handleDeleted = (id) => {
                             iconHtml: '<img src="/assets/icons/Success.png">',
                             confirmButtonColor: "#1B1212",
                         });
-                    } else if (response.props.flash.error) {
-                        Swal.fire('Error', "Oops! Something went wrong", 'error');
+                    } else {
+                        Swal.fire({
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
                     }
                 },
                 onError: (errors) => {
@@ -300,7 +304,7 @@ function getNestedValue(obj, path) {
                 </SelectContent>
             </Select>
         </div>
-        
+
         <div class="flex items-center space-x-6">
             <span class="text-sm">
                 {{ getDisplayRange() }}

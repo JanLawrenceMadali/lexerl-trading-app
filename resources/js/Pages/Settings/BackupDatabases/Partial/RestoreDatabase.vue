@@ -21,7 +21,7 @@ const restoreBackup = (backup) => {
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
         cancelButtonColor: '#1B1212',
-        confirmButtonText: 'Yes, restore it!',
+        confirmButtonText: 'Yes',
     }).then((result) => {
         if (result.isConfirmed) {
             isUploading.value = true;
@@ -35,12 +35,16 @@ const restoreBackup = (backup) => {
                             iconHtml: '<img src="/assets/icons/Success.png">',
                             confirmButtonColor: "#1B1212",
                         });
-                    } else if (response.props.flash.error) {
-                        Swal.fire('Error', response.props.flash.error, 'error');
+                    } else {
+                        Swal.fire({
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
                     }
                 },
                 onError: (errors) => {
-                    Swal.fire('Error', 'Failed to restore backup.', 'error');
+                    // console.log(errors);
                 },
                 onFinish: () => {
                     isUploading.value = false;
@@ -51,7 +55,8 @@ const restoreBackup = (backup) => {
 };
 </script>
 <template>
-    <Button size="sm" title="restore" variant="outline" class="text-green-500 h-7 hover:text-green-600" @click="restoreBackup(backup)">
+    <Button size="sm" title="restore" variant="outline" class="text-green-500 h-7 hover:text-green-600"
+        @click="restoreBackup(backup)">
         <span class="whitespace-nowrap">
             <History class="h-3.5 w-3.5" />
         </span>

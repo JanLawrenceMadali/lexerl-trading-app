@@ -20,25 +20,28 @@ const deleteBackup = (backup) => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
+        cancelButtonColor: '#1B1212',
+        confirmButtonText: 'Yes',
     }).then((result) => {
         if (result.isConfirmed) {
             form.delete(route('backup.destroy', { file: backup }), {
                 onSuccess: (response) => {
                     if (response.props.flash.success) {
                         Swal.fire({
-                            title: "Success!",
                             text: response.props.flash.success,
                             iconHtml: '<img src="/assets/icons/Success.png">',
                             confirmButtonColor: "#1B1212",
                         });
-                    } else if (response.props.flash.error) {
-                        Swal.fire('Error', response.props.flash.error, 'error');
+                    } else {
+                        Swal.fire({
+                            text: response.props.flash.error,
+                            icon: 'error',
+                            confirmButtonColor: "#1B1212",
+                        });
                     }
                 },
                 onError: (errors) => {
-                    Swal.fire('Error', 'Failed to delete backup.', 'error');
+                    // console.log(errors);
                 },
                 onFinish: () => {
                     isCleaning.value = false;
