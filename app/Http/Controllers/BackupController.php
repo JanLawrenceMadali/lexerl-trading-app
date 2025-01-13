@@ -41,10 +41,10 @@ class BackupController extends Controller
 
             $this->activityLog->logDatabaseBackup(
                 ActivityLog::ACTION_BACKUP,
-                "database was backed up manually ({$filename})",
+                "database was backed up ({$filename})",
             );
 
-            return redirect()->back()->with('success', 'Database backup manually created successfully.');
+            return redirect()->back()->with('success', 'Database backup created successfully.');
         } catch (\Exception $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to create a backup');
@@ -111,7 +111,7 @@ class BackupController extends Controller
     {
         try {
             $request->validate([
-                'backup' => 'required|file',
+                'backup' => 'required|file|mimetypes:application/x-sqlite3,application/octet-stream|max:10240',
             ]);
 
             $backupFile = $request->file('backup');
