@@ -32,10 +32,10 @@ const isTriggered = ref(false);
                 <span class="text-sm">{{ label }}</span>
             </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-56" side="right">
+        <DropdownMenuContent class="w-56 bg-[#1B1212]" side="right">
             <DropdownMenuGroup>
-                <DropdownMenuItem v-for="(item, index) in menuItems" :key="item">
-                    <Link :href="getRoute(index)" class="w-full text-base">
+                <DropdownMenuItem v-for="(item, index) in menuItems" :key="item" class="hover:!bg-[#757575]">
+                    <Link :href="getRoute(index)" class="w-full text-base text-white">
                     {{ item }}
                     </Link>
                 </DropdownMenuItem>
