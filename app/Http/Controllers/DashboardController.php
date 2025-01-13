@@ -18,12 +18,14 @@ class DashboardController extends Controller
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
 
         $monthlySales = $sale
-            ->sortBy('sale_date',  SORT_REGULAR, false)
             ->groupBy(function ($sale) {
                 return Carbon::parse($sale->sale_date)->format('F Y');
             })
             ->map(function ($sales) {
                 return $sales->sum('total_amount');
+            })
+            ->sortBy(function ($amount, $month) {
+                return Carbon::parse('01 ' . $month)->timestamp;
             });
 
         $chartData = [
@@ -31,8 +33,8 @@ class DashboardController extends Controller
             'datasets' => [
                 [
                     'label' => 'Total Amount',
-                    'backgroundColor' => '#42A5F5',
-                    'borderColor' => '#1E88E5',
+                    'backgroundColor' => '#191970',
+                    'borderColor' => '#172554',
                     'data' => $monthlySales->values()->toArray(),
                 ],
             ],
