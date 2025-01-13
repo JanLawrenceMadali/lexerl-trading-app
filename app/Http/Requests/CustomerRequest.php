@@ -45,7 +45,9 @@ class CustomerRequest extends FormRequest
             'contact_person.string' => 'Customer contact person must be a string.',
             'contact_number.required' => 'Customer contact number is required.',
             'contact_number.numeric' => 'Customer contact number must be a number.',
-            'contact_number.min' => 'Customer contact number must be at least 8 characters.',
+            'contact_number.min' => 'Customer contact number must be at least 8 digits.',
+            'contact_number.max' => 'Customer contact number must not exceed 15 digits.',
+            'contact_number.regex' => 'Customer contact number must contain only digits.',
         ];
     }
 }

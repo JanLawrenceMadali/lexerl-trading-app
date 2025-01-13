@@ -48,7 +48,9 @@ class SupplierRequest extends FormRequest
             'contact_person.max' => 'Supplier contact person must not exceed 255 characters.',
             'contact_number.required' => 'Supplier contact number is required.',
             'contact_number.numeric' => 'Supplier contact number must be a number.',
-            'contact_number.min' => 'Supplier contact number must be at least 8 characters.',
+            'contact_number.min' => 'Supplier contact number must be at least 8 digits.',
+            'contact_number.max' => 'Supplier contact number must not exceed 15 digits.',
+            'contact_number.regex' => 'Supplier contact number must contain only digits.',
         ];
     }
 }
