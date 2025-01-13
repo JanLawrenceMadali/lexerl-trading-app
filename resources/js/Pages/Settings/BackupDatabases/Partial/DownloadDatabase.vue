@@ -27,13 +27,16 @@ const downloadBackup = (backup) => {
         link.parentNode.removeChild(link);
 
         Swal.fire({
-            title: "Success!",
-            text: `The backup (${zipFileName}) has been downloaded.`,
+            text: `Database backup downloaded successfully!`,
             iconHtml: '<img src="/assets/icons/Success.png">',
             confirmButtonColor: "#1B1212",
         });
     }).catch(error => {
-        Swal.fire('Error', 'Failed to download the backup.', 'error');
+        Swal.fire({
+            text: `An error occurred while downloading the database backup: ${error.message}`,
+            icon: 'error',
+            confirmButtonColor: "#1B1212",
+        });
     }).finally(() => {
         isDownloading.value = false;
     });
@@ -42,7 +45,8 @@ const downloadBackup = (backup) => {
 </script>
 
 <template>
-    <Button size="sm" title="download" variant="outline" class="text-blue-500 h-7 hover:text-blue-600" @click="downloadBackup(backup)">
+    <Button size="sm" title="download" variant="outline" class="text-blue-500 h-7 hover:text-blue-600"
+        @click="downloadBackup(backup)">
         <Download class="h-3.5 w-3.5" />
     </Button>
 </template>

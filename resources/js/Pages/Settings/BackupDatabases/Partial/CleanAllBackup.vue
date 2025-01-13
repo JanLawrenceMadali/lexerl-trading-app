@@ -13,7 +13,7 @@ const cleanAllBackups = () => {
     Swal.fire({
         title: 'Are you sure?',
         text: 'This will permanently delete all backups!',
-        icon: 'warning',
+        iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
         cancelButtonColor: '#1B1212',

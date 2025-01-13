@@ -17,7 +17,7 @@ const restoreBackup = (backup) => {
     Swal.fire({
         title: 'Are you sure?',
         text: 'This will overwrite the current database with the selected backup.',
-        icon: 'warning',
+        iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
         confirmButtonColor: '#C00F0C',
         cancelButtonColor: '#1B1212',
@@ -30,7 +30,6 @@ const restoreBackup = (backup) => {
                 onSuccess: (response) => {
                     if (response.props.flash.success) {
                         Swal.fire({
-                            title: "Success!",
                             text: response.props.flash.success,
                             iconHtml: '<img src="/assets/icons/Success.png">',
                             confirmButtonColor: "#1B1212",

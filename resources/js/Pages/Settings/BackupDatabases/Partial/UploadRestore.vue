@@ -41,12 +41,16 @@ const uploadAndRestoreBackup = () => {
                     iconHtml: '<img src="/assets/icons/Success.png">',
                     confirmButtonColor: "#1B1212",
                 });
-            } else if (response.props.flash.error) {
-                Swal.fire('Error', response.props.flash.error, 'error');
+            } else {
+                Swal.fire({
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
             }
         },
-        onError: (error) => {
-            console.log(error);
+        onError: (errors) => {
+            // console.log(errors);
         }
     })
 };

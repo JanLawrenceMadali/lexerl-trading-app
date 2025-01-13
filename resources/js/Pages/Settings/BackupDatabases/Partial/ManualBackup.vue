@@ -19,8 +19,12 @@ const createBackup = () => {
                     iconHtml: '<img src="/assets/icons/Success.png">',
                     confirmButtonColor: "#1B1212",
                 });
-            } else if (response.props.flash.error) {
-                Swal.fire('Error', "Oops! Something went wrong", 'error');
+            } else {
+                Swal.fire({
+                    text: response.props.flash.error,
+                    icon: 'error',
+                    confirmButtonColor: "#1B1212",
+                });
             }
         },
         onError: (errors) => {
@@ -33,7 +37,8 @@ const createBackup = () => {
 };
 </script>
 <template>
-    <Button size="sm" variant="outline" class="gap-1 !text-white bg-blue-500 hover:bg-blue-600 h-7" @click="createBackup" :disabled="isLoading">
+    <Button size="sm" variant="outline" class="gap-1 !text-white bg-blue-500 hover:bg-blue-600 h-7"
+        @click="createBackup" :disabled="isLoading">
         <DatabaseBackup class="h-3.5 w-3.5" />
         <span class="whitespace-nowrap">
             {{ isLoading ? 'Backing up...' : 'Backup Database' }}
