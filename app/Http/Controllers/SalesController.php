@@ -272,20 +272,70 @@ class SalesController extends Controller
         int $product_id,
         array &$validationErrors
     ): bool {
-        $existingSaleProduct = $existingSale->products()->wherePivot('product_id', $product_id)->first();
-        $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
-        $newSaleQuantity = $product['quantity'];
-
-        $quantityDifference = round($oldSaleQuantity - $newSaleQuantity, 2);
-
-        if (!$inventory || $inventory->quantity + $quantityDifference < 0) {
-            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$inventory->quantity} available.";
+        // Ensure inventory exists
+        if (!$inventory) {
+            $validationErrors["products.{$index}.inventory"] = "Inventory not found for the given product.";
             return false;
         }
 
-        $newQuantity = $inventory->quantity + $quantityDifference;
-        $inventory->update(['quantity' => $newQuantity <= 0.01 ? 0 : $newQuantity]);
+        // Fetch the existing sale product and its quantity
+        $existingSaleProduct = $existingSale->products()->wherePivot('product_id', $product_id)->first();
+        $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
 
+        // Calculate new sale quantities and differences
+        $newSaleQuantity = $product['quantity'];
+        $quantityDifference = round($oldSaleQuantity - $newSaleQuantity, 2);
+
+        // Fetch all matching inventory items, ordered by priority (e.g., by ID)
+        $matchingInventoryItems = $inventory
+            ->where([
+                'category_id' => $product['category_id'],
+                'subcategory_id' => $product['subcategory_id'],
+                'unit_id' => $product['unit_id']
+            ])
+            ->orderBy('id', 'asc') // Adjust sorting criteria as needed
+            ->get();
+
+        // Calculate the total quantity of matching items
+        $totalQuantity = $matchingInventoryItems->sum('quantity');
+        $newTotalQuantity = $totalQuantity + $quantityDifference;
+
+        // Check if the inventory quantity is sufficient
+        if ($newTotalQuantity < 0) {
+            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$totalQuantity} available.";
+            return false;
+        }
+
+        // Handle edge case where new total quantity is very small
+        if ($newTotalQuantity <= 0.01) {
+            foreach ($matchingInventoryItems as $item) {
+                $item->update(['quantity' => 0]);
+            }
+            return true; // Early exit since all quantities are set to zero
+        }
+
+        // Consume inventory items based on priority
+        $remainingDifference = abs($quantityDifference);
+
+        foreach ($matchingInventoryItems as $item) {
+            if ($quantityDifference < 0) {
+                // Consume inventory when reducing quantity
+                $consumable = min($remainingDifference, $item->quantity);
+                $item->decrement('quantity', $consumable);
+                $remainingDifference -= $consumable;
+
+                if ($remainingDifference <= 0) {
+                    break; // Fully consumed the required quantity
+                }
+            } else {
+                // Replenish inventory when increasing quantity
+                $item->increment('quantity', $remainingDifference);
+                $remainingDifference = 0; // Fully replenished
+                break;
+            }
+        }
+
+        // Check for duplicates in the product list
         foreach ($products as $key => $existingItem) {
             if ($key === $index) {
                 continue;
@@ -296,11 +346,12 @@ class SalesController extends Controller
                 $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                 $existingItem['unit_id'] === $product['unit_id']
             ) {
-                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please pick another item.";
+                $validationErrors["products.{$index}.duplicate"] = "Duplicate entry: The combination of category, subcategory, and unit is already selected.";
                 return false;
             }
         }
 
+        // Validation successful
         return true;
     }
 
