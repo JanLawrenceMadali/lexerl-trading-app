@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\SalesExport;
+use App\Exports\SalesOverallExport;
+use App\Exports\SalesSummaryExport;
 use App\Http\Requests\SaleRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
@@ -16,6 +17,7 @@ use App\Models\Transaction;
 use App\Models\Unit;
 use App\Services\ActivityLoggerService;
 use App\Services\SaleService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -77,9 +79,10 @@ class SalesController extends Controller
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($sale) {
+                $sale_date = Carbon::parse($sale->sale_date)->format('M j, Y');
                 return [
                     'id' => $sale->id,
-                    'sale_date' => $sale->sale_date,
+                    'sale_date' => $sale_date,
                     'transaction_id' => $sale->transaction_id,
                     'transaction_type' => $sale->transactions->type,
                     'transaction_number' => $sale->transaction_number,
@@ -110,6 +113,7 @@ class SalesController extends Controller
                             'selling_price' => $product->pivot->selling_price,
                         ];
                     }),
+                    'created_at' => $sale->created_at,
                 ];
             });
 
@@ -128,13 +132,41 @@ class SalesController extends Controller
 
     public function store(SaleRequest $saleRequest)
     {
+        $validated = $saleRequest->validated();
+
         try {
-            DB::transaction(function () use ($saleRequest) {
-                $validated = $saleRequest->validated();
+            DB::transaction(function () use ($validated) {
 
-                $sale = Sale::create($this->saleService->prepareSaleData($validated));
+                $sale_date = Carbon::parse($validated['sale_date'])->format('Y-m-d');
 
-                $productAttachments = $this->processProductInventory($validated['products'], 'create');
+                $products = [];
+
+                foreach ($validated['products'] as $product) {
+                    $products[] = [
+                        'amount' => $product['amount'],
+                        'unit_id' => $product['unit_id'],
+                        'quantity' => $product['quantity'],
+                        'category_id' => $product['category_id'],
+                        'selling_price' => $product['selling_price'],
+                        'subcategory_id' => $product['subcategory_id'],
+                    ];
+                }
+
+                $commonData = [
+                    'sale_date' => $sale_date,
+                    'status_id' => $validated['status_id'],
+                    'due_date_id' => $validated['due_date_id'],
+                    'description' => $validated['description'],
+                    'customer_id' => $validated['customer_id'],
+                    'total_amount' => $validated['total_amount'],
+                    'transaction_id' => $validated['transaction_id'],
+                    'transaction_number' => $validated['transaction_number'],
+                    'products' => $products,
+                ];
+
+                $sale = Sale::create($this->saleService->prepareSaleData($commonData));
+
+                $productAttachments = $this->processProductInventory($products, 'create');
 
                 $sale->products()->attach($productAttachments);
 
@@ -158,15 +190,43 @@ class SalesController extends Controller
 
     public function update(SaleRequest $saleRequest, Sale $sale)
     {
+        $validated = $saleRequest->validated();
+
         try {
-            DB::transaction(function () use ($saleRequest, $sale) {
-                $validated = $saleRequest->validated();
+            DB::transaction(function () use ($validated, $sale) {
 
                 $oldData = $sale->toArray();
 
-                $sale->update($this->saleService->prepareSaleData($validated));
+                $sale_date = Carbon::parse($validated['sale_date'])->format('Y-m-d');
 
-                $productAttachments = $this->processProductInventory($validated['products'], 'update', $sale);
+                $products = [];
+
+                foreach ($validated['products'] as $product) {
+                    $products[] = [
+                        'amount' => $product['amount'],
+                        'unit_id' => $product['unit_id'],
+                        'quantity' => $product['quantity'],
+                        'category_id' => $product['category_id'],
+                        'selling_price' => $product['selling_price'],
+                        'subcategory_id' => $product['subcategory_id'],
+                    ];
+                }
+
+                $commonData = [
+                    'sale_date' => $sale_date,
+                    'status_id' => $validated['status_id'],
+                    'due_date_id' => $validated['due_date_id'],
+                    'description' => $validated['description'],
+                    'customer_id' => $validated['customer_id'],
+                    'total_amount' => $validated['total_amount'],
+                    'transaction_id' => $validated['transaction_id'],
+                    'transaction_number' => $validated['transaction_number'],
+                    'products' => $products,
+                ];
+
+                $sale->update($this->saleService->prepareSaleData($commonData));
+
+                $productAttachments = $this->processProductInventory($products, 'update', $sale);
 
                 $sale->products()->sync($productAttachments);
 
@@ -399,21 +459,42 @@ class SalesController extends Controller
         }
     }
 
-    public function export(Request $request)
+    public function summary_export(Request $request)
     {
         sleep(1);
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $export = new SalesExport($startDate, $endDate);
+        $export = new SalesSummaryExport($startDate, $endDate);
 
         $date = now()->format('Ymd');
-        $fileName = "sales_report_{$date}.xlsx";
+        $fileName = "sales_summary_report_{$date}.xlsx";
 
         $this->activityLog->logSaleExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported sales report",
+            "{$this->actor} exported sales summary report",
+            ['old' => null, 'new' => null,]
+        );
+
+        return Excel::download($export, $fileName);
+    }
+
+    public function overall_export(Request $request)
+    {
+        sleep(1);
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $export = new SalesOverallExport($startDate, $endDate);
+
+        $date = now()->format('Ymd');
+        $fileName = "sales_overall_report_{$date}.xlsx";
+
+        $this->activityLog->logSaleExport(
+            ActivityLog::ACTION_EXPORTED,
+            "{$this->actor} exported sales overall report",
             ['old' => null, 'new' => null,]
         );
 

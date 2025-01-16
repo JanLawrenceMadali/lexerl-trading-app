@@ -7,7 +7,7 @@ import { Button } from '@/Components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/Components/ui/table'
 import { ArrowUpDown, CalendarRange, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CircleX, File, RefreshCcw, Search } from 'lucide-vue-next'
 import { FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useVueTable, } from '@tanstack/vue-table'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import Create from './Dialog/Create.vue';
 import Edit from './Dialog/Edit.vue';
 import Swal from 'sweetalert2';
@@ -32,6 +32,7 @@ const data = ref(props.sales)
 const customerData = ref(props.customers)
 const sorting = ref([])
 const filter = ref('')
+const exportSale = ref('')
 
 // Updated display range function
 const getDisplayRange = () => {
@@ -126,6 +127,34 @@ const formattedCurrency = (value) => {
     }).format(value);
 };
 
+const TIME_UNITS = [
+    { unit: 'year', seconds: 31536000 },
+    { unit: 'month', seconds: 2592000 },
+    { unit: 'day', seconds: 86400 },
+    { unit: 'hour', seconds: 3600 },
+    { unit: 'minute', seconds: 60 },
+    { unit: 'second', seconds: 1 }
+];
+
+const timeAgo = (date) => {
+    const secondsElapsed = Math.floor((new Date() - date) / 1000);
+
+    for (const { unit, seconds } of TIME_UNITS) {
+        const interval = Math.floor(secondsElapsed / seconds);
+        if (interval >= 1) {
+            return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+        }
+    }
+
+    return 'just now';
+};
+
+const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+}).format(value)
+
 const columns = [
     {
         accessorKey: 'transaction_number',
@@ -193,6 +222,22 @@ const columns = [
         },
     },
     {
+        accessorKey: 'created_at',
+        header: ({ column }) => {
+            return h(Button, { variant: 'ghost', size: 'xs', onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'), }, () => ['Created At', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => {
+            const { created_at } = row.original
+
+            const date = new Date(created_at)
+
+            return h('div', { class: 'px-2' }, [
+                h('div', formattedDate(date)),
+                h('div', { class: 'text-xs text-gray-500' }, timeAgo(date))
+            ]);
+        },
+    },
+    {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
@@ -255,6 +300,7 @@ const table = useVueTable({
             'customer_email',
             'transaction_number',
             'transaction_type',
+            'created_at',
         ];
 
         return searchableFields.some(field => {
@@ -273,26 +319,35 @@ function getNestedValue(obj, path) {
 
 const isExporting = ref(false)
 
-const exportData = () => {
-    isExporting.value = true
+const exportData = async () => {
+    try {
+        isExporting.value = true;
 
-    const params = {
-        start_date: range.value.start
-            ? df.format(range.value.start.toDate(getLocalTimeZone()))
-            : null,
-        end_date: range.value.end
-            ? df.format(range.value.end.toDate(getLocalTimeZone()))
-            : null,
-    };
-    const queryString = new URLSearchParams(params).toString();
-    const exportUrl = `${route('sales.export')}?${queryString}`;
+        const params = {
+            start_date: range.value.start
+                ? df.format(range.value.start.toDate(getLocalTimeZone()))
+                : null,
+            end_date: range.value.end
+                ? df.format(range.value.end.toDate(getLocalTimeZone()))
+                : null,
+        };
+        const queryString = new URLSearchParams(params).toString();
 
-    window.location.href = exportUrl;
+        const exportUrl = `${route(
+            exportSale.value === 'summary' ? 'sales.summary_export' : 'sales.overall_export'
+        )}?${queryString}`;
 
-    setTimeout(() => {
-        isExporting.value = false;
-    }, 1000);
-}
+        window.location.href = exportUrl;
+    } catch (error) {
+        console.error('Export failed:', error);
+    } finally {
+        setTimeout(() => {
+            isExporting.value = false;
+            exportSale.value = '';
+            resetDateRange
+        }, 1000);
+    }
+};
 </script>
 
 <template>
@@ -331,8 +386,23 @@ const exportData = () => {
                         @update:start-value="(startDate) => range.start = startDate" />
                 </PopoverContent>
             </Popover>
-            <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
-                @click="exportData">
+            <Select v-model="exportSale">
+                <SelectTrigger class="w-[180px] h-7">
+                    <SelectValue placeholder="Select to export" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectItem value="summary">
+                            Summary
+                        </SelectItem>
+                        <SelectItem value="overall">
+                            Overall
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" class="gap-1 h-7"
+                :disabled="isExporting || data.length === 0 || !exportSale" @click="exportData">
                 <File class="h-3.5 w-3.5" />
                 <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {{ isExporting ? 'Exporting...' : 'Export' }}
