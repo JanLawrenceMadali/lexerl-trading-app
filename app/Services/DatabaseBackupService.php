@@ -33,12 +33,14 @@ class DatabaseBackupService
         $backupFileName = $filename;
         $backupPath = $backupDirectory . '/' . $backupFileName;
 
-        // Ensure the backup directory exists
-        Storage::makeDirectory('backups');
-
-        // Check if database file exists
+        // Check if database file exists first
         if (!file_exists($databasePath)) {
             throw new \Exception('Database file does not exist.');
+        }
+
+        // Ensure the backup directory exists with proper permissions
+        if (!File::isDirectory($backupDirectory)) {
+            File::makeDirectory($backupDirectory, 0755, true, true);
         }
 
         // Copy the database file
