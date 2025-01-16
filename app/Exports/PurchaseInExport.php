@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Purchases;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -19,18 +20,20 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function __construct($startDate = null, $endDate = null)
     {
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        $this->startDate = $startDate !== "null" ? Carbon::parse($startDate)->format('Y-m-d') : null;
+        $this->endDate = $endDate !== "null" ? Carbon::parse($endDate)->format('Y-m-d') : null;
     }
 
     public function collection()
     {
-        $purchases = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
-            ->where('quantity', '>', 0)
-            ->when($this->startDate !== "null" && $this->endDate !== "null", function ($query) {
-                $query->whereBetween('purchase_date', [$this->startDate, $this->endDate]);
-            })
-            ->get()
+        $query = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
+            ->where('quantity', '>', 0);
+
+        if ($this->startDate && $this->endDate) {
+            $query->whereBetween('purchase_date', [$this->startDate, $this->endDate]);
+        }
+
+        $purchases = $query->get()
             ->map(function ($inventory) {
                 return [
                     'ID' => $inventory->id,
@@ -40,18 +43,19 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
                     'Category' => $inventory->categories->name ?? '',
                     'Subcategory' => $inventory->subcategories->name ?? '',
                     'Supplier Name' => $inventory->suppliers->name ?? '',
-                    'Quantity' => $inventory->quantity . ' ' . ($inventory->units->abbreviation ?? ''),
+                    'Quantity' => $inventory->quantity,
+                    'UM' => $inventory->units->abbreviation ?? '',
                     'Landed Cost' => '₱' . number_format($inventory->landed_cost, 2),
                     'Amount' => '₱' . number_format($inventory->amount, 2),
                     'Description' => $inventory->description,
-                    'Created At' => $inventory->created_at->format('M d, Y i:s A'),
+                    'Created At' => $inventory->created_at->format('Y-m-d h:i A'),
                 ];
             });
 
         $totalAmount = $purchases->sum(fn($row) => (float) str_replace(['₱', ','], '', $row['Amount']));
 
         $purchases->push([
-            'ID' => '', // Empty cell
+            'ID' => '',
             'Transaction Type' => '',
             'Transaction Number' => '',
             'Purchase Date' => '',
@@ -59,10 +63,11 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
             'Subcategory' => '',
             'Supplier Name' => '',
             'Quantity' => '',
+            'UM' => '',
             'Landed Cost' => '',
-            'Amount' => 'Total Amount: ₱' . number_format($totalAmount, 2), // Total formatted
-            'Description' => '', // Label the row
-            'Created At' => '', // Empty cell
+            'Amount' => 'Total: ₱' . number_format($totalAmount, 2),
+            'Description' => '',
+            'Created At' => '',
         ]);
 
         return $purchases;
@@ -70,17 +75,10 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function headings(): array
     {
-        $collection = $this->collection()->where('ID', '!=', '');
-        $sales =  $collection->map(function ($item) {
-            return $item;
-        });
-        $fromDate = $this->startDate !== "null" ? $this->startDate : $sales->min('Purchase Date');
-        $toDate = $this->endDate !== "null" ? $this->endDate : $sales->max('Purchase Date');
-
         return [
             ['Lexerl Trading - Purchase In Report'],
-            ["From: {$fromDate}"],
-            ["To: {$toDate}"],
+            ["From: " . ($this->startDate ?? 'All Time')],
+            ["To: " . ($this->endDate ?? 'All Time')],
             [
                 'ID',
                 'Transaction Type',
@@ -90,6 +88,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
                 'Subcategory',
                 'Supplier Name',
                 'Quantity',
+                'UM',
                 'Landed Cost',
                 'Amount',
                 'Description',
@@ -101,8 +100,8 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
     public function styles(Worksheet $sheet)
     {
         // Merge the header title
-        $sheet->mergeCells('A1:L1');
-        $sheet->getStyle('A1:L1')->applyFromArray([
+        $sheet->mergeCells('A1:M1');
+        $sheet->getStyle('A1:M1')->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -114,9 +113,9 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
         ]);
 
         // Style date range rows
-        $sheet->mergeCells('A2:L2');
-        $sheet->mergeCells('A3:L3');
-        $sheet->getStyle('A2:L3')->applyFromArray([
+        $sheet->mergeCells('A2:M2');
+        $sheet->mergeCells('A3:M3');
+        $sheet->getStyle('A2:M3')->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -128,7 +127,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
         ]);
 
         // Style the headings row
-        $sheet->getStyle('A4:L4')->applyFromArray([
+        $sheet->getStyle('A4:M4')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -145,7 +144,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
         // Get the last row (Total row)
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle("A4:L{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A4:M{$lastRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN
@@ -154,7 +153,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
         ]);
 
         // Highlight the total row
-        $sheet->getStyle("A{$lastRow}:L{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A{$lastRow}:M{$lastRow}")->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
                 'startColor' => ['rgb' => 'FFFF99'],
