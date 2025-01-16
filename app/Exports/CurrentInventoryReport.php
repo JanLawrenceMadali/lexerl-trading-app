@@ -28,7 +28,10 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
                     'ID' => $inventory->id,
                     'Category' => $inventory->categories->name,
                     'Subcategory' => $inventory->subcategories->name,
-                    'Quantity' => $inventory->quantity . ($unit ? " {$unit->abbreviation}" : ''),
+                    'Quantity' => $inventory->quantity,
+                    'UM' => $unit ? $unit->abbreviation : '',
+                    'Landed Cost' => '₱' . number_format($inventory->landed_cost, 2),
+                    'Total Amount' => '₱' . number_format($inventory->landed_cost * $inventory->quantity, 2),
                     'Created At' => $inventory->created_at->format('M d, Y i:s A'),
                 ];
             });
@@ -46,6 +49,9 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
                 'Category',
                 'Subcategory',
                 'Quantity',
+                'UM',
+                'Landed Cost',
+                'Total Amount',
                 'Created At',
             ]
         ];
@@ -53,8 +59,8 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->mergeCells('A1:E1');
-        $sheet->getStyle('A1:E1')->applyFromArray([
+        $sheet->mergeCells('A1:H1');
+        $sheet->getStyle('A1:H1')->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -65,8 +71,8 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
             ]
         ]);
 
-        $sheet->mergeCells('A2:E2');
-        $sheet->getStyle('A2:E3')->applyFromArray([
+        $sheet->mergeCells('A2:H2');
+        $sheet->getStyle('A2:H3')->applyFromArray([
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -77,7 +83,7 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
             ],
         ]);
 
-        $sheet->getStyle('A3:E3')->applyFromArray([
+        $sheet->getStyle('A3:H3')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -93,7 +99,7 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
         ]);
 
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle("A3:E{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A3:H{$lastRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN
