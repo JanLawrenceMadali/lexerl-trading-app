@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\DueDate;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\Purchases;
 use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Transaction;
@@ -29,6 +30,10 @@ class SalesController extends Controller
     protected $activityLog;
     protected $saleService;
     private $actor;
+    private const QUANTITY_PRECISION = 2;
+    private const MINIMUM_QUANTITY_THRESHOLD = 0.01;
+    private const MAX_TRANSACTION_RETRIES = 3;
+    private const INVENTORY_LOCK_TIMEOUT = 5;
 
     public function __construct(
         SaleService $saleService,
@@ -135,51 +140,36 @@ class SalesController extends Controller
         $validated = $saleRequest->validated();
 
         try {
-            DB::transaction(function () use ($validated) {
+            return $this->executeWithRetry(function () use ($validated) {
+                $sale = null;
+                $productAttachments = [];
 
-                $sale_date = Carbon::parse($validated['sale_date'])->format('Y-m-d');
+                try {
+                    // Prepare and validate all data first
+                    $saleData = $this->saleService->prepareSaleData($validated);
+                    $productAttachments = $this->processProductInventory($validated['products'], 'create');
 
-                $products = [];
+                    // Create sale
+                    $sale = Sale::create($saleData);
 
-                foreach ($validated['products'] as $product) {
-                    $products[] = [
-                        'amount' => $product['amount'],
-                        'unit_id' => $product['unit_id'],
-                        'quantity' => $product['quantity'],
-                        'category_id' => $product['category_id'],
-                        'selling_price' => $product['selling_price'],
-                        'subcategory_id' => $product['subcategory_id'],
-                    ];
+                    // Attach products
+                    $sale->products()->attach($productAttachments);
+
+                    $this->activityLog->logSaleAction(
+                        ActivityLog::ACTION_CREATED,
+                        "{$this->actor} created sale: #{$sale->transaction_number}",
+                        ['new' => $sale->toArray()]
+                    );
+
+                    return redirect()->back()->with('success', 'Transaction added successfully!');
+                } catch (\Throwable $e) {
+                    // If we created the sale but failed to attach products, clean up
+                    if ($sale !== null) {
+                        $sale->delete();
+                    }
+                    throw $e;
                 }
-
-                $commonData = [
-                    'sale_date' => $sale_date,
-                    'status_id' => $validated['status_id'],
-                    'due_date_id' => $validated['due_date_id'],
-                    'description' => $validated['description'],
-                    'customer_id' => $validated['customer_id'],
-                    'total_amount' => $validated['total_amount'],
-                    'transaction_id' => $validated['transaction_id'],
-                    'transaction_number' => $validated['transaction_number'],
-                    'products' => $products,
-                ];
-
-                $sale = Sale::create($this->saleService->prepareSaleData($commonData));
-
-                $productAttachments = $this->processProductInventory($products, 'create');
-
-                $sale->products()->attach($productAttachments);
-
-                $this->activityLog->logSaleAction(
-                    ActivityLog::ACTION_CREATED,
-                    "{$this->actor} created a new sale: #{$sale->transaction_number}",
-                    ['new' => $sale->toArray()]
-                );
-
-                return $sale;
             });
-
-            return redirect()->back()->with('success', 'Transaction added successfully!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Throwable $e) {
@@ -187,7 +177,6 @@ class SalesController extends Controller
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to add transaction');
         }
     }
-
     public function update(SaleRequest $saleRequest, Sale $sale)
     {
         $validated = $saleRequest->validated();
@@ -273,7 +262,7 @@ class SalesController extends Controller
 
             if ($action === 'create') {
                 $this->validateInventoryForCreate($inventory, $product, $products, $index, $validationErrors);
-                $this->deductInventory($inventory, $product['quantity']);
+                $this->deductInventory($inventory, $product);
             } elseif ($action === 'update' && $existingSale) {
                 $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $product_id, $validationErrors);
             }
@@ -293,16 +282,52 @@ class SalesController extends Controller
         return $productAttachments;
     }
 
-    private function validateInventoryForCreate(?Inventory $inventory, array $product, array $products, int $index, array &$validationErrors)
+    private function executeWithRetry(callable $operation)
     {
+        $attempts = 0;
+        do {
+            try {
+                return DB::transaction($operation, self::INVENTORY_LOCK_TIMEOUT);
+            } catch (\Throwable $e) {
+                $attempts++;
+                if ($attempts >= self::MAX_TRANSACTION_RETRIES || !$this->isRetryableException($e)) {
+                    throw $e;
+                }
+                sleep(1); // Basic exponential backoff
+            }
+        } while (true);
+    }
+
+    private function isRetryableException(\Throwable $e): bool
+    {
+        return $e instanceof \PDOException &&
+            in_array($e->getCode(), [1213, 1205]); // MySQL deadlock codes
+    }
+
+    private function validateInventoryForCreate(
+        ?Inventory $inventory,
+        array $product,
+        array $products,
+        int $index,
+        array &$validationErrors
+    ): void {
+        // Collect all validation errors before returning
         if (!$inventory) {
             $validationErrors["products.{$index}.quantity"] = "Inventory not found.";
-            return false;
         }
 
-        if ($inventory->quantity < $product['quantity']) {
-            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$inventory->quantity} available.";
-            return false;
+        $currentInventory = $inventory
+            ->where([
+                'category_id' => $product['category_id'],
+                'subcategory_id' => $product['subcategory_id'],
+                'unit_id' => $product['unit_id']
+            ])
+            ->get();
+
+        $totalQuantity = $currentInventory->sum('quantity');
+
+        if ($totalQuantity < 0) {
+            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$totalQuantity} available.";
         }
 
         foreach ($products as $key => $existingItem) {
@@ -315,12 +340,10 @@ class SalesController extends Controller
                 $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                 $existingItem['unit_id'] === $product['unit_id']
             ) {
-                $validationErrors["duplicate"] = "category, subcategory and unit already selected. Please select another item.";
-                return false;
+                $validationErrors["products.{$index}.duplicate"] = "Duplicate entry: The combination of category, subcategory, and unit is already selected.";
+                break; // Break after finding first duplicate
             }
         }
-
-        return true;
     }
 
     private function validateInventoryForUpdate(
@@ -334,7 +357,7 @@ class SalesController extends Controller
     ): bool {
         // Ensure inventory exists
         if (!$inventory) {
-            $validationErrors["products.{$index}.inventory"] = "Inventory not found for the given product.";
+            $validationErrors["products.{$index}.inventory"] = "Inventory not found.";
             return false;
         }
 
@@ -415,12 +438,26 @@ class SalesController extends Controller
         return true;
     }
 
-    private function deductInventory(Inventory $inventory, float $quantityToDeduct)
+    private function deductInventory(Inventory $inventory, array $product)
     {
-        $inventory->quantity = round(max(0, $inventory->quantity - $quantityToDeduct), 2);
+        $currentInventory = $inventory
+            ->where([
+                'category_id' => $product['category_id'],
+                'subcategory_id' => $product['subcategory_id'],
+                'unit_id' => $product['unit_id']
+            ])
+            ->orderBy('id', 'asc')
+            ->get();
 
-        if ($inventory->quantity <= 0.01) {
-            $inventory->quantity = 0;
+        $totalQuantity = $currentInventory->sum('quantity');
+
+        $newTotalQuantity = round(max(0, $totalQuantity - $product['quantity']), 2);
+
+        if ($newTotalQuantity <= 0.01) {
+            foreach ($currentInventory as $item) {
+                $item->update(['quantity' => 0]);
+            }
+            return true;
         }
 
         $inventory->save();
@@ -436,11 +473,19 @@ class SalesController extends Controller
                         'category_id' => $product->categories->id,
                         'subcategory_id' => $product->subcategories->id,
                         'unit_id' => $product->pivot->unit_id
-                    ])->lockForUpdate()->first();
+                    ])->lockForUpdate()->firstOrFail();
 
                     if ($inventory) {
-                        $inventory->quantity += $product->pivot->quantity;
+                        // Validate inventory quantity doesn't exceed any maximum limits
+                        $newQuantity = $inventory->quantity + $product->pivot->quantity;
+                        // Could add a check here if you have a max_quantity constraint
+
+                        $inventory->quantity = $newQuantity;
                         $inventory->save();
+                    } else {
+                        throw ValidationException::withMessages([
+                            'inventory' => ['Inventory record not found for one or more products']
+                        ]);
                     }
                 }
 
@@ -452,13 +497,15 @@ class SalesController extends Controller
                     ['old' => $sale->toArray()]
                 );
             });
+
             return redirect()->back()->with('success', 'Transaction deleted successfully!');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->getMessages())->withInput();
         } catch (\Throwable $e) {
             report($e);
             return redirect()->back()->with('error', $e->getMessage() ?? 'Failed to delete transaction');
         }
     }
-
     public function summary_export(Request $request)
     {
         sleep(1);
