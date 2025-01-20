@@ -28,8 +28,8 @@ const props = defineProps({
     subcategories: Object,
 })
 
-const data = ref(props.sales)
-const customerData = ref(props.customers)
+const data = ref([...props.sales])
+const customerData = ref([...props.customers])
 const sorting = ref([])
 const filter = ref('')
 const exportSale = ref('')
@@ -75,11 +75,11 @@ const resetDateRange = () => {
 };
 
 const handleCustomerCreated = (customer) => {
-    customerData.value = customer
+    customerData.value = Array.isArray(customer) ? [...customer] : [...customerData.value]
 };
 
 const handleSale = (sale) => {
-    data.value = sale
+    data.value = Array.isArray(sale) ? [...sale] : [...data.value]
 };
 
 const handleSalesCanceled = (id) => {
@@ -95,7 +95,7 @@ const handleSalesCanceled = (id) => {
         if (result.isConfirmed) {
             router.delete(route('sales.destroy', id), {
                 onSuccess: (response) => {
-                    data.value = response.props.sales
+                    data.value = [...response.props.sales]
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,

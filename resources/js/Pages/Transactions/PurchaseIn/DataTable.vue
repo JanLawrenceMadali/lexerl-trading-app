@@ -25,9 +25,9 @@ const props = defineProps({
     subcategories: Object,
 })
 
-const data = ref(props.inventories)
-const subcategories = ref(props.subcategories);
-const suppliers = ref(props.suppliers);
+const data = ref([...props.inventories])
+const subcategories = ref([...props.subcategories])
+const suppliers = ref([...props.suppliers])
 
 const sorting = ref([])
 const filter = ref('')
@@ -73,15 +73,15 @@ const resetDateRange = () => {
 };
 
 const handleSupplierCreated = (supplier) => {
-    suppliers.value = supplier;
+    suppliers.value = Array.isArray(supplier) ? [...supplier] : [...suppliers.value]
 };
 
 const handleSubcategoryCreated = (subcategory) => {
-    subcategories.value = subcategory;
+    subcategories.value = Array.isArray(subcategory) ? [...subcategory] : [...subcategories.value]
 };
 
 const handleInventory = (inventory) => {
-    data.value = inventory;
+    data.value = Array.isArray(inventory) ? [...inventory] : [...data.value]
 };
 
 const handlePurchaseDeleted = (id) => {
@@ -97,7 +97,7 @@ const handlePurchaseDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('purchase-in.destroy', id), {
                 onSuccess: (response) => {
-                    data.value = response.props.inventories
+                    data.value = [...response.props.inventories]
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,

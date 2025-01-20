@@ -18,7 +18,7 @@ const props = defineProps({
     categories: Object
 })
 
-const data = ref(props.subcategories)
+const data = ref([...props.subcategories])
 const sorting = ref([])
 const filter = ref('')
 // Pagination state
@@ -68,7 +68,11 @@ const getDisplayRange = () => {
 }
 
 const handleSubCategory = (subcategory) => {
-    data.value = subcategory
+    data.value = Array.isArray(subcategory) ? [...subcategory] : [...data.value]
+    // Update pagination if "All" is selected
+    if (pagination.value.isAllSelected) {
+        pagination.value.pageSize = data.value.length;
+    }
 }
 
 const handleDeleted = (id) => {
@@ -84,7 +88,11 @@ const handleDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('subcategories.destroy', id), {
                 onSuccess: (response) => {
-                    data.value = response.props.subcategories
+                    data.value = [...response.props.subcategories]
+                    // Update pagination if "All" is selected
+                    if (pagination.value.isAllSelected) {
+                        pagination.value.pageSize = data.value.length;
+                    }
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,

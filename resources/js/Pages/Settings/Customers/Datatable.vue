@@ -17,7 +17,7 @@ const props = defineProps({
     customers: Object,
 })
 
-const data = ref(props.customers)
+const data = ref([...props.customers])
 const sorting = ref([])
 const filter = ref('')
 // Pagination state
@@ -67,7 +67,11 @@ const getDisplayRange = () => {
 }
 
 const handleCustomer = (customer) => {
-    data.value = customer
+    data.value = Array.isArray(customer) ? [...customer] : [...data.value]
+    // Update pagination if "All" is selected
+    if (pagination.value.isAllSelected) {
+        pagination.value.pageSize = data.value.length;
+    }
 }
 
 const handleDeleted = (id) => {
@@ -83,7 +87,11 @@ const handleDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('customers.destroy', id), {
                 onSuccess: (response) => {
-                    data.value = response.props.customers
+                    data.value = [...response.props.customers]
+                    // Update pagination if "All" is selected
+                    if (pagination.value.isAllSelected) {
+                        pagination.value.pageSize = data.value.length;
+                    }
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,

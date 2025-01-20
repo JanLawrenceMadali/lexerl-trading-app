@@ -17,7 +17,7 @@ const props = defineProps({
     suppliers: Object,
 })
 
-const data = ref(props.suppliers)
+const data = ref([...props.suppliers])
 const sorting = ref([])
 const filter = ref('')
 // Pagination state
@@ -67,7 +67,11 @@ const getDisplayRange = () => {
 }
 
 const handleSupplier = (supplier) => {
-    data.value = supplier
+    data.value = Array.isArray(supplier) ? [...supplier] : [...data.value]
+    // Update pagination if "All" is selected
+    if (pagination.value.isAllSelected) {
+        pagination.value.pageSize = data.value.length;
+    }
 }
 
 const handlePurchaseDeleted = (id) => {
@@ -83,7 +87,11 @@ const handlePurchaseDeleted = (id) => {
         if (result.isConfirmed) {
             router.delete(route('suppliers.destroy', id), {
                 onSuccess: (response) => {
-                    data.value = response.props.suppliers
+                    data.value = [...response.props.suppliers]
+                    // Update pagination if "All" is selected
+                    if (pagination.value.isAllSelected) {
+                        pagination.value.pageSize = data.value.length;
+                    }
                     if (response.props.flash.success) {
                         Swal.fire({
                             text: response.props.flash.success,
