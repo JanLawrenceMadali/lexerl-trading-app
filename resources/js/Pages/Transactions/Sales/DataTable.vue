@@ -84,7 +84,7 @@ const handleSale = (sale) => {
 
 const handleSalesCanceled = (id) => {
     Swal.fire({
-        title: '<h2 class="custom-title">Are you sure you want to delete this transaction?</h2>',
+        title: '<h2 class="custom-title">Are you sure you want to cancel this transaction?</h2>',
         html: '<p class="custom-text">Please note that this is irreversible</p>',
         iconHtml: '<img src="/assets/icons/Warning.png">',
         showCancelButton: true,
