@@ -18,7 +18,7 @@ const props = defineProps({
     sales: Object,
 })
 
-const data = ref(props.sales)
+const data = ref([...props.sales])
 const sorting = ref([])
 const filter = ref('')
 const rowSelection = ref({})
@@ -275,7 +275,7 @@ const bulkUpdate = () => {
         preserveScroll: true,
         preserveState: true,
         onSuccess: (response) => {
-            form.get(route('collectibles'))
+            data.value = [...response.props.sales]
             table.resetRowSelection();
             if (response.props.flash.success) {
                 Swal.fire({
@@ -329,6 +329,7 @@ const exportData = async () => {
         }, 1000);
     }
 }
+
 </script>
 
 <template>
