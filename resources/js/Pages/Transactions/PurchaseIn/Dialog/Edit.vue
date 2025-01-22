@@ -75,6 +75,10 @@ watch(
 )
 
 watch(() => props.inventory, (newInventory) => {
+    data.value = { ...newInventory }
+}, { immediate: true })
+
+watch(() => props.inventory, (newInventory) => {
     form.amount = newInventory.amount
     form.quantity = newInventory.quantity
     form.description = newInventory.description
@@ -126,10 +130,8 @@ const closeModal = () => {
 
 const emit = defineEmits(['update-purchase-in']);
 
-const inventory = data.value;
-
 const submit = () => {
-    form.patch(route('purchase-in.update', inventory), {
+    form.patch(route('purchase-in.update', data.value), {
         preserveState: true,
         preserveScroll: true,
         onSuccess: (response) => {

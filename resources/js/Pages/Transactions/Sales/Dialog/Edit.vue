@@ -29,7 +29,7 @@ const props = defineProps({
     subcategories: Object,
 })
 
-const sales = ref(props.sales)
+const sales = ref({ ...props.sales })
 
 const form = useForm({
     status_id: String(sales.value.status_id),
@@ -106,6 +106,10 @@ watch(() => form.products, (newProducts) => {
 },
     { deep: true }
 );
+
+watch(() => props.sales, (newSale) => {
+    sales.value = { ...newSale };
+}, { deep: true })
 
 watch(() => props.sales, (newSale) => {
     form.status_id = String(newSale.status_id);
