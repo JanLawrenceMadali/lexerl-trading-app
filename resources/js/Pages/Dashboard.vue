@@ -9,16 +9,15 @@ import Chart from '@/Components/Chart.vue'
 const props = defineProps({
     total_sale: { type: Number },
     total_purchase: { type: Number },
-    activity_logs: { type: Object },
+    total_inventory: { type: Number },
     total_collectible: { type: Number },
+    activity_logs: { type: Object },
     monthly_sales: { type: Object },
     chartData: { type: Object }
 })
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
-        // style: 'currency',
-        // currency: 'PHP',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(value);
@@ -40,7 +39,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
     <Head title="Dashboard" />
     <AuthenticatedLayout>
         <div class="flex flex-col flex-1 gap-6 px-6">
-            <div class="grid grid-cols-4 gap-6">
+            <div class="grid grid-cols-5 gap-6">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
                         <CardTitle class="text-sm font-medium">
@@ -48,7 +47,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4">
-                        <div class="text-4xl text-[#772E25]">
+                        <div class="text-3xl text-[#772E25]">
                             <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_purchase) }}</span>
                         </div>
                     </CardContent>
@@ -60,8 +59,20 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4">
-                        <div class="text-4xl text-[#772E25]">
+                        <div class="text-3xl text-[#772E25]">
                             <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale) }}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="flex flex-row items-center justify-between pb-2 space-y-0">
+                        <CardTitle class="text-sm font-medium">
+                            Current Inventory Value
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent class="mt-4">
+                        <div class="text-3xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_inventory) }}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -72,7 +83,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4">
-                        <div class="text-4xl text-[#772E25]">
+                        <div class="text-3xl text-[#772E25]">
                             <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_collectible) }}</span>
                         </div>
                     </CardContent>
@@ -84,9 +95,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4">
-                        <div class="text-4xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale - total_purchase)
-                                }}</span>
+                        <div class="text-3xl text-[#772E25]">
+                            <sup>PHP</sup> <span class="font-semibold"> {{ formatCurrency((total_sale + total_inventory) - total_purchase) }} </span>
                         </div>
                     </CardContent>
                 </Card>
@@ -118,10 +128,10 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                                     <span v-else-if="log.action === 'cancel'">
                                         <CircleX class="text-rose-600 size-6" />
                                     </span>
-                                     <span v-else-if="log.action === 'purge'">
+                                    <span v-else-if="log.action === 'purge'">
                                         <PackageX class="text-orange-600 size-6" />
                                     </span>
-                                     <span v-else-if="log.action === 'paid'">
+                                    <span v-else-if="log.action === 'paid'">
                                         <CircleCheck class="text-green-600 size-6" />
                                     </span>
                                     <span v-else-if="log.action === 'export'">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Inventory;
+use App\Models\Purchases;
 use App\Models\Sale;
 use Carbon\Carbon;
 
@@ -13,7 +14,8 @@ class DashboardController extends Controller
     {
         $sale = Sale::get();
         $total_sale = $sale->sum('total_amount');
-        $total_purchase = Inventory::sum('amount');
+        $total_purchase = Purchases::sum('amount');
+        $total_inventory = Inventory::where('quantity', '>', 0)->sum('amount');
         $activity_logs = ActivityLog::with('users')->latest()->get();
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
 
@@ -43,6 +45,7 @@ class DashboardController extends Controller
         return inertia('Dashboard', [
             'total_sale' => intval($total_sale),
             'total_purchase' => intval($total_purchase),
+            'total_inventory' => intval($total_inventory),
             'total_collectible' => intval($total_collectible),
             'activity_logs' => $activity_logs,
             'monthly_sales' => $monthlySales,
