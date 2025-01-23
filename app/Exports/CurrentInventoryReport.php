@@ -18,11 +18,14 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
 {
     public function collection()
     {
-        return Inventory::with('categories', 'subcategories', 'units')
-            ->where('quantity', '>', 0)
-            ->get()
-            ->map(function ($inventory) {
-                $units = Unit::all()->keyBy('id');
+        $query = Inventory::with('categories', 'subcategories', 'units')
+            ->where('quantity', '>', 0);
+
+
+        $units = Unit::all()->keyBy('id');
+
+        $inventory = $query->get()
+            ->map(function ($inventory) use ($units) {
                 $unit = $units[$inventory->unit_id] ?? '';
                 return [
                     'ID' => $inventory->id,
@@ -32,14 +35,29 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
                     'UM' => $unit ? $unit->abbreviation : '',
                     'Landed Cost' => '₱' . number_format($inventory->landed_cost, 2),
                     'Total Amount' => '₱' . number_format($inventory->landed_cost * $inventory->quantity, 2),
-                    'Created At' => $inventory->created_at->format('M d, Y i:s A'),
+                    'Created At' => $inventory->created_at->format('Y-m-d h:i A'),
                 ];
             });
+
+        $totalAmount = $inventory->sum(fn($row) => (float) str_replace(['₱', ','], '', $row['Total Amount']));
+
+        $inventory->push([
+            'ID' => '',
+            'Category' => '',
+            'Subcategory' => '',
+            'Quantity' => '',
+            'UM' => '',
+            'Landed Cost' => '',
+            'Total Amount' => 'Total: ₱' . number_format($totalAmount, 2),
+            'Created At' => '',
+        ]);
+
+        return $inventory;
     }
 
     public function headings(): array
     {
-        $currentDate = now()->format('M d, Y');
+        $currentDate = now()->format('Y-m-d');
 
         return [
             ['Lexerl Trading - Current Inventory Report'],
@@ -104,6 +122,16 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN
                 ],
+            ],
+        ]);
+
+        $sheet->getStyle("A{$lastRow}:H{$lastRow}")->applyFromArray([
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'FFFF99'],
+            ],
+            'font' => [
+                'bold' => true,
             ],
         ]);
 
