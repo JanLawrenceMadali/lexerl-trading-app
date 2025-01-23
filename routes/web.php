@@ -45,15 +45,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/update/{sale}', [SalesController::class, 'update'])->name('sales.update');
         Route::delete('/destroy/{sale}', [SalesController::class, 'destroy'])->name('sales.destroy');
         Route::get('/summary_export', [SalesController::class, 'summary_export'])->name('sales.summary_export');
-        Route::get('/overall_export', [SalesController::class, 'overall_export'])->name('sales.overall_export');
+        Route::get('/detailed_export', [SalesController::class, 'detailed_export'])->name('sales.detailed_export');
     });
 
     // Collectibles
     Route::prefix('collectibles')->group(function () {
         Route::get('/', [CollectibleController::class, 'index'])->name('collectibles');
         Route::post('/update', [CollectibleController::class, 'update'])->name('collectibles.update');
-        Route::get('/summary_export', [CollectibleController::class, 'summary_export'])->name('collectibles.summary_export');
-        Route::get('/overall_export', [CollectibleController::class, 'overall_export'])->name('collectibles.overall_export');
+        Route::get('/export', [CollectibleController::class, 'export'])->name('collectibles.export');
     });
 
     // Reports
