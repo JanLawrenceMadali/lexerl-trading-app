@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
+
 class SaleService
 {
     public function prepareSaleData(array $data): array
@@ -9,6 +11,9 @@ class SaleService
         if (isset($data['status_id']) && $data['status_id'] == 1) {
             $data['due_date_id'] = null;
         }
+
+        $sale_date = Carbon::parse($data['sale_date'])->format('Y-m-d');
+        $data['sale_date'] = $sale_date;
 
         return collect($data)->only([
             'sale_date',
