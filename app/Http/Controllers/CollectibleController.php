@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\CollectiblesOverallExport;
-use App\Exports\CollectiblesSummaryExport;
+use App\Exports\CollectiblesExport;
 use App\Models\ActivityLog;
 use App\Models\Sale;
 use App\Services\ActivityLoggerService;
@@ -90,42 +89,21 @@ class CollectibleController extends Controller
         }
     }
 
-    public function summary_export(Request $request)
+    public function export(Request $request)
     {
         sleep(1);
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $export = new CollectiblesSummaryExport($startDate, $endDate);
+        $export = new CollectiblesExport($startDate, $endDate);
 
         $date = now()->format('Ymd');
-        $fileName = "collectibles_summary_report_{$date}.xlsx";
+        $fileName = "collectibles_report_{$date}.xlsx";
 
         $this->activityLog->logCollectibleExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported collectibles summary report",
-            ['old' => null, 'new' => null]
-        );
-
-        return Excel::download($export, $fileName);
-    }
-
-    public function overall_export(Request $request)
-    {
-        sleep(1);
-
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        $export = new CollectiblesOverallExport($startDate, $endDate);
-
-        $date = now()->format('Ymd');
-        $fileName = "collectibles_summary_report_{$date}.xlsx";
-
-        $this->activityLog->logCollectibleExport(
-            ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported collectibles overall report",
+            "{$this->actor} exported collectibles report",
             ['old' => null, 'new' => null]
         );
 
