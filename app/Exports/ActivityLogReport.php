@@ -47,7 +47,7 @@ class ActivityLogReport implements FromQuery, WithMapping, WithHeadings, WithSty
 
     public function headings(): array
     {
-        $currentDate = now()->format('M d, Y');
+        $currentDate = now()->format('Y-m-d');
 
         return [
             ['Lexerl Trading - Activity Log Report'],
@@ -73,41 +73,25 @@ class ActivityLogReport implements FromQuery, WithMapping, WithHeadings, WithSty
     {
         $sheet->mergeCells('A1:L1');
         $sheet->getStyle('A1:L1')->applyFromArray([
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-            'font' => [
-                'bold' => true,
-                'size' => 18,
-            ]
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'font' => ['bold' => true, 'size' => 18]
         ]);
 
         $sheet->mergeCells('A2:L2');
         $sheet->getStyle('A2:L2')->applyFromArray([
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-            'font' => [
-                'italic' => true,
-                'size' => 12,
-            ]
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'font' => ['italic' => true, 'size' => 12]
         ]);
 
-        $sheet->getStyle('A3:E3')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4F81BD'],
-            ],
+        $sheet->getStyle('A3:L3')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F81BD']],
+        ]);
+
+        $lastRow = $sheet->getHighestRow();
+        $sheet->getStyle("A3:L{$lastRow}")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
     }
 }
