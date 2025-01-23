@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\SalesOverallExport;
+use App\Exports\SalesDetailedExport;
 use App\Exports\SalesSummaryExport;
 use App\Http\Requests\SaleRequest;
 use App\Models\ActivityLog;
@@ -11,7 +11,6 @@ use App\Models\Customer;
 use App\Models\DueDate;
 use App\Models\Inventory;
 use App\Models\Product;
-use App\Models\Purchases;
 use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Transaction;
@@ -30,8 +29,6 @@ class SalesController extends Controller
     protected $activityLog;
     protected $saleService;
     private $actor;
-    private const QUANTITY_PRECISION = 2;
-    private const MINIMUM_QUANTITY_THRESHOLD = 0.01;
     private const MAX_TRANSACTION_RETRIES = 3;
     private const INVENTORY_LOCK_TIMEOUT = 5;
 
@@ -340,7 +337,12 @@ class SalesController extends Controller
                 $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                 $existingItem['unit_id'] === $product['unit_id']
             ) {
-                $validationErrors["products.{$index}.duplicate"] = "Duplicate entry: The combination of category, subcategory, and unit is already selected.";
+                // Get the category, subcategory, and unit names
+                $category = Category::find($product['category_id'])->name;
+                $subcategory = Subcategory::find($product['subcategory_id'])->name;
+                $unit = Unit::find($product['unit_id'])->abbreviation;
+                
+                $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
                 break; // Break after finding first duplicate
             }
         }
@@ -429,8 +431,13 @@ class SalesController extends Controller
                 $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                 $existingItem['unit_id'] === $product['unit_id']
             ) {
-                $validationErrors["products.{$index}.duplicate"] = "Duplicate entry: The combination of category, subcategory, and unit is already selected.";
-                return false;
+                // Get the category, subcategory, and unit names
+                $category = Category::find($product['category_id'])->name;
+                $subcategory = Subcategory::find($product['subcategory_id'])->name;
+                $unit = Unit::find($product['unit_id'])->abbreviation;
+                
+                $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
+                break;
             }
         }
 
@@ -460,7 +467,7 @@ class SalesController extends Controller
             return true;
         }
 
-        $inventory->save();
+        $inventory->update(['quantity' => $newTotalQuantity]);
     }
 
     public function destroy(Sale $sale)
@@ -527,21 +534,21 @@ class SalesController extends Controller
         return Excel::download($export, $fileName);
     }
 
-    public function overall_export(Request $request)
+    public function detailed_export(Request $request)
     {
         sleep(1);
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $export = new SalesOverallExport($startDate, $endDate);
+        $export = new SalesDetailedExport($startDate, $endDate);
 
         $date = now()->format('Ymd');
-        $fileName = "sales_overall_report_{$date}.xlsx";
+        $fileName = "sales_detailed_report_{$date}.xlsx";
 
         $this->activityLog->logSaleExport(
             ActivityLog::ACTION_EXPORTED,
-            "{$this->actor} exported sales overall report",
+            "{$this->actor} exported sales detailed report",
             ['old' => null, 'new' => null,]
         );
 
