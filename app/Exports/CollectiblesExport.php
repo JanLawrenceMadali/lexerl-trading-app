@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Models\Sale;
-use App\Models\Unit;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -14,7 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class CollectiblesOverallExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
+class CollectiblesExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $startDate;
     protected $endDate;
@@ -73,7 +72,7 @@ class CollectiblesOverallExport implements FromCollection, WithHeadings, WithSty
     public function headings(): array
     {
         return [
-            ['Lexerl Trading Inc - Collectibles Overall Report'],
+            ['Lexerl Trading Inc - Collectibles Report'],
             ["From: " . ($this->startDate ?? 'All Time')],
             ["To: " . ($this->endDate ?? 'All Time')],
             [
