@@ -334,7 +334,7 @@ const exportData = async () => {
         const queryString = new URLSearchParams(params).toString();
 
         const exportUrl = `${route(
-            exportSale.value === 'summary' ? 'sales.summary_export' : 'sales.overall_export'
+            exportSale.value === 'summary' ? 'sales.summary_export' : 'sales.detailed_export'
         )}?${queryString}`;
 
         window.location.href = exportUrl;
@@ -395,8 +395,8 @@ const exportData = async () => {
                         <SelectItem value="summary">
                             Summary
                         </SelectItem>
-                        <SelectItem value="overall">
-                            Overall
+                        <SelectItem value="detailed">
+                            Detailed
                         </SelectItem>
                     </SelectGroup>
                 </SelectContent>
