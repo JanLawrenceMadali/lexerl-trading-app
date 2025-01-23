@@ -22,7 +22,6 @@ const data = ref([...props.sales])
 const sorting = ref([])
 const filter = ref('')
 const rowSelection = ref({})
-const exportSale = ref('')
 
 // Updated display range function
 const getDisplayRange = () => {
@@ -313,9 +312,7 @@ const exportData = async () => {
         };
 
         const queryString = new URLSearchParams(params).toString();
-        const exportUrl = `${route(
-            exportSale.value === 'summary' ? 'collectibles.summary_export' : 'collectibles.overall_export'
-        )}?${queryString}`;
+        const exportUrl = `${route('collectibles.export')}?${queryString}`;
 
         window.location.href = exportUrl;
 
@@ -324,8 +321,6 @@ const exportData = async () => {
     } finally {
         setTimeout(() => {
             isExporting.value = false;
-            exportSale.value = '';
-            resetDateRange
         }, 1000);
     }
 }
@@ -367,21 +362,6 @@ const exportData = async () => {
                         @update:start-value="(startDate) => range.start = startDate" />
                 </PopoverContent>
             </Popover>
-            <Select v-model="exportSale">
-                <SelectTrigger class="w-[180px] h-7">
-                    <SelectValue placeholder="Select to export" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectGroup>
-                        <SelectItem value="summary">
-                            Summary
-                        </SelectItem>
-                        <SelectItem value="overall">
-                            Overall
-                        </SelectItem>
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
             <Button size="sm" variant="outline" class="gap-1 h-7" :disabled="isExporting || data.length === 0"
                 @click="exportData">
                 <File class="h-3.5 w-3.5" />
