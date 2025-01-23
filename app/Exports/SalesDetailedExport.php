@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Sale;
+use App\Models\Unit;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -13,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
+class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
     protected $startDate;
     protected $endDate;
@@ -35,22 +36,34 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
 
         $sales = $query->get();
 
-        $salesData = $sales->map(function ($sale) {
-            return [
-                'ID' => $sale->id,
-                'Transaction Type' => $sale->transactions->type ?? '',
-                'Transaction Number' => $sale->transaction_number,
-                'Sale Date' => $sale->sale_date,
-                'Customer Name' => $sale->customers->name ?? '',
-                'Total Amount' => '₱' . number_format($sale->total_amount, 2),
-                'Status' => $sale->statuses->name ?? '',
-                'Due Date' => $sale->dues->days ?? '',
-                'Description' => $sale->description,
-                'Created At' => $sale->created_at->format('Y-m-d h:i A'),
-            ];
+        $units = Unit::all()->keyBy('id');
+
+        $salesData = $sales->flatMap(function ($sale) use ($units) {
+            return $sale->products->map(function ($product) use ($sale, $units) {
+                $unit = $units[$product->pivot->unit_id] ?? null;
+                return [
+                    'ID' => $sale->id,
+                    'Transaction Type' => $sale->transactions->type ?? '',
+                    'Transaction Number' => $sale->transaction_number,
+                    'Sale Date' => $sale->sale_date,
+                    'Customer Name' => $sale->customers->name ?? '',
+                    'Category' => $product->categories->name ?? '',
+                    'Subcategory' => $product->subcategories->name ?? '',
+                    'Quantity' => $product->pivot->quantity,
+                    'UM' => $unit->abbreviation ?? '',
+                    'Selling Price' => '₱' . number_format($product->pivot->selling_price, 2),
+                    'Amount' => '₱' . number_format($product->pivot->amount, 2),
+                    'Status' => $sale->statuses->name ?? '',
+                    'Due Date' => $sale->dues->days ?? '',
+                    'Description' => $sale->description,
+                    'Created At' => $sale->created_at->format('Y-m-d h:i A'),
+                ];
+            });
         });
 
-        $totalAmount = $salesData->sum(fn($row) => (float) str_replace(['₱', ','], '', $row['Total Amount']));
+        $totalAmount = $sales->sum(function ($sale) {
+            return $sale->products->sum('pivot.amount');
+        });
 
         $salesData->push([
             'ID' => '',
@@ -58,7 +71,12 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
             'Transaction Number' => '',
             'Sale Date' => '',
             'Customer Name' => '',
-            'Total Amount' => 'Total: ₱' . number_format($totalAmount, 2),
+            'Category' => '',
+            'Subcategory' => '',
+            'Quantity' => '',
+            'UM' => '',
+            'Selling Price' => '',
+            'Amount' => 'Total: ₱' . number_format($totalAmount, 2),
             'Status' => '',
             'Due Date' => '',
             'Description' => '',
@@ -71,7 +89,7 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
     public function headings(): array
     {
         return [
-            ['Lexerl Trading - Sales Summary Report'],
+            ['Lexerl Trading - Sales Detailed Report'],
             ["From: " . ($this->startDate ?? 'All Time')],
             ["To: " . ($this->endDate ?? 'All Time')],
             [
@@ -80,7 +98,12 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
                 'Transaction Number',
                 'Sale Date',
                 'Customer Name',
-                'Total Amount',
+                'Category',
+                'Subcategory',
+                'Quantity',
+                'UM',
+                'Selling Price',
+                'Amount',
                 'Status',
                 'Due Date',
                 'Description',
@@ -92,22 +115,22 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
     public function styles(Worksheet $sheet)
     {
         // Merge title and style it
-        $sheet->mergeCells('A1:J1');
-        $sheet->getStyle('A1:J1')->applyFromArray([
+        $sheet->mergeCells('A1:O1');
+        $sheet->getStyle('A1:O1')->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'font' => ['bold' => true, 'size' => 18],
         ]);
 
         // Style date range rows
-        $sheet->mergeCells('A2:J2');
-        $sheet->mergeCells('A3:J3');
-        $sheet->getStyle('A2:J3')->applyFromArray([
+        $sheet->mergeCells('A2:O2');
+        $sheet->mergeCells('A3:O3');
+        $sheet->getStyle('A2:O3')->applyFromArray([
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'font' => ['italic' => true, 'size' => 12],
         ]);
 
         // Style header row
-        $sheet->getStyle('A4:J4')->applyFromArray([
+        $sheet->getStyle('A4:O4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F81BD']],
@@ -115,12 +138,12 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
 
         // Style all data rows and add borders
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle("A4:J{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A4:O{$lastRow}")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
         // Highlight the total row
-        $sheet->getStyle("A{$lastRow}:J{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A{$lastRow}:O{$lastRow}")->applyFromArray([
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF99']],
             'font' => ['bold' => true],
         ]);
