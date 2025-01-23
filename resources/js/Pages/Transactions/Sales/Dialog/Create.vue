@@ -637,16 +637,23 @@ watch(
                                 </div>
                             </div>
 
-                            <DialogFooter class="flex items-center mt-4">
-                                <InputError :message="form.errors.duplicate" />
-                                <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500 h-7">
-                                    Cancel
-                                </Button>
-                                <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
-                                    :disabled="isOverQuantity || isSubmitDisabled">
-                                    <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
-                                    Submit
-                                </Button>
+                            <DialogFooter class="flex items-center justify-between mt-4">
+                                <div>
+                                    <InputError :message="form.products.findIndex((_, i) => form.errors[`products.${i}.duplicate`]) !== -1
+                                        ? form.errors[`products.${form.products.findIndex((_, i) => form.errors[`products.${i}.duplicate`])}.duplicate`]
+                                        : null" class="text-sm" />
+                                </div>
+                                <div class="flex gap-2">
+                                    <Button @click="closeModal()" type="button"
+                                        class="bg-[#C00F0C] hover:bg-red-500 h-7">
+                                        Cancel
+                                    </Button>
+                                    <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
+                                        :disabled="isOverQuantity || isSubmitDisabled">
+                                        <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
+                                        Submit
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </form>
                     </div>
