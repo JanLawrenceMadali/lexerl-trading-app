@@ -212,7 +212,7 @@ class SalesController extends Controller
 
                 $sale->update($this->saleService->prepareSaleData($commonData));
 
-                $productAttachments = $this->processProductInventory($products, 'update', $sale);
+                $productAttachments = $this->processProductInventory($products, 'update', $sale, $validated['productDeleted']);
 
                 $sale->products()->sync($productAttachments);
 
@@ -232,7 +232,7 @@ class SalesController extends Controller
         }
     }
 
-    private function processProductInventory(array $products, string $action, ?Sale $existingSale = null): array
+    private function processProductInventory(array $products, string $action, ?Sale $existingSale = null, array $productDeleted = null): array
     {
         $productAttachments = [];
         $validationErrors = [];
@@ -261,7 +261,7 @@ class SalesController extends Controller
                 $this->validateInventoryForCreate($inventory, $product, $products, $index, $validationErrors);
                 $this->deductInventory($inventory, $product);
             } elseif ($action === 'update' && $existingSale) {
-                $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $product_id, $validationErrors);
+                $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $product_id, $validationErrors, $productDeleted);
             }
 
             $productAttachments[$product_id] = [
@@ -341,7 +341,7 @@ class SalesController extends Controller
                 $category = Category::find($product['category_id'])->name;
                 $subcategory = Subcategory::find($product['subcategory_id'])->name;
                 $unit = Unit::find($product['unit_id'])->abbreviation;
-                
+
                 $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
                 break; // Break after finding first duplicate
             }
@@ -355,7 +355,8 @@ class SalesController extends Controller
         int $index,
         Sale $existingSale,
         int $product_id,
-        array &$validationErrors
+        array &$validationErrors,
+        array $productDeleted
     ): bool {
         // Ensure inventory exists
         if (!$inventory) {
@@ -389,6 +390,19 @@ class SalesController extends Controller
         if ($newTotalQuantity < 0) {
             $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$totalQuantity} available.";
             return false;
+        }
+        if ($productDeleted) {
+            foreach ($productDeleted as $index => $deletedProduct) {
+                $returnDeletedProduct = Inventory::where([
+                    'category_id' => $deletedProduct['category_id'],
+                    'subcategory_id' => $deletedProduct['subcategory_id'],
+                    'unit_id' => $deletedProduct['unit_id']
+                ])->get();
+
+                foreach ($returnDeletedProduct as $item) {
+                    $item->increment('quantity', $deletedProduct['quantity']);
+                }
+            }
         }
 
         // Handle edge case where new total quantity is very small
@@ -435,7 +449,7 @@ class SalesController extends Controller
                 $category = Category::find($product['category_id'])->name;
                 $subcategory = Subcategory::find($product['subcategory_id'])->name;
                 $unit = Unit::find($product['unit_id'])->abbreviation;
-                
+
                 $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
                 break;
             }

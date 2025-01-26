@@ -29,7 +29,7 @@ const props = defineProps({
     subcategories: Object,
 })
 
-const sales = ref({ ...props.sales })
+const sales = ref({ ...props.sales });
 
 const form = useForm({
     status_id: String(sales.value.status_id),
@@ -47,7 +47,8 @@ const form = useForm({
         unit_id: String(product.unit_id),
         category_id: String(product.category_id),
         subcategory_id: String(product.subcategory_id),
-    }))
+    })),
+    productDeleted: [],
 });
 
 
@@ -62,8 +63,11 @@ const addProduct = () => {
     });
 };
 
-const removeProduct = (index) => {
+const removeProduct = (product, index) => {
     form.products.splice(index, 1);
+    if (product) {
+        form.productDeleted = [...form.productDeleted, product];
+    }
 }
 
 const df = new Intl.DateTimeFormat('en-PH', {
@@ -509,7 +513,7 @@ const isSubmitDisabled = computed(() => {
                                             </div>
                                         </TableCell>
                                         <TableCell> <!-- Action -->
-                                            <Button variant="ghost" @click="removeProduct(index)" type="button"
+                                            <Button variant="ghost" @click="removeProduct(product, index)" type="button"
                                                 size="xs" class="text-red-500 hover:text-red-600">
                                                 <Trash2 class="size-4" />
                                             </Button>

@@ -24,6 +24,7 @@ class SaleRequest extends FormRequest
     {
         return [
             'description' => '',
+            'productDeleted' => '',
             'total_amount' => 'required',
             'status_id' => 'required',
             'sale_date' => 'required',
