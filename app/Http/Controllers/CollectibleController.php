@@ -27,7 +27,7 @@ class CollectibleController extends Controller
     public function index()
     {
         $sales = Sale::query()
-            ->whereHas('products')
+            ->whereHas('inventory_sale')
             ->with(['dues', 'statuses', 'customers', 'transactions'])
             ->where('status_id', 2)
             ->get()
@@ -37,10 +37,10 @@ class CollectibleController extends Controller
                     ->startOfDay()
                     ->addDays($duesDays);
                 $daysLeft = now()->startOfDay()->diffInDays($dueDate, false);
-                $sale_date = Carbon::parse($sale->sale_date)->format('M j, Y');
+
                 return [
                     'id' => $sale->id,
-                    'sale_date' => $sale_date,
+                    'sale_date' => Carbon::parse($sale->sale_date)->format('M j, Y'),
                     'transaction_number' => $sale->transaction_number,
                     'total_amount' => $sale->total_amount,
                     'description' => $sale->description,
