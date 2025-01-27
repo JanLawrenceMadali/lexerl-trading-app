@@ -14,5 +14,8 @@ import { Link } from '@inertiajs/vue3';
         <div class="w-full px-6 py-4 mt-6 overflow-hidden sm:max-w-md dark:bg-gray-800">
             <slot />
         </div>
+        <footer class="absolute bottom-0 pb-2 text-sm text-center text-gray-500">
+            <p>Copyright {{ new Date().getFullYear() }} © Lexerl Trading Inc. All rights reserved.</p>
+        </footer>
     </div>
 </template>
