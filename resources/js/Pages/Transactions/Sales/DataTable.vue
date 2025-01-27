@@ -388,7 +388,7 @@ const exportData = async () => {
             </Popover>
             <Select v-model="exportSale">
                 <SelectTrigger class="w-[180px] h-7">
-                    <SelectValue placeholder="Select to export" />
+                    <SelectValue placeholder="Select report type" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectGroup>
