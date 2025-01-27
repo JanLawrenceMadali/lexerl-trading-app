@@ -40,7 +40,7 @@ const form = useForm({
     transaction_id: String(sales.value.transaction_id),
     transaction_number: sales.value.transaction_number,
     total_amount: sales.value.total_amount,
-    products: sales.value.products.map((product) => ({
+    products: sales.value.inventory_sale.map((product) => ({
         amount: product.amount,
         quantity: product.quantity,
         selling_price: product.selling_price,
@@ -124,7 +124,7 @@ watch(() => props.sales, (newSale) => {
     form.transaction_id = String(newSale.transaction_id);
     form.transaction_number = newSale.transaction_number;
     form.total_amount = newSale.total_amount;
-    form.products = newSale.products.map((product) => ({
+    form.products = newSale.inventory_sale.map((product) => ({
         amount: product.amount,
         quantity: product.quantity,
         selling_price: product.selling_price,
@@ -592,7 +592,11 @@ const isSubmitDisabled = computed(() => {
                         </div>
 
                         <DialogFooter class="flex items-center mt-4">
-                            <InputError :message="form.errors.duplicate" />
+                            <div>
+                                <InputError :message="form.products.findIndex((_, i) => form.errors[`products.${i}.duplicate`]) !== -1
+                                    ? form.errors[`products.${form.products.findIndex((_, i) => form.errors[`products.${i}.duplicate`])}.duplicate`]
+                                    : null" class="text-sm" />
+                            </div>
                             <Button @click="closeModal()" type="button" class="bg-[#C00F0C] hover:bg-red-500 h-7">
                                 Cancel
                             </Button>

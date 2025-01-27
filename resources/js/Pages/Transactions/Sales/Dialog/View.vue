@@ -72,7 +72,7 @@ watch(() => props.sales, (newSales) => {
                     </ul>
 
                     <div class="font-semibold"> Product Details </div>
-                    <ul v-for="product in data.products" class="grid gap-3 p-4 border rounded-lg">
+                    <ul v-for="product in data.inventory_sale" class="grid gap-3 p-4 border rounded-lg">
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Category</span> <span>{{ product.category_name }}</span>
                         </li>
