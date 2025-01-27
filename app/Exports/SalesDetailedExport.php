@@ -27,8 +27,8 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
 
     public function collection()
     {
-        $query = Sale::has('products')
-            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions');
+        $query = Sale::whereHas('inventory_sale')
+            ->with('inventory_sale.categories', 'inventory_sale.subcategories', 'statuses', 'customers', 'transactions');
 
         if ($this->startDate && $this->endDate) {
             $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
@@ -39,8 +39,9 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
         $units = Unit::all()->keyBy('id');
 
         $salesData = $sales->flatMap(function ($sale) use ($units) {
-            return $sale->products->map(function ($product) use ($sale, $units) {
-                $unit = $units[$product->pivot->unit_id] ?? null;
+            return $sale->inventory_sale->map(function ($product) use ($sale, $units) {
+                $unit = $units[$product->unit_id] ?? null;
+                
                 return [
                     'ID' => $sale->id,
                     'Transaction Type' => $sale->transactions->type ?? '',
@@ -62,7 +63,7 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
         });
 
         $totalAmount = $sales->sum(function ($sale) {
-            return $sale->products->sum('pivot.amount');
+            return $sale->inventory_sale->sum('pivot.amount');
         });
 
         $salesData->push([

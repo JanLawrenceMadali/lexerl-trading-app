@@ -26,8 +26,8 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
 
     public function collection()
     {
-        $query = Sale::has('products')
-            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions');
+        $query = Sale::whereHas('inventory_sale')
+            ->with('inventory_sale.categories', 'inventory_sale.subcategories', 'statuses', 'customers', 'transactions');
 
         if ($this->startDate && $this->endDate) {
             $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
