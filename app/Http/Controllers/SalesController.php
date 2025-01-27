@@ -50,74 +50,8 @@ class SalesController extends Controller
         $subcategories = Subcategory::orderBy('name')->get();
         $customers = Customer::orderBy('name')->get();
         $transactions = Transaction::where('id', '!=', 1)->orderBy('type')->get();
-        $inventories = Inventory::with('units', 'suppliers', 'transactions', 'categories', 'subcategories')
-            ->orderBy('id', 'desc')
-            ->get()
-            ->map(function ($inventory) {
-                return [
-                    'id' => $inventory->id,
-                    'quantity' => $inventory->quantity,
-                    'purchase_date' => $inventory->purchase_date,
-                    'amount' => $inventory->amount,
-                    'transaction_number' => $inventory->transaction_number,
-                    'landed_cost' => $inventory->landed_cost,
-                    'description' => $inventory->description,
-                    'unit_id' => $inventory->unit_id,
-                    'abbreviation' => $inventory->units->abbreviation,
-                    'category_id' => $inventory->categories->id,
-                    'category_name' => $inventory->categories->name,
-                    'subcategory_id' => $inventory->subcategories->id,
-                    'subcategory_name' => $inventory->subcategories->name,
-                    'supplier_id' => $inventory->suppliers->id,
-                    'supplier_name' => $inventory->suppliers->name,
-                    'supplier_email' => $inventory->suppliers->email,
-                    'transaction_id' => $inventory->transaction_id,
-                    'transaction_type' => $inventory->transactions->type
-                ];
-            });
-
-        $sales = Sale::has('products')
-            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
-            ->orderBy('id', 'desc')
-            ->get()
-            ->map(function ($sale) {
-                $sale_date = Carbon::parse($sale->sale_date)->format('M j, Y');
-                return [
-                    'id' => $sale->id,
-                    'sale_date' => $sale_date,
-                    'transaction_id' => $sale->transaction_id,
-                    'transaction_type' => $sale->transactions->type,
-                    'transaction_number' => $sale->transaction_number,
-                    'total_amount' => $sale->total_amount,
-                    'description' => $sale->description,
-                    'status_id' => $sale->status_id,
-                    'status' => $sale->statuses->name,
-                    'customer_id' => $sale->customer_id,
-                    'customer_name' => $sale->customers->name,
-                    'customer_email' => $sale->customers->email,
-                    'customer_address1' => $sale->customers->address1,
-                    'customer_address2' => $sale->customers->address2,
-                    'customer_contact_person' => $sale->customers->contact_person,
-                    'customer_contact_number' => $sale->customers->contact_number,
-                    'due_date_id' => $sale->due_date_id,
-                    'products' => $sale->products->map(function ($product) {
-                        $unit = $product->pivot->unit_id ? Unit::find($product->pivot->unit_id) : null;
-                        return [
-                            'product_id' => $product->id,
-                            'amount' => $product->pivot->amount,
-                            'unit_id' => $unit->id,
-                            'abbreviation' => $unit->abbreviation,
-                            'quantity' => $product->pivot->quantity,
-                            'category_id' => $product->categories->id,
-                            'category_name' => $product->categories->name,
-                            'subcategory_id' => $product->subcategories->id,
-                            'subcategory_name' => $product->subcategories->name,
-                            'selling_price' => $product->pivot->selling_price,
-                        ];
-                    }),
-                    'created_at' => $sale->created_at,
-                ];
-            });
+        $inventories = $this->saleService->getInventories();
+        $sales = $this->saleService->getSales();
 
         return inertia('Transactions/Sales/Index', [
             'dues' => $dues,
@@ -139,18 +73,17 @@ class SalesController extends Controller
         try {
             return $this->executeWithRetry(function () use ($validated) {
                 $sale = null;
-                $productAttachments = [];
-
+                $inventoryAttachments = [];
                 try {
                     // Prepare and validate all data first
                     $saleData = $this->saleService->prepareSaleData($validated);
-                    $productAttachments = $this->processProductInventory($validated['products'], 'create');
+                    $inventoryAttachments = $this->processProductInventory($validated['products'], 'create');
 
                     // Create sale
                     $sale = Sale::create($saleData);
 
                     // Attach products
-                    $sale->products()->attach($productAttachments);
+                    $sale->inventory_sale()->attach($inventoryAttachments);
 
                     $this->activityLog->logSaleAction(
                         ActivityLog::ACTION_CREATED,
@@ -183,8 +116,6 @@ class SalesController extends Controller
 
                 $oldData = $sale->toArray();
 
-                $sale_date = Carbon::parse($validated['sale_date'])->format('Y-m-d');
-
                 $products = [];
 
                 foreach ($validated['products'] as $product) {
@@ -199,7 +130,7 @@ class SalesController extends Controller
                 }
 
                 $commonData = [
-                    'sale_date' => $sale_date,
+                    'sale_date' => Carbon::parse($validated['sale_date'])->format('Y-m-d'),
                     'status_id' => $validated['status_id'],
                     'due_date_id' => $validated['due_date_id'],
                     'description' => $validated['description'],
@@ -212,9 +143,9 @@ class SalesController extends Controller
 
                 $sale->update($this->saleService->prepareSaleData($commonData));
 
-                $productAttachments = $this->processProductInventory($products, 'update', $sale, $validated['productDeleted']);
+                $inventoryAttachments = $this->processProductInventory($products, 'update', $sale, $validated['productDeleted']);
 
-                $sale->products()->sync($productAttachments);
+                $sale->inventory_sale()->sync($inventoryAttachments);
 
                 $this->activityLog->logSaleAction(
                     ActivityLog::ACTION_UPDATED,
@@ -240,12 +171,13 @@ class SalesController extends Controller
         foreach ($products as $index => $product) {
             $product['quantity'] = round($product['quantity'], 2);
 
-            $product_id = Product::where([
+            $inventory_id = Inventory::where([
                 'category_id' => $product['category_id'],
-                'subcategory_id' => $product['subcategory_id']
+                'subcategory_id' => $product['subcategory_id'],
+                'unit_id' => $product['unit_id']
             ])->value('id');
 
-            if (!$product_id) {
+            if (!$inventory_id) {
                 $validationErrors["products.{$index}.category_id"] =
                     "Product not found for category ID {$product['category_id']} and subcategory ID {$product['subcategory_id']}.";
                 continue;
@@ -261,12 +193,11 @@ class SalesController extends Controller
                 $this->validateInventoryForCreate($inventory, $product, $products, $index, $validationErrors);
                 $this->deductInventory($inventory, $product);
             } elseif ($action === 'update' && $existingSale) {
-                $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $product_id, $validationErrors, $productDeleted);
+                $this->validateInventoryForUpdate($inventory, $product, $products, $index, $existingSale, $inventory_id, $validationErrors, $productDeleted);
             }
 
-            $productAttachments[$product_id] = [
+            $productAttachments[$inventory_id] = [
                 'amount' => $product['amount'],
-                'unit_id' => $product['unit_id'],
                 'quantity' => $product['quantity'],
                 'selling_price' => $product['selling_price'],
             ];
@@ -313,13 +244,11 @@ class SalesController extends Controller
             $validationErrors["products.{$index}.quantity"] = "Inventory not found.";
         }
 
-        $currentInventory = $inventory
-            ->where([
-                'category_id' => $product['category_id'],
-                'subcategory_id' => $product['subcategory_id'],
-                'unit_id' => $product['unit_id']
-            ])
-            ->get();
+        $currentInventory = $inventory->where([
+            'category_id' => $product['category_id'],
+            'subcategory_id' => $product['subcategory_id'],
+            'unit_id' => $product['unit_id']
+        ])->get();
 
         $totalQuantity = $currentInventory->sum('quantity');
 
@@ -354,7 +283,7 @@ class SalesController extends Controller
         array $products,
         int $index,
         Sale $existingSale,
-        int $product_id,
+        int $inventory_id,
         array &$validationErrors,
         array $productDeleted
     ): bool {
@@ -365,7 +294,7 @@ class SalesController extends Controller
         }
 
         // Fetch the existing sale product and its quantity
-        $existingSaleProduct = $existingSale->products()->wherePivot('product_id', $product_id)->first();
+        $existingSaleProduct = $existingSale->inventory_sale()->wherePivot('inventory_id', $inventory_id)->first();
         $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->quantity : 0;
 
         // Calculate new sale quantities and differences
@@ -373,14 +302,11 @@ class SalesController extends Controller
         $quantityDifference = round($oldSaleQuantity - $newSaleQuantity, 2);
 
         // Fetch all matching inventory items, ordered by priority (e.g., by ID)
-        $matchingInventoryItems = $inventory
-            ->where([
-                'category_id' => $product['category_id'],
-                'subcategory_id' => $product['subcategory_id'],
-                'unit_id' => $product['unit_id']
-            ])
-            ->orderBy('id', 'asc') // Adjust sorting criteria as needed
-            ->get();
+        $matchingInventoryItems = $inventory->where([
+            'category_id' => $product['category_id'],
+            'subcategory_id' => $product['subcategory_id'],
+            'unit_id' => $product['unit_id']
+        ])->get();
 
         // Calculate the total quantity of matching items
         $totalQuantity = $matchingInventoryItems->sum('quantity');
@@ -461,14 +387,11 @@ class SalesController extends Controller
 
     private function deductInventory(Inventory $inventory, array $product)
     {
-        $currentInventory = $inventory
-            ->where([
-                'category_id' => $product['category_id'],
-                'subcategory_id' => $product['subcategory_id'],
-                'unit_id' => $product['unit_id']
-            ])
-            ->orderBy('id', 'asc')
-            ->get();
+        $currentInventory = $inventory->where([
+            'category_id' => $product['category_id'],
+            'subcategory_id' => $product['subcategory_id'],
+            'unit_id' => $product['unit_id']
+        ])->get();
 
         $totalQuantity = $currentInventory->sum('quantity');
 
@@ -489,16 +412,16 @@ class SalesController extends Controller
         try {
             DB::transaction(function () use ($sale) {
 
-                foreach ($sale->products as $product) {
+                foreach ($sale->inventory_sale as $product) {
                     $inventory = Inventory::where([
-                        'category_id' => $product->categories->id,
-                        'subcategory_id' => $product->subcategories->id,
-                        'unit_id' => $product->pivot->unit_id
+                        'category_id' => $product->category_id,
+                        'subcategory_id' => $product->subcategory_id,
+                        'unit_id' => $product->unit_id
                     ])->lockForUpdate()->firstOrFail();
 
                     if ($inventory) {
                         // Validate inventory quantity doesn't exceed any maximum limits
-                        $newQuantity = $inventory->quantity + $product->pivot->quantity;
+                        $newQuantity = $inventory->quantity + $product->quantity;
                         // Could add a check here if you have a max_quantity constraint
 
                         $inventory->quantity = $newQuantity;
