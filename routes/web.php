@@ -14,9 +14,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
-use App\Models\ActivityLog;
-use App\Models\Inventory;
-use App\Models\Sale;
 
 Route::get('/', function () {
     return redirect(route('login'));
