@@ -17,6 +17,7 @@ import FormattedNumberInput from '@/Components/FormattedNumberInput.vue'
 import CreateSubcategory from '../../../Settings/Subcategory/Dialog/Create.vue'
 import DropdownSearch from '@/Components/DropdownSearch.vue'
 import Create from '@/Pages/Settings/Suppliers/Dialog/Create.vue'
+import QuantityConfirmationModal from '../partial/QuantityConfirmationModal.vue'
 
 const props = defineProps({
     units: Object,
@@ -76,7 +77,7 @@ watch(
 
 watch(() => props.inventory, (newInventory) => {
     data.value = { ...newInventory }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 watch(() => props.inventory, (newInventory) => {
     form.amount = newInventory.amount
@@ -91,7 +92,7 @@ watch(() => props.inventory, (newInventory) => {
     form.transaction_id = String(newInventory.transaction_id)
     form.transaction_number = newInventory.transaction_number
     formatAndSetDate(newInventory.purchase_date)
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 const state = reactive({
     search: ''
@@ -388,11 +389,16 @@ const isSubmitDisabled = computed(() => {
                             <Button type="button" @click="closeModal()" class="bg-[#C00F0C] hover:bg-red-500 h-7">
                                 Cancel
                             </Button>
-                            <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
-                                :disabled="isSubmitDisabled">
-                                <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
-                                Submit
-                            </Button>
+                            <div v-if="form.quantity <= data.quantity">
+                                <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
+                                    :disabled="isSubmitDisabled">
+                                    <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
+                                    Submit
+                                </Button>
+                            </div>
+                            <div v-else>
+                                <QuantityConfirmationModal :quantity="form.quantity" :inventory="data" :submit="submit" />
+                            </div>
                         </DialogFooter>
                     </form>
                 </div>
