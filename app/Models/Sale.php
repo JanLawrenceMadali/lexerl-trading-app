@@ -12,20 +12,13 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
-        'amount',
-        'quantity',
         'sale_date',
         'status_id',
         'description',
-        'total_amount',
         'due_date_id',
-        'supplier_id',
-        'category_id',
         'customer_id',
-        'selling_price',
-        'subcategory_id',
+        'total_amount',
         'transaction_id',
-        'unit_measure_id',
         'transaction_number',
     ];
 
@@ -33,6 +26,13 @@ class Sale extends Model
     {
         return $this->belongsToMany(Product::class, 'product_sale')
             ->withPivot('quantity', 'amount', 'selling_price', 'unit_id', 'product_id')
+            ->withTimestamps();
+    }
+
+    public function inventory_sale(): BelongsToMany
+    {
+        return $this->belongsToMany(Inventory::class, 'inventory_sale')
+            ->withPivot('quantity', 'amount', 'selling_price')
             ->withTimestamps();
     }
 
