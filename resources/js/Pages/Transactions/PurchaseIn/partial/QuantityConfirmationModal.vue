@@ -9,6 +9,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/Components/ui/dialog'
+import { TriangleAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -26,7 +27,7 @@ const props = defineProps({
     },
 });
 
-const isOpen = ref(true);
+const isOpen = ref(false);
 
 const close = () => {
     isOpen.value = false;
@@ -35,17 +36,26 @@ const close = () => {
 </script>
 
 <template>
-    <Dialog :open="isOpen">
+    <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
             <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7">
                 Submit
             </Button>
         </DialogTrigger>
-        <DialogContent class="sm:max-w-[425px]">
+        <DialogContent>
             <DialogHeader>
-                <DialogTitle>Are you sure you want to proceed?</DialogTitle>
-                <DialogDescription>
-                    You are about to increase the quantity of {{ inventory.quantity }} to {{ quantity }}.
+                <DialogTitle class="text-2xl text-slate-700">Are you sure you want to proceed?</DialogTitle>
+                <DialogDescription class="space-y-4">
+                    <p v-if="quantity > inventory.quantity" class="text-lg text-center text-red-500">
+                        You are about to increase the quantity from {{
+                            inventory.quantity.toLocaleString() }} to {{ quantity.toLocaleString() }}.</p>
+                    <p v-else class="text-lg text-center text-red-500">
+                        You are about to decrease the quantity from {{ inventory.quantity.toLocaleString() }} to {{
+                            quantity.toLocaleString() }}.</p>
+                    <p class="flex text-orange-500">
+                        <TriangleAlert class="w-5 h-5 mr-1" />
+                        Warning: This may affect the inventory quantity. This action cannot be undone.
+                    </p>
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>

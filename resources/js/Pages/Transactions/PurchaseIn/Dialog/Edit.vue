@@ -389,15 +389,16 @@ const isSubmitDisabled = computed(() => {
                             <Button type="button" @click="closeModal()" class="bg-[#C00F0C] hover:bg-red-500 h-7">
                                 Cancel
                             </Button>
-                            <div v-if="form.quantity <= data.quantity">
+                            <div v-if="form.quantity !== data.quantity">
+                                <QuantityConfirmationModal :quantity="form.quantity" :inventory="data"
+                                    :submit="submit" />
+                            </div>
+                            <div v-else>
                                 <Button class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7" type="submit"
                                     :disabled="isSubmitDisabled">
                                     <Loader2 v-if="form.processing" class="w-4 h-4 mr-2 animate-spin" />
                                     Submit
                                 </Button>
-                            </div>
-                            <div v-else>
-                                <QuantityConfirmationModal :quantity="form.quantity" :inventory="data" :submit="submit" />
                             </div>
                         </DialogFooter>
                     </form>
