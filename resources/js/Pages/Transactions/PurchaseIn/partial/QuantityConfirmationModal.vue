@@ -4,12 +4,10 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from '@/Components/ui/dialog'
-import { TriangleAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -42,30 +40,32 @@ const close = () => {
                 Submit
             </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent class="p-8">
             <DialogHeader>
-                <DialogTitle class="text-2xl text-slate-700">Are you sure you want to proceed?</DialogTitle>
-                <DialogDescription class="space-y-4">
-                    <p v-if="quantity > inventory.quantity" class="text-lg text-center text-red-500">
+                <DialogTitle class="flex flex-col items-center justify-center">
+                    <img src="/assets/icons/Warning.png" class="size-20" alt="">
+                    <span class="mt-8 text-[22px] text-slate-700">Are you sure you want to proceed?</span>
+                </DialogTitle>
+                <DialogDescription class="mt-2 space-y-2 text-base text-center text-red-700">
+                    <p v-if="quantity > inventory.quantity">
                         You are about to increase the quantity from {{
                             inventory.quantity.toLocaleString() }} to {{ quantity.toLocaleString() }}.</p>
-                    <p v-else class="text-lg text-center text-red-500">
+                    <p v-else>
                         You are about to decrease the quantity from {{ inventory.quantity.toLocaleString() }} to {{
                             quantity.toLocaleString() }}.</p>
-                    <p class="flex text-orange-500">
-                        <TriangleAlert class="w-5 h-5 mr-1" />
-                        Warning: This may affect the inventory quantity. This action cannot be undone.
+                    <p>
+                        Please note that this action is irreversible and may affect the current inventory.
                     </p>
                 </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
-                <Button type="button" @click="close()" class="bg-[#C00F0C] hover:bg-red-500 h-7">
-                    No
-                </Button>
-                <Button type="button" @click="submit()" class="disabled:cursor-not-allowed disabled:bg-[#757575] h-7">
+            <div class="flex justify-center gap-2 mt-2">
+                <Button type="button" @click="submit()" class="bg-[#C00F0C] hover:bg-red-500 text-lg">
                     Yes
                 </Button>
-            </DialogFooter>
+                <Button type="button" @click="close()" class="disabled:cursor-not-allowed disabled:bg-[#757575] text-lg">
+                    Cancel
+                </Button>
+            </div>
         </DialogContent>
     </Dialog>
 </template>
