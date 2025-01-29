@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Product;
 use App\Models\Subcategory;
 use Illuminate\Support\Facades\DB;
 
@@ -14,11 +13,6 @@ class SubCategoryService
 
             $subcategory = Subcategory::create([
                 'name' => $data['name'],
-                'category_id' => $data['category_id'],
-            ]);
-
-            Product::create([
-                'subcategory_id' => $subcategory->id,
                 'category_id' => $data['category_id'],
             ]);
 
@@ -35,11 +29,6 @@ class SubCategoryService
                 'category_id' => $data['category_id'],
             ]);
 
-            Product::where('subcategory_id', $subcategory->id)->update([
-                'subcategory_id' => $subcategory->id,
-                'category_id' => $data['category_id'],
-            ]);
-
             return $subcategory;
         });
     }
@@ -48,7 +37,6 @@ class SubCategoryService
     {
         return DB::transaction(function () use ($subcategory) {
             $subcategory->delete();
-            Product::where('subcategory_id', $subcategory->id)->delete();
 
             return true;
         });

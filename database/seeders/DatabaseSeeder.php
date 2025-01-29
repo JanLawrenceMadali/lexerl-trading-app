@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             // SupplierSeeder::class,
             StatusSeeder::class,
             UnitSeeder::class,
-            ProductSeeder::class,
+            // ProductSeeder::class,
             // SaleSeeder::class,
             // InventorySeeder::class,
         ]);
