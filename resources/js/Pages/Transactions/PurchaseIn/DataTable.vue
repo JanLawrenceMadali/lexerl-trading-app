@@ -129,6 +129,10 @@ const formattedCurrency = (value) => {
     }).format(value);
 };
 
+const formattedNumber = (value) => {
+    return new Intl.NumberFormat().format(value);
+};
+
 const columns = [
     {
         accessorKey: 'transaction_number',
@@ -197,7 +201,7 @@ const columns = [
             const { quantity } = row.original
             const { abbreviation } = row.original
 
-            return h('div', { class: 'px-2' }, `${quantity} ${abbreviation}`)
+            return h('div', { class: 'px-2' }, `${formattedNumber(quantity)} ${abbreviation}`)
         },
     },
     {

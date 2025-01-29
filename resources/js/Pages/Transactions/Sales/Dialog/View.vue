@@ -10,13 +10,17 @@ const props = defineProps({ sales: Object })
 
 const data = ref(props.sales)
 
-const formatCurrency = (value) => {
+const formattedCurrency = (value) => {
     return new Intl.NumberFormat('en-PH', {
         style: 'currency',
         currency: 'PHP',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(value);
+};
+
+const formattedNumber = (value) => {
+    return new Intl.NumberFormat().format(value);
 };
 
 watch(() => props.sales, (newSales) => {
@@ -82,22 +86,22 @@ watch(() => props.sales, (newSales) => {
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Quantity</span> <span>
-                                {{ product.quantity }} {{ product.abbreviation }}
+                                {{ formattedNumber(product.quantity) }} {{ product.abbreviation }}
                             </span>
                         </li>
                         <li class="flex items-center justify-between">
                             <span class="text-muted-foreground">Selling Price</span> <span>{{
-                                formatCurrency(product.selling_price) }}</span>
+                                formattedCurrency(product.selling_price) }}</span>
                         </li>
                         <li class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Amount</span> <span>{{ formatCurrency(product.amount)
+                            <span class="text-muted-foreground">Amount</span> <span>{{ formattedCurrency(product.amount)
                                 }}</span>
                         </li>
                     </ul>
 
                     <span class="flex items-center justify-between">
                         <span class="text-muted-foreground">Total Amount:</span>
-                        <span>{{ formatCurrency(data.total_amount) }}</span>
+                        <span>{{ formattedCurrency(data.total_amount) }}</span>
                     </span>
                     <span class="grid gap-1 py-2">
                         <span class="text-muted-foreground">Notes:</span>

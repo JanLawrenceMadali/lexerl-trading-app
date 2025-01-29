@@ -19,6 +19,10 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
+const formattedNumber = (value) => {
+    return new Intl.NumberFormat().format(value);
+};
+
 watch(() => props.inventory, (newInventory) => {
     data.value = newInventory
 }, { immediate: true })
@@ -78,7 +82,7 @@ watch(() => props.inventory, (newInventory) => {
                                 }}</span>
                         </li>
                         <li class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Quantity</span> <span>{{ data.quantity }} {{
+                            <span class="text-muted-foreground">Quantity</span> <span>{{ formattedNumber(data.quantity) }} {{
                                 data.abbreviation }}</span>
                         </li>
                         <li class="flex items-center justify-between">
