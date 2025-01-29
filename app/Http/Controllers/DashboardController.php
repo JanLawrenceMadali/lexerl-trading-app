@@ -42,7 +42,7 @@ class DashboardController extends Controller
             ],
         ];
 
-        return inertia('Dashboard', [
+        return inertia('Dashboard/Index', [
             'total_sale' => intval($total_sale),
             'total_purchase' => intval($total_purchase),
             'total_inventory' => intval($total_inventory),

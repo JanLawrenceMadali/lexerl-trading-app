@@ -5,6 +5,7 @@ import { ArrowRightFromLine, CircleCheck, CirclePlus, CircleX, Delete, Download,
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Chart from '@/Components/Chart.vue'
+import DashboardTooltip from './Partial/DashboardTooltip.vue'
 
 const props = defineProps({
     total_sale: { type: Number },
@@ -15,13 +16,6 @@ const props = defineProps({
     monthly_sales: { type: Object },
     chartData: { type: Object }
 })
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-PH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(value);
-};
 
 const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
     month: 'long',
@@ -47,9 +41,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4">
-                        <div class="text-3xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_purchase) }}</span>
-                        </div>
+                        <DashboardTooltip :value="total_purchase" />
                     </CardContent>
                 </Card>
                 <Card>
@@ -58,10 +50,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                             Total Sales
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="mt-4">
-                        <div class="text-3xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_sale) }}</span>
-                        </div>
+                    <CardContent class="mt-4 text-3xl text-[#772E25] truncate">
+                        <DashboardTooltip :value="total_sale" />
                     </CardContent>
                 </Card>
                 <Card>
@@ -70,10 +60,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                             Current Inventory Value
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="mt-4">
-                        <div class="text-3xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_inventory) }}</span>
-                        </div>
+                    <CardContent class="mt-4 text-3xl text-[#772E25] truncate">
+                        <DashboardTooltip :value="total_inventory" />
                     </CardContent>
                 </Card>
                 <Card>
@@ -82,10 +70,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                             Total Collectibles
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="mt-4">
-                        <div class="text-3xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold">{{ formatCurrency(total_collectible) }}</span>
-                        </div>
+                    <CardContent class="mt-4 text-3xl text-[#772E25] truncate">
+                        <DashboardTooltip :value="total_collectible" />
                     </CardContent>
                 </Card>
                 <Card>
@@ -94,10 +80,8 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                             Total Gross Profit
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="mt-4">
-                        <div class="text-3xl text-[#772E25]">
-                            <sup>PHP</sup> <span class="font-semibold"> {{ formatCurrency((total_sale + total_inventory) - total_purchase) }} </span>
-                        </div>
+                    <CardContent class="mt-4 text-3xl text-[#772E25] truncate">
+                        <DashboardTooltip :value="((total_sale + total_inventory) - total_purchase)" />
                     </CardContent>
                 </Card>
             </div>
