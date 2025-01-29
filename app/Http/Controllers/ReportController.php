@@ -8,6 +8,7 @@ use App\Exports\CurrentInventoryReport;
 use App\Services\ActivityLoggerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Number;
 use Maatwebsite\Excel\Facades\Excel;
 
 use function Symfony\Component\Clock\now;
@@ -53,7 +54,7 @@ class ReportController extends Controller
                     'category' => $item->category_name,
                     'subcategory' => $item->subcategory_name,
                     'unit' => $item->unit,
-                    'quantity' => $item->total_quantity . ' left',
+                    'quantity' => Number::format($item->total_quantity) . ' left',
                 ];
             });
 

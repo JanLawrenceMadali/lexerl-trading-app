@@ -7,6 +7,7 @@ use App\Models\Inventory;
 use App\Models\Purchases;
 use App\Models\Sale;
 use Carbon\Carbon;
+use Illuminate\Support\Number;
 
 class DashboardController extends Controller
 {
@@ -18,6 +19,7 @@ class DashboardController extends Controller
         $total_inventory = Inventory::where('quantity', '>', 0)->sum('amount');
         $activity_logs = ActivityLog::with('users')->latest()->get();
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
+        $total_gross_profit = $total_sale + $total_inventory - $total_purchase;
 
         $monthlySales = $sale
             ->groupBy(function ($sale) {
@@ -43,10 +45,11 @@ class DashboardController extends Controller
         ];
 
         return inertia('Dashboard/Index', [
-            'total_sale' => intval($total_sale),
-            'total_purchase' => intval($total_purchase),
-            'total_inventory' => intval($total_inventory),
-            'total_collectible' => intval($total_collectible),
+            'total_sale' => Number::format($total_sale),
+            'total_purchase' => Number::format($total_purchase),
+            'total_inventory' => Number::format($total_inventory),
+            'total_collectible' => Number::format($total_collectible),
+            'total_gross_profit' => Number::format($total_gross_profit),
             'activity_logs' => $activity_logs,
             'monthly_sales' => $monthlySales,
             'chartData' => $chartData
