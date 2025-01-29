@@ -130,7 +130,7 @@ class BackupController extends Controller
     {
         try {
             $request->validate([
-                'backup' => 'required|file|mimetypes:application/x-sqlite3,application/octet-stream|max:10240',
+                'backup' => 'required|file|mimetypes:application/x-sqlite3,application/octet-stream,application/vnd.sqlite3|max:10240',
             ]);
 
             $backupFile = $request->file('backup');
