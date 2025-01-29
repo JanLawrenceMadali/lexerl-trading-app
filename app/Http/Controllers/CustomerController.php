@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\ActivityLog;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\CustomerRequest;
 use App\Services\ActivityLoggerService;
 use App\Services\CustomerService;
