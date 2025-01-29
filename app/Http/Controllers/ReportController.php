@@ -62,27 +62,6 @@ class ReportController extends Controller
         ]);
     }
 
-    public function sale_logs()
-    {
-        $sales = DB::table('product_sale')
-            ->join('products', 'product_sale.product_id', '=', 'products.id')
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->join('subcategories', 'products.subcategory_id', '=', 'subcategories.id')
-            ->join('units', 'product_sale.unit_id', '=', 'units.id')
-            ->select(
-                'categories.name as category_name',
-                'subcategories.name as subcategory_name',
-                'product_sale.quantity',
-                'units.abbreviation as unit'
-            )
-            ->latest('product_sale.created_at')
-            ->get();
-
-        return inertia('Reports/Sales/Index', [
-            'sales' => $sales
-        ]);
-    }
-
     public function activity_logs_export()
     {
         sleep(1);
