@@ -42,8 +42,7 @@ const submit = () => {
         <form @submit.prevent="submit">
             <div class="grid gap-2">
                 <Label for="username">Username</Label>
-                <Input id="username" type="text" v-model="form.username" autofocus autocomplete="username"
-                    placeholder="Username" />
+                <Input id="username" type="text" v-model="form.username" autofocus autocomplete="username" />
                 <InputError :message="form.errors.username" />
             </div>
 
@@ -51,16 +50,6 @@ const submit = () => {
                 <Label for="password">Password</Label>
                 <Input id="password" type="password" v-model="form.password" autocomplete="current-password" />
                 <InputError :message="form.errors.password" />
-            </div>
-
-            <div class="block mt-4">
-                <Label class="flex items-center space-x-2">
-                    <Checkbox id="remember" v-model:checked="form.remember" />
-                    <Label for="remember"
-                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Stay signed in
-                    </Label>
-                </Label>
             </div>
 
             <div class="flex items-center justify-end my-4">
