@@ -41,7 +41,7 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
         $salesData = $sales->flatMap(function ($sale) use ($units) {
             return $sale->inventory_sale->map(function ($product) use ($sale, $units) {
                 $unit = $units[$product->unit_id] ?? null;
-                
+
                 return [
                     'ID' => $sale->id,
                     'Transaction Type' => $sale->transactions->type ?? '',
@@ -89,10 +89,14 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
 
     public function headings(): array
     {
+        $sale_date = Sale::get();
+        $fromDate = $sale_date->min('sale_date');
+        $toDate = $sale_date->max('sale_date');
+
         return [
             ['Lexerl Trading - Sales Detailed Report'],
-            ["From: " . ($this->startDate ?? 'All Time')],
-            ["To: " . ($this->endDate ?? 'All Time')],
+            ["From: " . ($this->startDate ?? $fromDate)],
+            ["To: " . ($this->endDate ?? $toDate)],
             [
                 'ID',
                 'Transaction Type',

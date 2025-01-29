@@ -75,10 +75,14 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function headings(): array
     {
+        $purchase_date = Purchases::get();
+        $fromDate = $purchase_date->min('purchase_date');
+        $toDate = $purchase_date->max('purchase_date');
+
         return [
             ['Lexerl Trading - Purchase In Report'],
-            ["From: " . ($this->startDate ?? 'All Time')],
-            ["To: " . ($this->endDate ?? 'All Time')],
+            ["From: " . ($this->startDate ?? $fromDate)],
+            ["To: " . ($this->endDate ?? $toDate)],
             [
                 'ID',
                 'Transaction Type',

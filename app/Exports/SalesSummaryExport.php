@@ -70,10 +70,13 @@ class SalesSummaryExport implements FromCollection, WithHeadings, WithStyles, Sh
 
     public function headings(): array
     {
+        $sale_date = Sale::get();
+        $fromDate = $sale_date->min('sale_date');
+        $toDate = $sale_date->max('sale_date');
         return [
             ['Lexerl Trading - Sales Summary Report'],
-            ["From: " . ($this->startDate ?? 'All Time')],
-            ["To: " . ($this->endDate ?? 'All Time')],
+            ["From: " . ($this->startDate ?? $fromDate)],
+            ["To: " . ($this->endDate ?? $toDate)],
             [
                 'ID',
                 'Transaction Type',
