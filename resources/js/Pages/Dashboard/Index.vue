@@ -8,10 +8,11 @@ import Chart from '@/Components/Chart.vue'
 import DashboardTooltip from './Partial/DashboardTooltip.vue'
 
 const props = defineProps({
-    total_sale: { type: Number },
-    total_purchase: { type: Number },
-    total_inventory: { type: Number },
-    total_collectible: { type: Number },
+    total_sale: { type: String },
+    total_purchase: { type: String },
+    total_inventory: { type: String },
+    total_collectible: { type: String },
+    total_gross_profit: { type: String },
     activity_logs: { type: Object },
     monthly_sales: { type: Object },
     chartData: { type: Object }
@@ -81,7 +82,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="mt-4 text-3xl text-[#772E25] truncate">
-                        <DashboardTooltip :value="((total_sale + total_inventory) - total_purchase)" />
+                        <DashboardTooltip :value="total_gross_profit" />
                     </CardContent>
                 </Card>
             </div>
@@ -95,7 +96,7 @@ const formattedDate = (value) => new Intl.DateTimeFormat('en-PH', {
                             </Link>
                         </CardTitle>
                     </CardHeader>
-                    <ScrollArea class="h-[450px] mr-2">
+                    <ScrollArea class="h-[565px] mr-2">
                         <CardContent class="grid gap-6">
                             <div v-for="log in activity_logs" :key="log"
                                 :class="['flex items-center justify-between p-2 rounded-lg']">
