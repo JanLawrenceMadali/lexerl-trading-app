@@ -46,9 +46,4 @@ class Purchases extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_id');
     }
-
-    public function products(): BelongsTo
-    {
-        return $this->belongsTo(Product::class, 'product_id');
-    }
 }

@@ -39,8 +39,7 @@ class SaleService
 
     public function getSales()
     {
-        return Sale::whereHas('inventory_sale')
-            ->with('products.categories', 'products.subcategories', 'statuses', 'customers', 'transactions')
+        return Sale::with('statuses', 'customers', 'transactions')
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($sale) {

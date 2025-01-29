@@ -22,13 +22,6 @@ class Sale extends Model
         'transaction_number',
     ];
 
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(Product::class, 'product_sale')
-            ->withPivot('quantity', 'amount', 'selling_price', 'unit_id', 'product_id')
-            ->withTimestamps();
-    }
-
     public function inventory_sale(): BelongsToMany
     {
         return $this->belongsToMany(Inventory::class, 'inventory_sale')

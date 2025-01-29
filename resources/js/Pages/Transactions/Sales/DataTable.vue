@@ -20,7 +20,6 @@ const props = defineProps({
     dues: Object,
     sales: Object,
     units: Object,
-    products: Object,
     customers: Object,
     categories: Object,
     inventories: Object,
@@ -245,7 +244,6 @@ const columns = [
             const units = props.units
             const sales = row.original;
             const customers = props.customers
-            const products = props.products
             const categories = props.categories
             const inventories = props.inventories
             const transactions = props.transactions
@@ -260,7 +258,6 @@ const columns = [
                     sales,
                     units,
                     customers,
-                    products,
                     categories,
                     inventories,
                     transactions,
@@ -409,7 +406,7 @@ const exportData = async () => {
                 </span>
             </Button>
             <Create :sales="sales" :categories="categories" :subcategories="subcategories" :customers="customers"
-                :transactions="transactions" :units="units" :dues="dues" :inventories="inventories" :products="products"
+                :transactions="transactions" :units="units" :dues="dues" :inventories="inventories"
                 @create-customer="handleCustomerCreated" @create-sale="handleSale" />
         </div>
     </div>

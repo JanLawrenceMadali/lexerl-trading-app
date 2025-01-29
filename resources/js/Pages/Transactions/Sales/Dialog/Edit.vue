@@ -21,7 +21,6 @@ const props = defineProps({
     dues: Object,
     sales: Object,
     units: Object,
-    products: Object,
     customers: Object,
     categories: Object,
     inventories: Object,

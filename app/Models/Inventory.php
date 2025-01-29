@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Inventory extends Model
 {
@@ -49,10 +48,5 @@ class Inventory extends Model
     public function units(): BelongsTo
     {
         return $this->belongsTo(Unit::class, 'unit_id');
-    }
-
-    public function products(): BelongsTo
-    {
-        return $this->belongsTo(Product::class, 'product_id');
     }
 }

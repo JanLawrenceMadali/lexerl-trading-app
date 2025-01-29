@@ -7,7 +7,6 @@ const props = defineProps({
     dues: Object,
     units: Object,
     sales: Object,
-    products: Object,
     customers: Object,
     categories: Object,
     inventories: Object,
@@ -32,7 +31,7 @@ const props = defineProps({
                 <CardContent>
                     <DataTable :sales="sales" :categories="categories" :subcategories="subcategories"
                         :customers="customers" :transactions="transactions" :units="units" :dues="dues"
-                        :inventories="inventories" :products="products" />
+                        :inventories="inventories" />
                 </CardContent>
                 <CardFooter>
                 </CardFooter>

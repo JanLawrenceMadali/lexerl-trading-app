@@ -10,7 +10,6 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\DueDate;
 use App\Models\Inventory;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Transaction;
@@ -45,7 +44,6 @@ class SalesController extends Controller
     {
         $units = Unit::orderBy('name')->get();
         $dues = DueDate::get();
-        $products = Product::get();
         $categories = Category::orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
         $customers = Customer::orderBy('name')->get();
@@ -57,7 +55,6 @@ class SalesController extends Controller
             'dues' => $dues,
             'units' => $units,
             'sales' => $sales,
-            'products' => $products,
             'customers' => $customers,
             'categories' => $categories,
             'inventories' => $inventories,
@@ -414,16 +411,12 @@ class SalesController extends Controller
 
                 foreach ($sale->inventory_sale as $product) {
                     $inventory = Inventory::where([
-                        'category_id' => $product->category_id,
-                        'subcategory_id' => $product->subcategory_id,
-                        'unit_id' => $product->unit_id
+                        'id' => $product->pivot->inventory_id
                     ])->lockForUpdate()->firstOrFail();
 
                     if ($inventory) {
                         // Validate inventory quantity doesn't exceed any maximum limits
                         $newQuantity = $inventory->quantity + $product->quantity;
-                        // Could add a check here if you have a max_quantity constraint
-
                         $inventory->quantity = $newQuantity;
                         $inventory->save();
                     } else {
