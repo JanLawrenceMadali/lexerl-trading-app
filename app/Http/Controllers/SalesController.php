@@ -384,26 +384,54 @@ class SalesController extends Controller
 
     private function deductInventory(Inventory $inventory, array $product)
     {
+        // Find all matching inventory items, ordered by creation date (oldest first)
         $currentInventory = $inventory->where([
             'category_id' => $product['category_id'],
             'subcategory_id' => $product['subcategory_id'],
             'unit_id' => $product['unit_id']
-        ])->get();
+        ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($currentInventory->isEmpty()) {
+            return false;
+        }
 
         $totalQuantity = $currentInventory->sum('quantity');
 
-        $newTotalQuantity = round(max(0, $totalQuantity - $product['quantity']), 2);
-
-        if ($newTotalQuantity <= 0.01) {
-            foreach ($currentInventory as $item) {
-                $item->update(['quantity' => 0]);
-            }
-            return true;
+        // If trying to deduct more than available, return false
+        if ($totalQuantity < $product['quantity']) {
+            return false;
         }
 
-        $inventory->update(['quantity' => $newTotalQuantity]);
-    }
+        $remainingToDeduct = $product['quantity'];
 
+        // Process each inventory item in FIFO order
+        foreach ($currentInventory as $item) {
+            if ($remainingToDeduct <= 0) {
+                break;
+            }
+
+            $deductFromCurrent = min($item->quantity, $remainingToDeduct);
+            $newQuantity = round(max(0, $item->quantity - $deductFromCurrent), 2);
+
+            $item->update(['quantity' => $newQuantity]);
+
+            $remainingToDeduct -= $deductFromCurrent;
+        }
+
+        // Verify all quantity was deducted
+        if ($remainingToDeduct > 0.01) {
+            // This shouldn't happen if our initial checks were correct
+            \Log::error('Inventory deduction failed to process complete quantity', [
+                'product' => $product,
+                'remaining' => $remainingToDeduct
+            ]);
+            return false;
+        }
+
+        return true;
+    }
     public function destroy(Sale $sale)
     {
         try {
@@ -416,7 +444,7 @@ class SalesController extends Controller
 
                     if ($inventory) {
                         // Validate inventory quantity doesn't exceed any maximum limits
-                        $newQuantity = $inventory->quantity + $product->quantity;
+                        $newQuantity = $inventory->quantity + $product->pivot->quantity;
                         $inventory->quantity = $newQuantity;
                         $inventory->save();
                     } else {

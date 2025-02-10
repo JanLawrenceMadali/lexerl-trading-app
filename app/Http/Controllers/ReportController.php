@@ -54,7 +54,7 @@ class ReportController extends Controller
                     'category' => $item->category_name,
                     'subcategory' => $item->subcategory_name,
                     'unit' => $item->unit,
-                    'quantity' => Number::format($item->total_quantity) . ' left',
+                    'quantity' => Number::format($item->total_quantity, 2) . ' left',
                 ];
             });
 
