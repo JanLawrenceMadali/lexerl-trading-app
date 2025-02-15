@@ -174,6 +174,7 @@ const totalQuantity = computed(() => {
 const isOpen = ref(false);
 
 const closeModal = () => {
+    selectedDate.value = null;
     isOpen.value = false;
     form.reset();
     form.clearErrors();
