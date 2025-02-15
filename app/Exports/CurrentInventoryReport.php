@@ -21,7 +21,6 @@ class CurrentInventoryReport implements FromCollection, WithHeadings, WithStyles
         $query = Inventory::with('categories', 'subcategories', 'units')
             ->where('quantity', '>', 0);
 
-
         $units = Unit::all()->keyBy('id');
 
         $inventory = $query->get()
