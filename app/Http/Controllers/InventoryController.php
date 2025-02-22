@@ -7,7 +7,7 @@ use App\Http\Requests\InventoryRequest;
 use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Inventory;
-use App\Models\Purchases;
+use App\Models\Purchase;
 use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -61,7 +61,7 @@ class InventoryController extends Controller
                 $data = $this->inventoryService->prepareInventoryData($inventoryRequest->validated());
 
                 $inventory = Inventory::create($data);
-                Purchases::create($data);
+                Purchase::create($data);
 
                 $this->logInventoryActivity(
                     ActivityLog::ACTION_CREATED,
@@ -100,7 +100,7 @@ class InventoryController extends Controller
 
                 // Perform updates
                 $inventory->update($updateData);
-                Purchases::where('id', $inventory->id)->update($updateData);
+                Purchase::where('id', $inventory->id)->update($updateData);
 
                 $this->logInventoryActivity(
                     ActivityLog::ACTION_UPDATED,
@@ -125,7 +125,7 @@ class InventoryController extends Controller
                 $oldData = $inventory->toArray();
 
                 $inventory->delete();
-                Purchases::where('id', $inventory->id)->delete();
+                Purchase::where('id', $inventory->id)->delete();
 
                 $this->logInventoryActivity(
                     ActivityLog::ACTION_DELETED,

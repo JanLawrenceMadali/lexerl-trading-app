@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Inventory;
-use App\Models\Purchases;
+use App\Models\Purchase;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -11,7 +11,7 @@ class InventoryService
 {
     public function getFormattedInventories()
     {
-        return Purchases::with(['units', 'suppliers', 'categories', 'subcategories', 'transactions'])
+        return Purchase::with(['units', 'suppliers', 'categories', 'subcategories', 'transactions'])
             ->orderBy('purchases.id', 'desc')
             ->get()
             ->map(function ($inventory) {

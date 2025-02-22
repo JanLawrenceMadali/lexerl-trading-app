@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Inventory;
-use App\Models\Purchases;
+use App\Models\Purchase;
 use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Support\Number;
@@ -22,7 +22,7 @@ class DashboardController extends Controller
         });
 
         $total_sale = $sale->sum('total_amount');
-        $total_purchase = Purchases::sum('amount');
+        $total_purchase = Purchase::sum('amount');
         $total_inventory = $inventory->sum('total_amount');
         $activity_logs = ActivityLog::with('users')->latest()->get();
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');

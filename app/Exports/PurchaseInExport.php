@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Purchases;
+use App\Models\Purchase;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -26,7 +26,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function collection()
     {
-        $query = Purchases::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
+        $query = Purchase::with(['units', 'suppliers', 'transactions', 'categories', 'subcategories'])
             ->where('quantity', '>', 0);
 
         if ($this->startDate && $this->endDate) {
@@ -75,7 +75,7 @@ class PurchaseInExport implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function headings(): array
     {
-        $purchase_date = Purchases::get();
+        $purchase_date = Purchase::get();
         $fromDate = $purchase_date->min('purchase_date');
         $toDate = $purchase_date->max('purchase_date');
 
