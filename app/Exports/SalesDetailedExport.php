@@ -16,55 +16,115 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, ShouldAutoSize
 {
-    protected $startDate;
-    protected $endDate;
+    protected ?string $startDate;
+    protected ?string $endDate;
 
     public function __construct($startDate = null, $endDate = null)
     {
-        $this->startDate = $startDate !== "null" ? Carbon::parse($startDate)->format('Y-m-d') : null;
-        $this->endDate = $endDate !== "null" ? Carbon::parse($endDate)->format('Y-m-d') : null;
+        $this->startDate = $this->parseDate($startDate);
+        $this->endDate = $this->parseDate($endDate);
+    }
+
+    private function parseDate($date): ?string
+    {
+        return $date !== "null" ? Carbon::parse($date)->format('Y-m-d') : null;
     }
 
     public function collection()
     {
-        $query = Sale::whereHas('inventory_sale')
-            ->with('inventory_sale.categories', 'inventory_sale.subcategories', 'statuses', 'customers', 'transactions');
+        $sales = $this->fetchSales();
+        $units = Unit::all()->keyBy('id');
+
+        $salesData = $sales->flatMap(fn($sale) => $this->transformSale($sale, $units))->values();
+        $this->appendTotalAmountRow($salesData, $sales);
+
+        return $salesData;
+    }
+
+    private function fetchSales()
+    {
+        $query = Sale::with([
+            'inventory_sale.categories',
+            'inventory_sale.subcategories',
+            'statuses',
+            'customers',
+            'transactions'
+        ])
+            ->select('sales.*')
+            ->join('inventory_sale', 'sales.id', '=', 'inventory_sale.sale_id')
+            ->groupBy([
+                'inventory_sale.sale_id',
+                'inventory_sale.unit_id',
+                'inventory_sale.category_id',
+                'inventory_sale.subcategory_id'
+            ]);
 
         if ($this->startDate && $this->endDate) {
             $query->whereBetween('sale_date', [$this->startDate, $this->endDate]);
         }
 
-        $sales = $query->get();
+        return $query->get();
+    }
 
-        $units = Unit::all()->keyBy('id');
+    private function transformSale($sale, $units)
+    {
+        $totals = $this->calculateTotals($sale);
 
-        $salesData = $sales->flatMap(function ($sale) use ($units) {
-            return $sale->inventory_sale->map(function ($product) use ($sale, $units) {
-                $unit = $units[$product->unit_id] ?? null;
+        return $sale->inventory_sale->groupBy(fn($item) => $this->generateKey($item->pivot))
+            ->map(fn($group) => $this->mapSaleGroup($group, $sale, $units, $totals));
+    }
 
-                return [
-                    'ID' => $sale->id,
-                    'Transaction Type' => $sale->transactions->type ?? '',
-                    'Transaction Number' => $sale->transaction_number,
-                    'Sale Date' => $sale->sale_date,
-                    'Customer Name' => $sale->customers->name ?? '',
-                    'Category' => $product->categories->name ?? '',
-                    'Subcategory' => $product->subcategories->name ?? '',
-                    'Quantity' => $product->pivot->quantity,
-                    'UM' => $unit->abbreviation ?? '',
-                    'Selling Price' => '₱' . number_format($product->pivot->selling_price, 2),
-                    'Amount' => '₱' . number_format($product->pivot->amount, 2),
-                    'Status' => $sale->statuses->name ?? '',
-                    'Due Date' => $sale->dues->days ?? '',
-                    'Description' => $sale->description,
-                    'Created At' => $sale->created_at->format('Y-m-d h:i A'),
-                ];
-            });
-        });
+    private function calculateTotals($sale)
+    {
+        return $sale->inventory_sale->groupBy(fn($item) => $this->generateKey($item->pivot))
+            ->map(fn($group) => [
+                'total_quantity' => $group->sum('pivot.quantity'),
+                'total_amount' => $group->sum('pivot.amount')
+            ]);
+    }
 
-        $totalAmount = $sales->sum(function ($sale) {
-            return $sale->inventory_sale->sum('pivot.amount');
-        });
+    private function generateKey($pivot): string
+    {
+        return implode('-', [
+            $pivot->sale_id,
+            $pivot->unit_id,
+            $pivot->category_id,
+            $pivot->subcategory_id
+        ]);
+    }
+
+    private function mapSaleGroup($group, $sale, $units, $totals)
+    {
+        $product = $group->first();
+        $identifier = $this->generateKey($product->pivot);
+        $total = $totals[$identifier] ?? ['total_quantity' => 0, 'total_amount' => 0];
+        $unit = $units[$product->pivot->unit_id] ?? null;
+
+        return [
+            'ID' => $sale->id,
+            'Transaction Type' => $sale->transactions->type ?? '',
+            'Transaction Number' => $sale->transaction_number,
+            'Sale Date' => $sale->sale_date,
+            'Customer Name' => $sale->customers->name ?? '',
+            'Category' => $product->categories->name ?? '',
+            'Subcategory' => $product->subcategories->name ?? '',
+            'Quantity' => $total['total_quantity'],
+            'UM' => $unit->abbreviation ?? '',
+            'Selling Price' => '₱' . number_format($product->pivot->selling_price, 2),
+            'Amount' => '₱' . number_format($total['total_amount'], 2),
+            'Status' => $sale->statuses->name ?? '',
+            'Due Date' => $sale->dues->days ?? '',
+            'Description' => $sale->description,
+            'Created At' => $sale->created_at->format('Y-m-d h:i A'),
+        ];
+    }
+
+    private function appendTotalAmountRow(&$salesData, $sales)
+    {
+        $totalAmount = $sales->flatMap(fn($sale) => $sale->inventory_sale
+            ->groupBy(fn($item) => $this->generateKey($item->pivot))
+            ->map(fn($group) => $group->sum('pivot.amount')))
+            ->sum();
 
         $salesData->push([
             'ID' => '',
@@ -83,20 +143,15 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
             'Description' => '',
             'Created At' => '',
         ]);
-
-        return $salesData;
     }
 
     public function headings(): array
     {
         $sale_date = Sale::get();
-        $fromDate = $sale_date->min('sale_date');
-        $toDate = $sale_date->max('sale_date');
-
         return [
             ['Lexerl Trading - Sales Detailed Report'],
-            ["From: " . ($this->startDate ?? $fromDate)],
-            ["To: " . ($this->endDate ?? $toDate)],
+            ["From: " . ($this->startDate ?? $sale_date->min('sale_date'))],
+            ["To: " . ($this->endDate ?? $sale_date->max('sale_date'))],
             [
                 'ID',
                 'Transaction Type',
@@ -119,43 +174,38 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
 
     public function styles(Worksheet $sheet)
     {
-        // Merge title and style it
         $sheet->mergeCells('A1:O1');
         $sheet->getStyle('A1:O1')->applyFromArray([
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'font' => ['bold' => true, 'size' => 18],
         ]);
 
-        // Style date range rows
         $sheet->mergeCells('A2:O2');
         $sheet->mergeCells('A3:O3');
         $sheet->getStyle('A2:O3')->applyFromArray([
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'font' => ['italic' => true, 'size' => 12],
         ]);
 
-        // Style header row
         $sheet->getStyle('A4:O4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F81BD']],
         ]);
 
-        // Style all data rows and add borders
         $lastRow = $sheet->getHighestRow();
         $sheet->getStyle("A4:O{$lastRow}")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
 
-        // Highlight the total row
         $sheet->getStyle("A{$lastRow}:O{$lastRow}")->applyFromArray([
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF99']],
             'font' => ['bold' => true],
         ]);
 
         return [
-            4   => ['font' => ['bold' => true, 'size' => 12]], // Headings row
-            'A' => ['alignment' => ['horizontal' => 'center']], // Center align column A
+            4   => ['font' => ['bold' => true, 'size' => 12]],
+            'A' => ['alignment' => ['horizontal' => 'center']],
         ];
     }
 }
