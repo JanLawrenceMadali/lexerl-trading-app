@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\DueDate;
 use App\Models\Inventory;
+use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Transaction;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+
+use function Pest\Laravel\get;
 
 class SalesController extends Controller
 {
@@ -167,16 +170,33 @@ class SalesController extends Controller
         $validationErrors = [];
         $processedInventoryIds = [];
 
-        foreach ($products as $index => $product) {
-            // Get all matching inventory records
-            $inventory = Inventory::with('inventory_sale');
+        // **Handle product deletion first (only for updates)**
+        if ($action === 'update' && !empty($productDeleted)) {
+            foreach ($productDeleted as $deletedProduct) {
+                $returnInventory = Inventory::where([
+                    'category_id' => $deletedProduct['category_id'],
+                    'subcategory_id' => $deletedProduct['subcategory_id'],
+                    'unit_id' => $deletedProduct['unit_id']
+                ])->first();
 
-            $inventories = $inventory->where([
-                'category_id' => $product['category_id'],
-                'subcategory_id' => $product['subcategory_id'],
-                'unit_id' => $product['unit_id']
-            ])->lockForUpdate()
-                ->get();
+                if ($returnInventory) {
+                    $returnInventory->increment('quantity', $deletedProduct['quantity']);
+                }
+            }
+        }
+
+        // **Lock necessary inventory records upfront to reduce deadlocks**
+        $inventoryIds = Inventory::whereIn('category_id', array_column($products, 'category_id'))
+            ->whereIn('subcategory_id', array_column($products, 'subcategory_id'))
+            ->whereIn('unit_id', array_column($products, 'unit_id'))
+            ->pluck('id');
+
+        $lockedInventories = Inventory::with('inventory_sale')->whereIn('id', $inventoryIds)->get();
+
+        foreach ($products as $index => $product) {
+            $inventories = $lockedInventories->where('category_id', $product['category_id'])
+                ->where('subcategory_id', $product['subcategory_id'])
+                ->where('unit_id', $product['unit_id']);
 
             $totalQuantityInput = round($product['quantity'], 2);
             $currentTotalQuantity = $inventories->sum('quantity');
@@ -186,104 +206,72 @@ class SalesController extends Controller
                 continue;
             }
 
-            // Validate total available quantity
+            // **Validate available quantity**
             if ($action === 'create' && $currentTotalQuantity < $totalQuantityInput) {
                 $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$currentTotalQuantity} units available.";
                 continue;
             }
 
-            // Check for duplicates in the products list
+            // **Check for duplicates**
             foreach ($products as $key => $existingItem) {
-                if ($key === $index) {
-                    continue;
-                }
-
                 if (
+                    $key !== $index &&
                     $existingItem['category_id'] === $product['category_id'] &&
                     $existingItem['subcategory_id'] === $product['subcategory_id'] &&
                     $existingItem['unit_id'] === $product['unit_id']
                 ) {
+
                     $category = Category::find($product['category_id'])->name;
                     $subcategory = Subcategory::find($product['subcategory_id'])->name;
                     $unit = Unit::find($product['unit_id'])->abbreviation;
 
                     $validationErrors["products.{$index}.duplicate"] =
-                        "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
+                        "{$category}, {$subcategory} and, {$unit} are already exists in the list of item. Please choose a different item.";
                     break;
                 }
             }
 
-            // Handle product deletion during update
-            if ($action === 'update' && $productDeleted) {
-                foreach ($productDeleted as $deletedProduct) {
-                    $returnInventory = Inventory::where([
-                        'category_id' => $deletedProduct['category_id'],
-                        'subcategory_id' => $deletedProduct['subcategory_id'],
-                        'unit_id' => $deletedProduct['unit_id']
-                    ])->lockForUpdate()->first();
-
-                    if ($returnInventory) {
-                        $returnInventory->increment('quantity', $deletedProduct['quantity']);
-                    }
-                }
-            }
-
-            // Process each inventory record
+            // **Process inventory adjustments**
             foreach ($inventories as $inventory) {
-                if ($totalQuantityInput <= 0) {
-                    break;
-                }
-
-                $quantityFromThis = min($totalQuantityInput, $inventory->quantity);
-
-                // Calculate proportional amount
+                $processedInventoryIds[] = $inventory->id;
                 $unitAmount = $product['amount'] / $product['quantity'];
-                $amountForThis = round($quantityFromThis * $unitAmount, 2);
 
                 if ($action === 'create') {
+                    if ($inventory->quantity == 0) continue;
+
+                    $quantityFromThis = min($totalQuantityInput, $inventory->quantity);
+                    $amountForThis = round($quantityFromThis * $unitAmount, 2);
+
                     // Deduct from inventory
-                    $inventory->quantity -= $quantityFromThis;
-                    $inventory->save();
-                } elseif ($action === 'update' && $existingSale) {
-                    // To Do
-                    foreach ($existingSale->inventory_sale as $saleItem) {
-                        $inventory = $inventory->where([
-                            'id' => $saleItem->pivot->secondary_id,
-                            'category_id' => $saleItem->pivot->category_id,
-                            'subcategory_id' => $saleItem->pivot->subcategory_id,
-                            'unit_id' => $saleItem->pivot->unit_id
-                        ])->get();
-                        dd($inventory);
-                    }
+                    $inventory->decrement('quantity', $quantityFromThis);
+
+                    $productAttachments[$inventory->id] = [
+                        'amount' => $amountForThis,
+                        'purchase_id' => $inventory->id,
+                        'quantity' => $quantityFromThis,
+                        'unit_id' => $product['unit_id'],
+                        'category_id' => $product['category_id'],
+                        'selling_price' => $product['selling_price'],
+                        'subcategory_id' => $product['subcategory_id'],
+                        'inventory_id' => $inventory->id === $inventory->id,
+                    ];
+                    $totalQuantityInput -= $quantityFromThis;
+                } elseif ($action === 'update') {
+                    // To Do: Implement update logic
                 }
+            }
+        }
 
-                $processedInventoryIds[] = $inventory->id;
+        // **Round very small inventory values to zero**
+        if (!empty($processedInventoryIds)) {
+            $inventoriesToCheck = Inventory::whereIn('id', array_unique($processedInventoryIds))
+                ->lockForUpdate()
+                ->get();
 
-                if (!empty($processedInventoryIds)) {
-                    $inventoriesToCheck = Inventory::whereIn('id', array_unique($processedInventoryIds))
-                        ->lockForUpdate()
-                        ->get();
-                    foreach ($inventoriesToCheck as $inventory) {
-                        $roundedQuantity = round($inventory->quantity, 2);
-                        if ($roundedQuantity <= 0.01) {
-                            $inventory->update(['quantity' => 0]);
-                        }
-                    }
+            foreach ($inventoriesToCheck as $inventoryArray) {
+                if (round($inventoryArray->quantity, 2) <= 0.01) {
+                    $inventoryArray->update(['quantity' => 0]);
                 }
-
-                // Record the attachment
-                $productAttachments[$inventory->id] = [
-                    'amount' => $amountForThis,
-                    'quantity' => $quantityFromThis,
-                    'secondary_id' => $inventory->id,
-                    'unit_id' => $product['unit_id'],
-                    'category_id' => $product['category_id'],
-                    'selling_price' => $product['selling_price'],
-                    'subcategory_id' => $product['subcategory_id'],
-                    'inventory_id' => $inventory->id === $inventory->id,
-                ];
-
-                $totalQuantityInput -= $quantityFromThis;
             }
         }
 
@@ -316,198 +304,6 @@ class SalesController extends Controller
             in_array($e->getCode(), [1213, 1205]); // MySQL deadlock codes
     }
 
-    private function validateInventoryForCreate(
-        ?Inventory $inventory,
-        array $product,
-        array $products,
-        int $index,
-        array &$validationErrors
-    ): void {
-        // Collect all validation errors before returning
-        if (!$inventory) {
-            $validationErrors["products.{$index}.quantity"] = "Inventory not found.";
-        }
-
-        $currentInventory = $inventory->where([
-            'category_id' => $product['category_id'],
-            'subcategory_id' => $product['subcategory_id'],
-            'unit_id' => $product['unit_id']
-        ])->get();
-
-        $totalQuantity = $currentInventory->sum('quantity');
-
-        if ($totalQuantity < 0) {
-            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$totalQuantity} available.";
-        }
-
-        foreach ($products as $key => $existingItem) {
-            if ($key === $index) {
-                continue;
-            }
-
-            if (
-                $existingItem['category_id'] === $product['category_id'] &&
-                $existingItem['subcategory_id'] === $product['subcategory_id'] &&
-                $existingItem['unit_id'] === $product['unit_id']
-            ) {
-                // Get the category, subcategory, and unit names
-                $category = Category::find($product['category_id'])->name;
-                $subcategory = Subcategory::find($product['subcategory_id'])->name;
-                $unit = Unit::find($product['unit_id'])->abbreviation;
-
-                $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
-                break; // Break after finding first duplicate
-            }
-        }
-    }
-
-    private function validateInventoryForUpdate(?Inventory $inventory, array $product, array $products, int $index, Sale $existingSale, array &$validationErrors, array $productDeleted): bool
-    {
-        // Ensure inventory exists
-        if (!$inventory) {
-            $validationErrors["products.{$index}.inventory"] = "Inventory not found.";
-            return false;
-        }
-
-        // Fetch the existing sale product and its quantity
-        $existingSaleProduct = $existingSale->inventory_sale()->wherePivot('inventory_id', $inventory->id)->first();
-        $oldSaleQuantity = $existingSaleProduct ? $existingSaleProduct->pivot->sum('quantity') : 0;
-
-        // Calculate new sale quantities and differences
-        $newSaleQuantity = $product['quantity'];
-        $quantityDifference = round($oldSaleQuantity - $newSaleQuantity, 2);
-
-        // Fetch all matching inventory items, ordered by priority (e.g., by ID)
-        $matchingInventoryItems = $inventory->where([
-            'category_id' => $product['category_id'],
-            'subcategory_id' => $product['subcategory_id'],
-            'unit_id' => $product['unit_id']
-        ])->get();
-
-        // Calculate the total quantity of matching items
-        $totalQuantity = $matchingInventoryItems->sum('quantity');
-        $newTotalQuantity = $totalQuantity + $quantityDifference;
-
-        // Check if the inventory quantity is sufficient
-        if ($newTotalQuantity < 0) {
-            $validationErrors["products.{$index}.quantity"] = "Requested quantity is insufficient. Only {$totalQuantity} available.";
-            return false;
-        }
-
-        if ($productDeleted) {
-            foreach ($productDeleted as $index => $deletedProduct) {
-                $returnDeletedProduct = Inventory::where([
-                    'category_id' => $deletedProduct['category_id'],
-                    'subcategory_id' => $deletedProduct['subcategory_id'],
-                    'unit_id' => $deletedProduct['unit_id']
-                ])->get();
-
-                foreach ($returnDeletedProduct as $item) {
-                    $item->increment('quantity', $deletedProduct['quantity']);
-                }
-            }
-        }
-
-        // Handle edge case where new total quantity is very small
-        if ($newTotalQuantity <= 0.01) {
-            foreach ($matchingInventoryItems as $item) {
-                $item->update(['quantity' => 0]);
-            }
-            return true; // Early exit since all quantities are set to zero
-        }
-
-        // Consume inventory items based on priority
-        $remainingDifference = abs($quantityDifference);
-
-        foreach ($existingSale->inventory_sale as $saleItem) {
-            $inventory = $inventory->with('inventory_sale')
-                ->where([
-                    'id' => $saleItem->pivot->secondary_id,
-                    'category_id' => $saleItem->pivot->category_id,
-                    'subcategory_id' => $saleItem->pivot->subcategory_id,
-                    'unit_id' => $saleItem->pivot->unit_id
-                ])->get();
-
-            if ($quantityDifference < 0) {
-                $consumable = min($remainingDifference, $item->quantity);
-                $inventory->decrement('quantity', $consumable);
-                $remainingDifference -= $consumable;
-            } else {
-                $inventory->increment('quantity', $remainingDifference);
-                $remainingDifference = 0; // Fully replenished
-                break;
-            }
-        }
-
-        foreach ($products as $key => $existingItem) {
-            if ($key === $index) {
-                continue;
-            }
-
-            // Check for duplicates in the product list
-            if (
-                $existingItem['category_id'] === $product['category_id'] &&
-                $existingItem['subcategory_id'] === $product['subcategory_id'] &&
-                $existingItem['unit_id'] === $product['unit_id']
-            ) {
-                // Get the category, subcategory, and unit names
-                $category = Category::find($product['category_id'])->name;
-                $subcategory = Subcategory::find($product['subcategory_id'])->name;
-                $unit = Unit::find($product['unit_id'])->abbreviation;
-
-                $validationErrors["products.{$index}.duplicate"] = "{$category} {$subcategory} ({$unit}) already exists. Please choose a different item.";
-                break;
-            }
-        }
-
-        // Validation successful
-        return true;
-    }
-
-    private function deductInventory(Inventory $inventory, array $product)
-    {
-        // Find all matching inventory items, ordered by creation date (oldest first)
-        $currentInventory = $inventory->where([
-            'category_id' => $product['category_id'],
-            'subcategory_id' => $product['subcategory_id'],
-            'unit_id' => $product['unit_id']
-        ])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        if ($currentInventory->isEmpty()) {
-            return false;
-        }
-
-        $totalQuantity = $currentInventory->sum('quantity');
-
-        // If trying to deduct more than available, return false
-        if ($totalQuantity < $product['quantity']) {
-            return false;
-        }
-
-        $remainingToDeduct = $product['quantity'];
-
-        // Process each inventory item in FIFO order
-        foreach ($currentInventory as $item) {
-            if ($remainingToDeduct <= 0) {
-                break;
-            }
-
-            $deductFromCurrent = min($item->quantity, $remainingToDeduct);
-            $newQuantity = round(max(0, $item->quantity - $deductFromCurrent), 2);
-
-            if ($newQuantity <= 0.01) {
-                $item->update(['quantity' => 0]);
-            } else {
-                $item->update(['quantity' => $newQuantity]);
-            }
-
-            $remainingToDeduct -= $deductFromCurrent;
-        }
-        return true;
-    }
-
     public function destroy(Sale $sale)
     {
         try {
@@ -515,7 +311,7 @@ class SalesController extends Controller
 
                 foreach ($sale->inventory_sale as $product) {
                     $inventory = Inventory::where([
-                        'id' => $product->pivot->secondary_id,
+                        'id' => $product->pivot->purchase_id
                     ])->lockForUpdate()->firstOrFail();
 
                     if ($inventory) {
