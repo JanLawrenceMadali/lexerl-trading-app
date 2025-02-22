@@ -54,7 +54,7 @@ class Inventory extends Model
     public function inventory_sale(): BelongsToMany
     {
         return $this->belongsToMany(Sale::class, 'inventory_sale')
-            ->withPivot('secondary_id', 'quantity', 'amount', 'selling_price')
+            ->withPivot('quantity', 'amount', 'selling_price', 'unit_id', 'category_id', 'subcategory_id', 'purchase_id')
             ->withTimestamps();
     }
 }
