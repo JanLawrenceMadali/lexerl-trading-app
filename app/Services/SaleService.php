@@ -79,11 +79,9 @@ class SaleService
                     'inventory_sale' => collect($sale->inventory_sale)
                         ->groupBy(function ($item) {
                             return implode('-', [
-                                $item->inventory_id,
                                 $item->unit_id,
                                 $item->category_id,
                                 $item->subcategory_id,
-                                $item->selling_price
                             ]);
                         })
                         ->map(function ($group) {
@@ -98,7 +96,7 @@ class SaleService
                                 'subcategory_id' => $first->subcategory_id,
                                 'subcategory_name' => $first->subcategories?->name,
                                 'amount' => $group->sum('amount'),
-                                'quantity' => $group->sum('quantity'),
+                                'quantity' => round($group->sum('quantity'), 2),
                                 'selling_price' => $first->selling_price,
                             ];
                         })
