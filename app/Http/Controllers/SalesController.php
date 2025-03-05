@@ -239,18 +239,18 @@ class SalesController extends Controller
             }
 
             $availableInventories = $inventories->sortBy('id');
-            $unitAmount = $product['amount'] / $product['quantity'];
-            $quantityToDeduct = $totalQuantityInput;
 
             if ($action === 'create') {
+                $currentQuantity = $inventories->sum('quantity');
+                $quantityDifference = $totalQuantityInput - $currentQuantity;
+                $quantityToDeduct = abs($quantityDifference);
+
                 foreach ($availableInventories as $inventory) {
                     if ($quantityToDeduct <= 0) break;
 
                     $deductQty = min($quantityToDeduct, $inventory->quantity);
-                    $amountForThis = round($deductQty * $unitAmount, 2);
 
                     $inventory->decrement('quantity', $deductQty);
-
                     if (round($inventory->quantity, 2) <= 0.01) {
                         $inventory->update([
                             'quantity' => 0,
@@ -260,9 +260,11 @@ class SalesController extends Controller
                         $inventory->update(['amount' => $inventory->quantity * $inventory->landed_cost]);
                     }
 
+                    $newQuantity = $deductQty - $inventory->quantity;
+                    dd($deductQty, $inventory->quantity);
                     $inventoryAttachments[$inventory->id] = [
-                        'amount' => $amountForThis,
-                        'quantity' => $deductQty,
+                        'quantity' => $newQuantity,
+                        'amount' => $newQuantity * $inventory->landed_cost,
                         'unit_id' => $product['unit_id'],
                         'category_id' => $product['category_id'],
                         'selling_price' => $product['selling_price'],
