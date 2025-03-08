@@ -241,9 +241,8 @@ class SalesController extends Controller
             $availableInventories = $inventories->sortBy('id');
 
             if ($action === 'create') {
-                $currentQuantity = $inventories->sum('quantity');
-                $quantityDifference = $totalQuantityInput - $currentQuantity;
-                $quantityToDeduct = abs($quantityDifference);
+                $availableInventories = $inventories->sortBy('id');
+                $quantityToDeduct = $totalQuantityInput;
 
                 foreach ($availableInventories as $inventory) {
                     if ($quantityToDeduct <= 0) break;
@@ -260,11 +259,9 @@ class SalesController extends Controller
                         $inventory->update(['amount' => $inventory->quantity * $inventory->landed_cost]);
                     }
 
-                    $newQuantity = $deductQty - $inventory->quantity;
-                    dd($deductQty, $inventory->quantity);
                     $inventoryAttachments[$inventory->id] = [
-                        'quantity' => $newQuantity,
-                        'amount' => $newQuantity * $inventory->landed_cost,
+                        'quantity' => $deductQty,
+                        'amount' => $deductQty * $product['selling_price'],
                         'unit_id' => $product['unit_id'],
                         'category_id' => $product['category_id'],
                         'selling_price' => $product['selling_price'],
@@ -276,7 +273,6 @@ class SalesController extends Controller
 
                 if ($quantityToDeduct > 0) {
                     $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$currentTotalQuantity} units available.";
-                    continue;
                 }
             }
 
