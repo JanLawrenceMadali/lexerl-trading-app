@@ -15,15 +15,24 @@ class DatabaseBackupService
         $backupDirectory = storage_path('app/backups');
 
         if (file_exists($backupDirectory)) {
-            $files = scandir($backupDirectory, SCANDIR_SORT_DESCENDING);
+            $files = array_diff(scandir($backupDirectory), ['.', '..']);
+            $filesWithInfo = [];
+
             foreach ($files as $file) {
-                if ($file != '.' && $file != '..') {
-                    $backups[] = $file;
-                }
+                $filePath = $backupDirectory . '/' . $file;
+                $filesWithInfo[] = [
+                    'name' => $file,
+                    'modified' => filemtime($filePath) // Get last modified timestamp
+                ];
             }
+
+            // Sort by modification time (most recent first)
+            usort($filesWithInfo, fn($a, $b) => $b['modified'] - $a['modified']);
+
+            return $filesWithInfo; // Return name & modified timestamp
         }
 
-        return $backups;
+        return [];
     }
 
     public function createManualBackup(string $filename): bool
@@ -107,9 +116,8 @@ class DatabaseBackupService
 
             $backupPath = storage_path("app/backups/{$timestamp}_database.sqlite");
 
-            if (File::exists($databasePath)) {
-                File::copy($databasePath, $backupPath);
-            }
+            $uploadedBackupPath = storage_path("app/backups/{$timestamp}_uploaded_backup.sqlite");
+            File::copy($file->getPathname(), $uploadedBackupPath);
 
             // Close existing database connections
             DB::disconnect();
