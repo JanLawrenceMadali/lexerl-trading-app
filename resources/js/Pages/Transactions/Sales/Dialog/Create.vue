@@ -257,6 +257,12 @@ const formatRemainingQuantity = (quantity) => {
     });
 }
 
+// Format number function
+const formatNumber = (value) => {
+    if (value === null || value === undefined) return 0;
+    return Number(parseFloat(value).toFixed(2));
+};
+
 const validateQuantity = (event, index) => {
     const value = parseFloat(event.target.value);
     const max = totalQuantity.value[index];
@@ -267,16 +273,27 @@ const validateQuantity = (event, index) => {
         return;
     }
 
+    // Format values to fix floating point precision
+    const formattedValue = formatNumber(value);
+    const formattedMax = formatNumber(max);
+
     // Ensure quantity doesn't exceed total quantity
-    if (value > max) {
-        form.products[index].quantity = max;
+    if (formattedValue > formattedMax) {
+        form.products[index].quantity = formattedMax;
+    } else {
+        form.products[index].quantity = formattedValue;
     }
 
     // Ensure quantity is not negative
-    if (value < 0) {
+    if (formattedValue < 0) {
         form.products[index].quantity = 0;
     }
-}
+
+    // Update amount if needed
+    if (form.products[index].selling_price) {
+        form.products[index].amount = formatNumber(form.products[index].quantity * form.products[index].selling_price);
+    }
+};
 
 // clear errors when input/select value is not empty
 watch(
@@ -421,22 +438,28 @@ watch(
                                     <TableHeader class="bg-slate-100">
                                         <TableRow>
                                             <TableHead><span class="sr-only">Index</span></TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Category
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Sub Category
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Unit
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Selling Price
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Quantity
                                             </TableHead>
-                                            <TableHead class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
+                                            <TableHead
+                                                class="after:content-['*'] after:ml-0.5 after:text-red-500 text-slate-900">
                                                 Amount
                                             </TableHead>
                                             <TableHead>
@@ -522,13 +545,13 @@ watch(
                                                 <InputError class="mt-3"
                                                     :message="form.errors[`products.${index}.selling_price`]" />
                                             </TableCell>
-                                            <TableCell> <!-- Quantity -->
+                                            <TableCell class="relative"> <!-- Quantity -->
                                                 <div class="relative items-center">
-                                                    <Input v-model.number="product.quantity" type="number" min="0"
-                                                        max="totalQuantity[index]" step="0.01"
+                                                    <Input v-model.number="form.products[index].quantity" type="number"
+                                                        min="0" :max="formatNumber(totalQuantity[index])" step="0.01"
                                                         :disabled="!totalQuantity[index]"
                                                         @input="validateQuantity($event, index)" :class="[
-                                                            'pl-7',
+                                                            'pl-7 z-20',
                                                             form.errors[`products.${index}.quantity`] && 'border-red-600 focus-visible:ring-red-500',
                                                             !totalQuantity[index] && 'bg-slate-100 cursor-not-allowed'
                                                         ]" />
@@ -536,12 +559,13 @@ watch(
                                                         class="absolute inset-y-0 flex items-center justify-center px-2 start-0">
                                                         <Boxes class="size-4 text-muted-foreground" />
                                                     </span>
-                                                    <small class="absolute font-medium top-2.5 right-3"
-                                                        :class="totalQuantity[index] > product.quantity ? 'text-green-600' : 'text-red-600'">
-                                                        {{ formatRemainingQuantity(totalQuantity[index] -
-                                                            product.quantity) }} left
-                                                    </small>
                                                 </div>
+                                                <small v-if="product.unit_id"
+                                                    class="absolute font-medium -bottom-1 right-4"
+                                                    :class="totalQuantity[index] > product.quantity ? 'text-green-600' : 'text-red-600'">
+                                                    {{ formatRemainingQuantity(totalQuantity[index] -
+                                                        product.quantity) }} left
+                                                </small>
                                                 <InputError class="mt-3"
                                                     :message="form.errors[`products.${index}.quantity`]" />
                                             </TableCell>
