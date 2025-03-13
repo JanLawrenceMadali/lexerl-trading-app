@@ -547,7 +547,7 @@ watch(
                                             </TableCell>
                                             <TableCell class="relative"> <!-- Quantity -->
                                                 <div class="relative items-center">
-                                                    <Input v-model.number="form.products[index].quantity" type="number"
+                                                    <Input v-model.number="product.quantity" type="number"
                                                         min="0" :max="formatNumber(totalQuantity[index])" step="0.01"
                                                         :disabled="!totalQuantity[index]"
                                                         @input="validateQuantity($event, index)" :class="[
