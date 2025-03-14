@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $total_inventory = $inventory->sum('total_amount');
         $activity_logs = ActivityLog::with('users')->latest()->get();
         $total_collectible = $sale->where('status_id', 2)->sum('total_amount');
-        $total_gross_profit = $total_sale + $total_inventory - $total_purchase;
+        $total_gross_profit = bcsub(bcadd($total_sale, $total_inventory, 10), $total_purchase, 10);
 
         $monthlySales = $sale
             ->groupBy(function ($sale) {
