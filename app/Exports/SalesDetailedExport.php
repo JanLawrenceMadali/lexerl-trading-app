@@ -38,10 +38,9 @@ class SalesDetailedExport implements FromCollection, WithHeadings, WithStyles, S
         $units = Unit::all()->keyBy('id');
 
         $salesData = $sales->flatMap(function ($sale) use ($units) {
-            return $sale->inventory_sale->map(function ($product) use ($sale, $units) {
+            return $sale->inventory_sale->where('pivot.quantity', '>', 0)->map(function ($product) use ($sale, $units) {
                 $unit = $units[$product->pivot->unit_id] ?? null;
 
-                
                 return [
                     'ID' => $sale->id,
                     'Transaction Type' => $sale->transactions->type ?? '',
