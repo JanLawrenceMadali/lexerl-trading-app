@@ -249,6 +249,12 @@ class SalesController extends Controller
 
                     $deductQty = min($quantityToDeduct, $inventory->quantity);
 
+                    if ($deductQty <= 0) continue;
+
+                    if (abs($deductQty) < 0.00001) {
+                        $deductQty = 0;
+                    }
+
                     $inventory->decrement('quantity', $deductQty);
                     if (round($inventory->quantity, 2) <= 0.01) {
                         $inventory->update([
