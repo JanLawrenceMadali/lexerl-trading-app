@@ -259,8 +259,11 @@ const formatRemainingQuantity = (quantity) => {
 
 // Format number function
 const formatNumber = (value) => {
-    if (value === null || value === undefined) return 0;
-    return Number(parseFloat(value).toFixed(2));
+  const epsilon = 1e-10;
+  if (Math.abs(value) < epsilon) {
+    return 0;
+  }
+  return Number(parseFloat(value).toFixed(2));
 };
 
 const validateQuantity = (event, index) => {
@@ -547,7 +550,7 @@ watch(
                                             </TableCell>
                                             <TableCell class="relative"> <!-- Quantity -->
                                                 <div class="relative items-center">
-                                                    <Input v-model.number="form.products[index].quantity" type="number"
+                                                    <Input v-model.number="product.quantity" type="number"
                                                         min="0" :max="formatNumber(totalQuantity[index])" step="0.01"
                                                         :disabled="!totalQuantity[index]"
                                                         @input="validateQuantity($event, index)" :class="[
