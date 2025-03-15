@@ -212,7 +212,7 @@ class SalesController extends Controller
             }
 
             // Validate stock on create
-            if ($action === 'create' && $currentTotalQuantity < $totalQuantityInput) {
+            if ($action === 'create' && (round($currentTotalQuantity, 2) < round($totalQuantityInput, 2))) {
                 $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$currentTotalQuantity} units available.";
                 continue;
             }
