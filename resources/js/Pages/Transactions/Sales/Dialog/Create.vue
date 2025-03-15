@@ -246,7 +246,7 @@ const isOverQuantity = computed(() => {
     return form.products.some(product => {
         const { quantity } = product;
         const total = totalQuantity.value.reduce((total, item) => total + item, 0);
-        return quantity > total;
+        return quantity > Number(parseFloat(total).toFixed(2));
     });
 });
 
