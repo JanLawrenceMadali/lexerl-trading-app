@@ -251,11 +251,7 @@ class SalesController extends Controller
 
                     if ($deductQty <= 0) continue;
 
-                    if (abs($deductQty) < 0.00001) {
-                        $deductQty = 0;
-                    }
-
-                    $inventory->decrement('quantity', $deductQty);
+                    $inventory->update(['quantity' => round($inventory->quantity - $deductQty, 2)]);
                     if (round($inventory->quantity, 2) <= 0.01) {
                         $inventory->update([
                             'quantity' => 0,
@@ -266,8 +262,8 @@ class SalesController extends Controller
                     }
 
                     $inventoryAttachments[$inventory->id] = [
-                        'quantity' => $deductQty,
-                        'amount' => $deductQty * $product['selling_price'],
+                        'quantity' => round($deductQty, 2),
+                        'amount' => round($deductQty * $product['selling_price'], 2),
                         'unit_id' => $product['unit_id'],
                         'category_id' => $product['category_id'],
                         'selling_price' => $product['selling_price'],
@@ -277,7 +273,7 @@ class SalesController extends Controller
                     $quantityToDeduct -= $deductQty;
                 }
 
-                if ($quantityToDeduct > 0) {
+                if (round($quantityToDeduct, 2) > 0) {
                     $validationErrors["products.{$index}.quantity"] = "Insufficient stock. Only {$currentTotalQuantity} units available.";
                 }
             }
@@ -306,7 +302,7 @@ class SalesController extends Controller
                         $originalInventory = $inventories->firstWhere('id', $inventorySale->pivot->inventory_id);
                         $deductAmount = min($quantityToReturn, $inventorySale->pivot->quantity);
 
-                        $originalInventory->increment('quantity', $deductAmount);
+                        $originalInventory->update(['quantity' => round($originalInventory->quantity + $deductAmount, 2)]);
                         if (round($originalInventory->quantity, 2) <= 0.01) {
                             $originalInventory->update([
                                 'quantity' => 0,
@@ -318,8 +314,8 @@ class SalesController extends Controller
 
                         $newQuantity = $inventorySale->pivot->quantity - $deductAmount;
                         $inventoryAttachments[$inventorySale->pivot->inventory_id] = [
-                            'quantity' => $newQuantity,
-                            'amount' => $newQuantity * $inventorySale->pivot->selling_price,
+                            'quantity' => round($newQuantity, 2),
+                            'amount' => round($newQuantity * $inventorySale->pivot->selling_price, 2),
                             'unit_id' => $product['unit_id'],
                             'category_id' => $product['category_id'],
                             'selling_price' => $product['selling_price'],
@@ -340,12 +336,12 @@ class SalesController extends Controller
 
                         $deductAmount = min($quantityToReturn, $nextInventory->quantity);
 
-                        $nextInventory->decrement('quantity', $deductAmount);
+                        $nextInventory->update(['quantity' => round($nextInventory->quantity - $deductAmount, 2)]);
                         $nextInventory->update(['amount' => round($nextInventory->quantity * $nextInventory->landed_cost, 2)]);
 
                         $inventoryAttachments[$nextInventory->id] = [
-                            'quantity' => $nextInventory->quantity,
-                            'amount' => $nextInventory->quantity * $inventorySale->pivot->selling_price,
+                            'quantity' => round($nextInventory->quantity, 2),
+                            'amount' => round($nextInventory->quantity * $inventorySale->pivot->selling_price, 2),
                             'unit_id' => $product['unit_id'],
                             'category_id' => $product['category_id'],
                             'selling_price' => $product['selling_price'],
@@ -373,7 +369,7 @@ class SalesController extends Controller
 
                         $deduction = min($quantityToDeduct, $inventory->quantity);
 
-                        $inventory->decrement('quantity', $deduction);
+                        $inventory->update(['quantity' => round($inventory->quantity - $deduction, 2)]);
                         if (round($inventory->quantity, 2) <= 0.01) {
                             $inventory->update([
                                 'quantity' => 0,
@@ -386,8 +382,8 @@ class SalesController extends Controller
                         $newQuantity = $originalInventorySale ? $originalInventorySale->pivot->quantity + $deduction : $deduction;
 
                         $inventoryAttachments[$inventory->id] = [
-                            'quantity' => $newQuantity,
-                            'amount' => $newQuantity * $product['selling_price'],
+                            'quantity' => round($newQuantity, 2),
+                            'amount' => round($newQuantity * $product['selling_price'], 2),
                             'unit_id' => $product['unit_id'],
                             'category_id' => $product['category_id'],
                             'subcategory_id' => $product['subcategory_id'],
@@ -411,12 +407,12 @@ class SalesController extends Controller
 
                         $deduction = min($quantityToDeduct, $nextInventory->quantity);
 
-                        $nextInventory->decrement('quantity', $deduction);
+                        $nextInventory->update(['quantity' => round($nextInventory->quantity - $deduction, 2)]);
                         $nextInventory->update(['amount' => $nextInventory->quantity * $nextInventory->landed_cost]);
 
                         $inventoryAttachments[$nextInventory->id] = [
-                            'quantity' => $deduction,
-                            'amount' => $deduction * $product['selling_price'],
+                            'quantity' => round($deduction, 2),
+                            'amount' => round($deduction * $product['selling_price'], 2),
                             'unit_id' => $product['unit_id'],
                             'category_id' => $product['category_id'],
                             'subcategory_id' => $product['subcategory_id'],
