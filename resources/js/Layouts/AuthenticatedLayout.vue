@@ -30,9 +30,9 @@ import BellNotification from '@/Components/BellNotification.vue';
             <aside class="flex-col hidden w-36 bg-[#1B1212] fixed inset-y-0 sm:flex">
                 <nav class="grid items-center gap-4 px-3 mt-[115px]">
                     <MenuTab label="Dashboard" route="dashboard"
-                        :custom-class="$page.component === 'Dashboard' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'">
+                        :custom-class="$page.component === 'Dashboard/Index' ? 'bg-slate-100 text-slate-800' : 'text-muted-foreground'">
                         <LayoutDashboard
-                            :class="['size-8 group-hover:fill-[#1B1212] group-hover:text-[#1B1212]', $page.component === 'Dashboard' ? 'fill-[#1B1212] text-[#1B1212]' : 'fill-slate-100 text-slate-100']" />
+                            :class="['size-8 group-hover:fill-[#1B1212] group-hover:text-[#1B1212]', $page.component === 'Dashboard/Index' ? 'fill-[#1B1212] text-[#1B1212]' : 'fill-slate-100 text-slate-100']" />
                     </MenuTab>
                     <SubmenuTab label="Transactions" :icon="ArrowLeftRight"
                         :menu-items="['Purchase In', 'Sales', 'Collectibles']"
