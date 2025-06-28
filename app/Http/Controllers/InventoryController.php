@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Supplier;
 use App\Models\Transaction;
@@ -89,6 +90,21 @@ class InventoryController extends Controller
                 $quantityChanged = isset($validated['quantity']) &&
                     $validated['quantity'] != $inventory->quantity;
 
+                // if quantity is being modified, check if the item has been purchased
+                $sale = Sale::with('inventory_sale')
+                    ->get()
+                    ->map(function ($sale) {
+                        foreach ($sale->inventory_sale as $inventorySale) {
+                            return $sale->inventory_sale->where('id', $inventorySale->id);
+                        }
+                        return null;
+                    })->toArray();
+
+                if ($sale) {
+                    throw ValidationException::withMessages([
+                        'quantity' => 'This item has been encoded as sales. Deleting related sales is required before updating the quantity.'
+                    ]);
+                }
                 // Prepare update data
                 $updateData = $this->inventoryService->prepareInventoryData($validated, false);
 
