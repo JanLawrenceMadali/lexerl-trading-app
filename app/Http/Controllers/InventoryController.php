@@ -91,20 +91,13 @@ class InventoryController extends Controller
                     $validated['quantity'] != $inventory->quantity;
 
                 // if quantity is being modified, check if the item has been purchased
-                $sale = Sale::with('inventory_sale')
-                    ->get()
-                    ->map(function ($sale) {
-                        foreach ($sale->inventory_sale as $inventorySale) {
-                            return $sale->inventory_sale->where('id', $inventorySale->id);
-                        }
-                        return null;
-                    })->toArray();
-
-                if ($sale) {
+                $purchase = Purchase::where('id', $inventory->id)->first();
+                if ($purchase->quantity !== $inventory->quantity) {
                     throw ValidationException::withMessages([
                         'quantity' => 'This item has been encoded as sales. Deleting related sales is required before updating the quantity.'
                     ]);
                 }
+
                 // Prepare update data
                 $updateData = $this->inventoryService->prepareInventoryData($validated, false);
 
